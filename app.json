@@ -1,11 +1,12 @@
 {
   "expo": {
-    "name": "food-app",
+    "name": "CBA",
     "slug": "food-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0D0D0D",
     "ios": {
       "supportsTablet": true
     },

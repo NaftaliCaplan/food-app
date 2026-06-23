@@ -7,7 +7,6 @@ node_modules/
 .expo/
 dist/
 web-build/
-expo-env.d.ts
 
 # Native
 .kotlin/
@@ -39,3 +38,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Claude Code
+.claude/
