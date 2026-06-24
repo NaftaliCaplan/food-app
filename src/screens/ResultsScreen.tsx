@@ -33,7 +33,15 @@ export function ResultsScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} bounces={false}>
         <View style={styles.photoContainer}>
-          <Image source={{ uri: photoUri }} style={styles.photo} resizeMode="cover" />
+          <View style={styles.photoPlaceholder}>
+            <AppText style={styles.photoPlaceholderIcon}>📷</AppText>
+            <AppText style={styles.photoPlaceholderText}>Photo captured</AppText>
+          </View>
+          <Image
+            source={{ uri: photoUri }}
+            style={styles.photo}
+            resizeMode="cover"
+          />
         </View>
 
         <View style={styles.content}>
@@ -85,6 +93,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   photo: {
+    position: 'absolute',
     width: '100%',
     height: 280,
   },
@@ -101,5 +110,21 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontSize: 13,
     textTransform: 'capitalize',
+  },
+  photoPlaceholder: {
+    position: 'absolute',
+    width: '100%',
+    height: 280,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.surface,
+  },
+  photoPlaceholderIcon: {
+    fontSize: 40,
+  },
+  photoPlaceholderText: {
+    color: Colors.textSecondary,
+    fontSize: 13,
   },
 });
