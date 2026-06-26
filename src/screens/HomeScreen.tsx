@@ -29,8 +29,8 @@ export function HomeScreen() {
         />
         <FeatureButton
           title="Does it match?"
-          subtitle="Check if your clothes colors go together"
-          disabled
+          subtitle="Check if your clothes go together"
+          onPress={() => navigation.navigate('ClothesChecker')}
         />
       </View>
 

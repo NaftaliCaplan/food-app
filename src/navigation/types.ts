@@ -5,4 +5,8 @@ export type RootStackParamList = {
     photoUri: string;
     foodLabel: string;
   };
+  ClothesChecker: undefined;
+  ClothesResults: {
+    photoUri: string;
+  };
 };

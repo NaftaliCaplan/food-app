@@ -22,4 +22,13 @@ export const Colors = {
   stateWellDone:   '#4ADE80',
   stateError:      '#F87171',
   stateComingSoon: '#444444',
+
+  // Clothes matcher verdict colors — always paired with icons, never used alone
+  clothesStrongMatch: '#4ADE80',
+  clothesGoodMatch:   '#86EFAC',
+  clothesNeutral:     '#94A3B8',
+  clothesMildClash:   '#FACC15',
+  clothesStrongClash: '#F87171',
+  clothesAccent:      '#818CF8',
+  clothesAccentMuted: '#1E1B4B',
 } as const;

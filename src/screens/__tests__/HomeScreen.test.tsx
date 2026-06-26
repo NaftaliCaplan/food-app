@@ -27,9 +27,9 @@ describe('HomeScreen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('FoodChecker');
   });
 
-  it('does not navigate when clothes button is pressed (disabled)', () => {
+  it('navigates to ClothesChecker when clothes button is pressed', () => {
     render(<HomeScreen />);
     fireEvent.press(screen.getByText('Does it match?'));
-    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith('ClothesChecker');
   });
 });
