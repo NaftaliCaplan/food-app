@@ -28,7 +28,7 @@ export function StatusOverlay({ status, error, foodLabel }: Props) {
       <AppText style={styles.errorTitle}>Analysis failed</AppText>
       <AppText style={styles.errorMessage}>{error}</AppText>
       <AppText style={styles.errorHint}>
-        Make sure Ollama is running: ollama serve
+        Check your connection and try again
       </AppText>
     </View>
   );

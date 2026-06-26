@@ -17,4 +17,5 @@ export interface AnalysisResult {
   confidencePercent: number;
   visualCues: string[];
   recommendation: string;
+  observedFood?: string;
 }

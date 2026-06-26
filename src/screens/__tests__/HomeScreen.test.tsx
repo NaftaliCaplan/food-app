@@ -17,13 +17,13 @@ describe('HomeScreen', () => {
 
   it('renders both feature buttons', () => {
     render(<HomeScreen />);
-    expect(screen.getByText('Is it ready or ripe?')).toBeTruthy();
+    expect(screen.getByText('Is it ready?')).toBeTruthy();
     expect(screen.getByText('Does it match?')).toBeTruthy();
   });
 
   it('navigates to FoodChecker when food button is pressed', () => {
     render(<HomeScreen />);
-    fireEvent.press(screen.getByText('Is it ready or ripe?'));
+    fireEvent.press(screen.getByText('Is it ready?'));
     expect(mockNavigate).toHaveBeenCalledWith('FoodChecker');
   });
 

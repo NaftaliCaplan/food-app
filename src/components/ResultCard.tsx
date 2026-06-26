@@ -64,6 +64,15 @@ export function ResultCard({ result }: Props) {
         </View>
       )}
 
+      {/* Observed food mismatch warning */}
+      {!!result.observedFood && (
+        <View style={styles.mismatchBanner}>
+          <AppText style={styles.mismatchText}>
+            Looks like: {result.observedFood}
+          </AppText>
+        </View>
+      )}
+
       {/* Recommendation */}
       {!!result.recommendation && (
         <View style={styles.section}>
@@ -114,5 +123,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontStyle: 'italic',
     lineHeight: 20,
+  },
+  mismatchBanner: {
+    backgroundColor: Colors.surfaceRaised,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.accent,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: 6,
+  },
+  mismatchText: {
+    color: Colors.accent,
+    fontSize: 13,
   },
 });

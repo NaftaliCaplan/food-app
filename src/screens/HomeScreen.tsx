@@ -23,8 +23,8 @@ export function HomeScreen() {
 
       <View style={styles.cards}>
         <FeatureButton
-          title="Is it ready or ripe?"
-          subtitle="Check food doneness and ripeness with your camera"
+          title="Is it ready?"
+          subtitle="Check if your food is ripe, done, or safe to eat"
           onPress={() => navigation.navigate('FoodChecker')}
         />
         <FeatureButton

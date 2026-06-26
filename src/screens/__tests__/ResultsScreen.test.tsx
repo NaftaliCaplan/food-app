@@ -41,7 +41,7 @@ describe('ResultsScreen', () => {
   });
 
   it('shows error overlay on failure', () => {
-    useAnalysis.mockReturnValue({ status: 'error', result: null, error: 'Ollama not running' });
+    useAnalysis.mockReturnValue({ status: 'error', result: null, error: 'Network error' });
     render(<ResultsScreen />);
     expect(screen.getByText(/analysis failed/i)).toBeTruthy();
   });
