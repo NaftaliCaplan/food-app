@@ -18,4 +18,5 @@ export interface AnalysisResult {
   visualCues: string[];
   recommendation: string;
   observedFood?: string;
+  labelMatch?: boolean;
 }

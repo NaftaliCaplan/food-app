@@ -64,11 +64,12 @@ export function ResultCard({ result }: Props) {
         </View>
       )}
 
-      {/* Observed food mismatch warning */}
-      {!!result.observedFood && (
+      {/* Mismatch warning — only shown when model says label is wrong */}
+      {result.labelMatch === false && !!result.observedFood && (
         <View style={styles.mismatchBanner}>
+          <AppText style={styles.mismatchTitle}>Heads up</AppText>
           <AppText style={styles.mismatchText}>
-            Looks like: {result.observedFood}
+            This looks like: {result.observedFood}
           </AppText>
         </View>
       )}
@@ -127,13 +128,20 @@ const styles = StyleSheet.create({
   mismatchBanner: {
     backgroundColor: Colors.surfaceRaised,
     borderLeftWidth: 3,
-    borderLeftColor: Colors.accent,
+    borderLeftColor: Colors.stateUseSoon,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: 6,
+    gap: 2,
+  },
+  mismatchTitle: {
+    color: Colors.stateUseSoon,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.5,
   },
   mismatchText: {
-    color: Colors.accent,
+    color: Colors.textSecondary,
     fontSize: 13,
   },
 });

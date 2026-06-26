@@ -9,6 +9,13 @@ const MODEL = '@cf/meta/llama-3.2-11b-vision-instruct';
 
 const BASE_URL = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/${MODEL}`;
 
+function foodLabelMatchesObserved(label: string, observed: string): boolean {
+  const normalize = (s: string) => s.toLowerCase().replace(/[^a-z\s]/g, '');
+  const labelWords = normalize(label).split(/\s+/).filter(w => w.length > 2);
+  const observedNorm = normalize(observed);
+  return labelWords.some(word => observedNorm.includes(word));
+}
+
 function buildPrompt(foodLabel: string): string {
   return `You are a food safety and readiness expert with sharp vision. A colorblind user is relying entirely on your analysis — they cannot distinguish colors themselves. Your visual cues must describe texture, shape, surface condition, and pattern — not just color names alone.
 
@@ -29,7 +36,7 @@ STEP 4 — LIGHTING CHECK: If the image is dark, blurry, or overexposed, reduce 
 
 STEP 5 — OUTPUT: You MUST respond with ONLY a raw JSON object. No markdown, no bold text, no bullet points, no explanation. Start your response with { and end with }. Nothing else.
 {
-  "observedFood": "<what you actually see in the image>",
+  "observedFood": "<what you actually see in the image, e.g. 'a yellow banana with brown spots'>",
   "state": "<ripe|unripe|overripe|almost_ready|use_soon|raw|rare|medium-rare|medium|well-done|unknown>",
   "stateLabel": "<short human-readable label, e.g. 'Ripe', 'Medium-rare', 'Cooked', 'Not food'>",
   "confidencePercent": <0-100>,
@@ -78,13 +85,18 @@ export async function analyzeFood(
   const raw = json.result?.response;
   // Model returns response as a pre-parsed object — use directly
   if (raw && typeof raw === 'object' && raw.state) {
+    const observedFood: string = raw.observedFood ?? '';
+    const labelMatch = observedFood
+      ? foodLabelMatchesObserved(foodLabel, observedFood)
+      : true;
     return {
       state: raw.state ?? 'unknown',
       stateLabel: raw.stateLabel ?? labelForState(raw.state),
       confidencePercent: raw.confidencePercent ?? 50,
       visualCues: Array.isArray(raw.visualCues) ? raw.visualCues : [],
       recommendation: raw.recommendation ?? '',
-      ...(raw.observedFood ? { observedFood: raw.observedFood } : {}),
+      observedFood: observedFood || undefined,
+      labelMatch,
     };
   }
   // Fallback: parse as string
