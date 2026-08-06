@@ -9,4 +9,13 @@ export type RootStackParamList = {
   ClothesResults: {
     photoUri: string;
   };
+  Wardrobe: undefined;
+  AddItem: undefined;
+  UserProfile: undefined;
+  OutfitBuilder: undefined;
+  OutfitResults: {
+    stylePrefs: string[];
+    useProfile: boolean;
+    includeAccessories: boolean;
+  };
 };

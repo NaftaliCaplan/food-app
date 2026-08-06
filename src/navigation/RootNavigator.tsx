@@ -5,6 +5,11 @@ import { ClothesResultsScreen } from '../screens/ClothesResultsScreen';
 import { FoodCheckerScreen } from '../screens/FoodCheckerScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ResultsScreen } from '../screens/ResultsScreen';
+import { AddItemScreen } from '../screens/AddItemScreen';
+import { OutfitBuilderScreen } from '../screens/OutfitBuilderScreen';
+import { OutfitResultsScreen } from '../screens/OutfitResultsScreen';
+import { UserProfileScreen } from '../screens/UserProfileScreen';
+import { WardrobeScreen } from '../screens/WardrobeScreen';
 import { Colors } from '../theme/colors';
 import { RootStackParamList } from './types';
 
@@ -24,6 +29,11 @@ export function RootNavigator() {
       <Stack.Screen name="Results" component={ResultsScreen} />
       <Stack.Screen name="ClothesChecker" component={ClothesCheckerScreen} />
       <Stack.Screen name="ClothesResults" component={ClothesResultsScreen} />
+      <Stack.Screen name="Wardrobe" component={WardrobeScreen} />
+      <Stack.Screen name="AddItem" component={AddItemScreen} />
+      <Stack.Screen name="UserProfile" component={UserProfileScreen} />
+      <Stack.Screen name="OutfitBuilder" component={OutfitBuilderScreen} />
+      <Stack.Screen name="OutfitResults" component={OutfitResultsScreen} />
     </Stack.Navigator>
   );
 }

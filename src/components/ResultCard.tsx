@@ -7,18 +7,21 @@ import { AppText } from './AppText';
 import { ConfidenceBadge } from './ConfidenceBadge';
 import { CueBulletList } from './CueBulletList';
 
+// Icons are the colorblind-accessible signal — always paired with STATE_COLOR
+// but never dependent on it. Each state gets a distinct bracket tag so the
+// meaning survives even if color can't be perceived.
 const STATE_ICON: Record<RipenessState, string> = {
-  ripe:         '✅',
-  unripe:       '⏳',
-  overripe:     '⚠️',
-  almost_ready: '🕐',
-  use_soon:     '⚠️',
-  raw:          '❌',
-  rare:         '🔶',
-  'medium-rare':'🟡',
-  medium:       '🟢',
-  'well-done':  '✅',
-  unknown:      '❓',
+  ripe:         '[OK]',
+  unripe:       '[WAIT]',
+  overripe:     '[WARN]',
+  almost_ready: '[SOON]',
+  use_soon:     '[WARN]',
+  raw:          '[RAW]',
+  rare:         '[RARE]',
+  'medium-rare':'[M-RARE]',
+  medium:       '[MED]',
+  'well-done':  '[DONE]',
+  unknown:      '[?]',
 };
 
 const STATE_COLOR: Record<RipenessState, string> = {
@@ -88,7 +91,7 @@ export function ResultCard({ result }: Props) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surfaceRaised,
-    borderRadius: 16,
+    borderRadius: 0,
     padding: Spacing.lg,
     gap: Spacing.md,
   },
@@ -97,13 +100,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
     borderWidth: 2,
-    borderRadius: 12,
+    borderRadius: 0,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     alignSelf: 'flex-start',
   },
   stateIcon: {
-    fontSize: 24,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   stateLabel: {
     fontSize: 28,
@@ -131,7 +136,7 @@ const styles = StyleSheet.create({
     borderLeftColor: Colors.stateUseSoon,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    borderRadius: 6,
+    borderRadius: 0,
     gap: 2,
   },
   mismatchTitle: {

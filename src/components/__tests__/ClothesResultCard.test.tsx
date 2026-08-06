@@ -19,37 +19,37 @@ function makeResult(overrides: Partial<ClothesAnalysisResult> = {}): ClothesAnal
 describe('ClothesResultCard', () => {
   it('shows strong_match icon and label', () => {
     render(<ClothesResultCard result={makeResult({ verdict: 'strong_match', verdictLabel: 'Strong Match' })} />);
-    expect(screen.getByText('✅')).toBeTruthy();
+    expect(screen.getByText('[MATCH]')).toBeTruthy();
     expect(screen.getByText('STRONG MATCH')).toBeTruthy();
   });
 
   it('shows good_match icon and label', () => {
     render(<ClothesResultCard result={makeResult({ verdict: 'good_match', verdictLabel: 'Good Match' })} />);
-    expect(screen.getByText('👍')).toBeTruthy();
+    expect(screen.getByText('[GOOD]')).toBeTruthy();
     expect(screen.getByText('GOOD MATCH')).toBeTruthy();
   });
 
   it('shows neutral icon and label', () => {
     render(<ClothesResultCard result={makeResult({ verdict: 'neutral', verdictLabel: 'Neutral' })} />);
-    expect(screen.getByText('➖')).toBeTruthy();
+    expect(screen.getByText('[NEUT]')).toBeTruthy();
     expect(screen.getByText('NEUTRAL')).toBeTruthy();
   });
 
   it('shows mild_clash icon and label', () => {
     render(<ClothesResultCard result={makeResult({ verdict: 'mild_clash', verdictLabel: 'Mild Clash' })} />);
-    expect(screen.getByText('⚠️')).toBeTruthy();
+    expect(screen.getByText('[CLASH?]')).toBeTruthy();
     expect(screen.getByText('MILD CLASH')).toBeTruthy();
   });
 
   it('shows strong_clash icon and label', () => {
     render(<ClothesResultCard result={makeResult({ verdict: 'strong_clash', verdictLabel: 'Strong Clash' })} />);
-    expect(screen.getByText('❌')).toBeTruthy();
+    expect(screen.getByText('[CLASH]')).toBeTruthy();
     expect(screen.getByText('STRONG CLASH')).toBeTruthy();
   });
 
   it('shows unknown icon and label', () => {
     render(<ClothesResultCard result={makeResult({ verdict: 'unknown', verdictLabel: 'Unknown' })} />);
-    expect(screen.getByText('❓')).toBeTruthy();
+    expect(screen.getByText('[?]')).toBeTruthy();
     expect(screen.getByText('UNKNOWN')).toBeTruthy();
   });
 

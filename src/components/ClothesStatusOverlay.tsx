@@ -21,7 +21,7 @@ export function ClothesStatusOverlay({ status, error }: Props) {
 
   return (
     <View style={styles.container}>
-      <AppText style={styles.errorIcon}>⚠️</AppText>
+      <AppText style={styles.errorIcon}>[ERROR]</AppText>
       <AppText style={styles.errorTitle}>Analysis failed</AppText>
       <AppText style={styles.errorMessage}>{error}</AppText>
       <AppText style={styles.errorHint}>Check your connection and try again</AppText>
@@ -40,7 +40,10 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
   },
   errorIcon: {
-    fontSize: 32,
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 1,
+    color: Colors.stateError,
   },
   errorTitle: {
     color: Colors.stateError,

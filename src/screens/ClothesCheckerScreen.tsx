@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   },
   camera: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 0,
     overflow: 'hidden',
     marginHorizontal: Spacing.lg,
   },
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.clothesAccent,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
-    borderRadius: 12,
+    borderRadius: 0,
     marginTop: Spacing.sm,
   },
   permissionBtnText: {

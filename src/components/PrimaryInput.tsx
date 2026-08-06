@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
-    borderRadius: 12,
+    borderRadius: 0,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm + 4,
   },
@@ -44,5 +44,6 @@ const styles = StyleSheet.create({
   input: {
     color: Colors.textPrimary,
     fontSize: 16,
+    fontFamily: 'JetBrainsMono_400Regular',
   },
 });

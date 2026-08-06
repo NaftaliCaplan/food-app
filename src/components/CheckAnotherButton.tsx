@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
   btn: {
     borderWidth: 1,
     borderColor: Colors.accent,
-    borderRadius: 12,
+    borderRadius: 0,
     paddingVertical: Spacing.md,
     alignItems: 'center',
   },

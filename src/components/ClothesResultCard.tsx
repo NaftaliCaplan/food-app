@@ -7,13 +7,16 @@ import { AppText } from './AppText';
 import { ConfidenceBadge } from './ConfidenceBadge';
 import { CueBulletList } from './CueBulletList';
 
+// Icons are the colorblind-accessible signal — always paired with VERDICT_COLOR
+// but never dependent on it. Each verdict gets a distinct bracket tag so the
+// meaning survives even if color can't be perceived.
 const VERDICT_ICON: Record<MatchVerdict, string> = {
-  strong_match: '✅',
-  good_match:   '👍',
-  neutral:      '➖',
-  mild_clash:   '⚠️',
-  strong_clash: '❌',
-  unknown:      '❓',
+  strong_match: '[MATCH]',
+  good_match:   '[GOOD]',
+  neutral:      '[NEUT]',
+  mild_clash:   '[CLASH?]',
+  strong_clash: '[CLASH]',
+  unknown:      '[?]',
 };
 
 const VERDICT_COLOR: Record<MatchVerdict, string> = {
@@ -86,7 +89,7 @@ export function ClothesResultCard({ result }: Props) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.clothesAccentMuted,
-    borderRadius: 16,
+    borderRadius: 0,
     padding: Spacing.lg,
     gap: Spacing.md,
   },
@@ -95,13 +98,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
     borderWidth: 2,
-    borderRadius: 12,
+    borderRadius: 0,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     alignSelf: 'flex-start',
   },
   verdictIcon: {
-    fontSize: 24,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   verdictLabel: {
     fontSize: 28,

@@ -19,7 +19,7 @@ export function ConfidenceBadge({ confidencePercent }: Props) {
 const styles = StyleSheet.create({
   pill: {
     backgroundColor: Colors.accentMuted,
-    borderRadius: 20,
+    borderRadius: 0,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     alignSelf: 'flex-start',
