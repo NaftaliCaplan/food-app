@@ -1,0 +1,110 @@
+import { tagClothingItem } from '../tagService';
+
+jest.mock('expo-file-system/next', () => ({
+  File: jest.fn().mockImplementation(() => ({
+    bytes: jest.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),
+  })),
+}));
+
+global.fetch = jest.fn();
+const mockFetch = global.fetch as jest.Mock;
+
+const makeResponse = (body: unknown, ok = true, status = 200) => ({
+  ok,
+  status,
+  json: jest.fn().mockResolvedValue(body),
+  text: jest.fn().mockResolvedValue(String(body)),
+});
+
+describe('tagClothingItem', () => {
+  beforeEach(() => {
+    mockFetch.mockReset();
+  });
+
+  it('merges the dedicated style field into tags', async () => {
+    mockFetch.mockResolvedValue(makeResponse({
+      result: {
+        response: {
+          isClothing: true,
+          name: 'plaid flannel pajama pants',
+          style: 'casual',
+          tags: ['plaid', 'light', 'loose'],
+        },
+      },
+    }));
+    const result = await tagClothingItem('file://test.jpg', 'bottom');
+    expect(result.tags).toEqual(expect.arrayContaining(['plaid', 'light', 'loose', 'casual']));
+    expect(result.tags.filter(t => t === 'casual')).toHaveLength(1);
+  });
+
+  it('strips contradictory style words the model put in the free-form tags list', async () => {
+    // Regression case: the model tagged an item with both "casual" and "formal"
+    // directly in the tags array. The dedicated "style" field should win, and
+    // any stray style words in tags must be removed, not just deduplicated.
+    mockFetch.mockResolvedValue(makeResponse({
+      result: {
+        response: {
+          isClothing: true,
+          name: 'plaid pajama pants',
+          style: 'casual',
+          tags: ['plaid', 'casual', 'formal'],
+        },
+      },
+    }));
+    const result = await tagClothingItem('file://test.jpg', 'bottom');
+    expect(result.tags).toEqual(expect.arrayContaining(['plaid', 'casual']));
+    expect(result.tags).not.toContain('formal');
+  });
+
+  it('normalizes hyphenated style values to the underscore form', async () => {
+    mockFetch.mockResolvedValue(makeResponse({
+      result: {
+        response: {
+          isClothing: true,
+          name: 'chinos',
+          style: 'smart-casual',
+          tags: [],
+        },
+      },
+    }));
+    const result = await tagClothingItem('file://test.jpg', 'bottom');
+    expect(result.tags).toContain('smart_casual');
+  });
+
+  it('flags non-clothing photos via isClothing', async () => {
+    mockFetch.mockResolvedValue(makeResponse({
+      result: {
+        response: {
+          isClothing: false,
+          name: '',
+          tags: [],
+        },
+      },
+    }));
+    const result = await tagClothingItem('file://test.jpg', 'top');
+    expect(result.isClothing).toBe(false);
+  });
+
+  it('defaults isClothing to true when the field is missing', async () => {
+    mockFetch.mockResolvedValue(makeResponse({
+      result: {
+        response: {
+          name: 'white tee',
+          style: 'casual',
+          tags: [],
+        },
+      },
+    }));
+    const result = await tagClothingItem('file://test.jpg', 'top');
+    expect(result.isClothing).toBe(true);
+  });
+
+  it('falls back to regex extraction when the model wraps JSON in markdown fences', async () => {
+    const fenced = '```json\n{"isClothing": true, "name": "denim jacket", "style": "casual", "tags": ["denim", "casual", "formal"]}\n```';
+    mockFetch.mockResolvedValue(makeResponse({ result: { response: fenced } }));
+    const result = await tagClothingItem('file://test.jpg', 'top');
+    expect(result.name).toBe('denim jacket');
+    expect(result.tags).toEqual(expect.arrayContaining(['denim', 'casual']));
+    expect(result.tags).not.toContain('formal');
+  });
+});

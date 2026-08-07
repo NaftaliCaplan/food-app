@@ -33,10 +33,9 @@ export async function removeItem(id: string): Promise<void> {
   const current = await getWardrobe();
   const filtered = current.filter(i => i.id !== id);
   await AsyncStorage.setItem(WARDROBE_KEY, JSON.stringify(filtered));
-  const photoPath = WARDROBE_DIR + id + '.jpg';
-  const info = await FileSystem.getInfoAsync(photoPath);
-  if (info.exists) {
-    await FileSystem.deleteAsync(photoPath, { idempotent: true });
+  const file = new File(wardrobeDir, `${id}.jpg`);
+  if (file.exists) {
+    file.delete();
   }
 }
 

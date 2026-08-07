@@ -87,6 +87,10 @@ Unrelated to the visual redesign but requested in the same pass: raised the food
 
 Verified via: full jest suite (21/21 suites, 138/138 tests) and `tsc --noEmit` clean (same pre-existing error only).
 
+## Follow-up: on-device visual feedback (2026-07-25)
+
+First live Expo Go test surfaced two more visual notes. (1) The single accent color (`#4ADE80`) read as "too neon" on an actual phone screen — dialed back to a more muted/desaturated `#4A9B6E` (with `accentMuted`/`accentText` adjusted to match), applied as a judgment call for the user to react to live rather than debated in the abstract, since a real device is a much faster feedback loop than describing hex codes. Only the brand-chrome accent changed — the food/clothes state/verdict colors (`stateRipe`, `clothesStrongMatch`, etc.) were left alone, consistent with this ADR's original accessibility-color boundary. (2) `AddItemScreen`'s 4-chip category row (Top/Bottom/Shoes/Accessory) stranded "Accessory" alone on a second row on a real phone width — converted from 4 equal `flex:1` columns to a `flexWrap` grid (`minWidth: '45%'`, matching the pattern already used by `OutfitBuilderScreen`'s style picker) so it renders as a deliberate 2×2 grid at phone width instead of an accidental 3-plus-1 split.
+
 ## Known tech debt / open items (not addressed by this decision)
 
 * `expo-camera`'s `takePictureAsync()` does not appear to work in the browser (Expo web) build — capture silently stalls with no error surfaced. Suspected to be a web-only limitation of `expo-camera` rather than an app bug; unconfirmed on native until a full Expo Go session is run on-device.

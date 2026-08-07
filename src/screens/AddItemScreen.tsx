@@ -31,7 +31,7 @@ const CATEGORIES: { key: ItemCategory; label: string }[] = [
   { key: 'accessory', label: 'Accessory' },
 ];
 
-type Step = 'camera' | 'tagging' | 'review';
+type Step = 'camera' | 'tagging' | 'notClothing' | 'review';
 
 export function AddItemScreen() {
   const navigation = useNavigation<Nav>();
@@ -73,6 +73,10 @@ export function AddItemScreen() {
       setPhotoUri(photo.uri);
       setStep('tagging');
       const result = await tagClothingItem(photo.uri, category);
+      if (!result.isClothing) {
+        setStep('notClothing');
+        return;
+      }
       setName(result.name);
       setTags(result.tags);
       setStep('review');
@@ -124,6 +128,23 @@ export function AddItemScreen() {
         <View style={styles.loadingBox}>
           <ActivityIndicator color={Colors.accent} size="large" />
           <AppText style={styles.loadingText}>Identifying item...</AppText>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Step: not clothing — blocked, no save option, must retake
+  if (step === 'notClothing') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingBox}>
+          <AppText style={styles.notClothingIcon}>[NOT CLOTHING]</AppText>
+          <AppText style={styles.notClothingText}>
+            That doesn't look like a clothing item. Try again with the item clearly in frame.
+          </AppText>
+          <TouchableOpacity style={styles.permissionBtn} onPress={() => setStep('camera')}>
+            <AppText style={styles.permissionBtnText}>Retake Photo</AppText>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -273,12 +294,14 @@ const styles = StyleSheet.create({
   },
   categoryRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     gap: Spacing.sm,
   },
   catChip: {
-    flex: 1,
+    flexGrow: 1,
+    minWidth: '45%',
     alignItems: 'center',
     paddingVertical: Spacing.sm,
     borderRadius: 0,
@@ -348,6 +371,19 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: Colors.textSecondary,
+  },
+  notClothingIcon: {
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 1,
+    color: Colors.stateError,
+  },
+  notClothingText: {
+    color: Colors.textPrimary,
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: Spacing.xl,
   },
   reviewScroll: {
     padding: Spacing.lg,
