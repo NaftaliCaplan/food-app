@@ -1,11 +1,12 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
 import { CheckAnotherButton } from '../components/CheckAnotherButton';
 import { ResultCard } from '../components/ResultCard';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { StatusOverlay } from '../components/StatusOverlay';
 import { useAnalysis } from '../hooks/useAnalysis';
 import { Colors } from '../theme/colors';
@@ -21,14 +22,12 @@ export function ResultsScreen() {
   const { photoUri, foodLabel } = params;
 
   const { status, result, error } = useAnalysis(photoUri, foodLabel);
+  const titleLabel = foodLabel.replace(/\b\w/g, c => c.toUpperCase());
 
   return (
     <View style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AppText style={styles.backText}>← Back</AppText>
-        </TouchableOpacity>
-        <AppText style={styles.screenTitle}>{foodLabel}</AppText>
+        <ScreenHeader title={titleLabel} onBack={() => navigation.goBack()} />
       </SafeAreaView>
 
       <ScrollView contentContainerStyle={styles.scroll} bounces={false}>
@@ -69,20 +68,6 @@ const styles = StyleSheet.create({
   },
   topBar: {
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
-  backText: {
-    color: Colors.accent,
-    fontSize: 14,
-  },
-  screenTitle: {
-    color: Colors.textPrimary,
-    fontWeight: '600',
-    fontSize: 16,
-    textTransform: 'capitalize',
   },
   scroll: {
     flexGrow: 1,

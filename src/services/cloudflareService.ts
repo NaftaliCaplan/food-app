@@ -21,7 +21,7 @@ function adjustConfidence(modelConfidence: number, imageSizeBytes: number): numb
   // Small images (< 150kb) — moderate penalty
   else if (imageSizeBytes < 150_000) adjusted = Math.min(adjusted, 70);
 
-  return Math.round(Math.max(10, Math.min(95, adjusted)));
+  return Math.round(Math.max(10, Math.min(99, adjusted)));
 }
 
 function foodLabelMatchesObserved(label: string, observed: string): boolean {

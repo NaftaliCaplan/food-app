@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { RootStackParamList } from '../navigation/types';
 import { getUserProfile } from '../storage/profileStorage';
 import { Colors } from '../theme/colors';
@@ -88,10 +89,7 @@ export function OutfitBuilderScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AppText style={styles.backText}>← Back</AppText>
-        </TouchableOpacity>
-        <AppText style={styles.screenTitle}>Build an Outfit</AppText>
+        <ScreenHeader title="Build an Outfit" onBack={() => navigation.goBack()} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -160,18 +158,6 @@ const styles = StyleSheet.create({
   },
   topBar: {
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.sm,
-    gap: Spacing.xs,
-  },
-  backText: {
-    color: Colors.clothesAccent,
-    fontSize: 14,
-    paddingVertical: Spacing.xs,
-  },
-  screenTitle: {
-    color: Colors.textPrimary,
-    fontWeight: '600',
-    fontSize: 18,
   },
   scroll: {
     padding: Spacing.lg,
@@ -205,7 +191,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   chipActive: {
-    borderColor: Colors.clothesAccent,
+    borderColor: Colors.accent,
   },
   chipLabel: {
     fontSize: 14,
@@ -213,7 +199,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   chipLabelActive: {
-    color: Colors.clothesAccent,
+    color: Colors.accent,
     fontWeight: '700',
   },
   toggleRow: {
@@ -247,7 +233,7 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.border,
   },
   generateBtn: {
-    backgroundColor: Colors.clothesAccent,
+    backgroundColor: Colors.accent,
     paddingVertical: Spacing.md,
     borderRadius: 0,
     alignItems: 'center',

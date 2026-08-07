@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { RootStackParamList } from '../navigation/types';
 import { getWardrobe, removeItem } from '../storage/wardrobeStorage';
 import { getUserProfile } from '../storage/profileStorage';
@@ -56,24 +57,26 @@ export function WardrobeScreen() {
   if (items.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <AppText style={styles.backText}>← Back</AppText>
-          </TouchableOpacity>
-          <AppText style={styles.screenTitle}>My Wardrobe</AppText>
-          <TouchableOpacity
-            style={styles.profileBtn}
-            onPress={() => navigation.navigate('UserProfile')}
-            accessibilityLabel="Set up style profile"
-          >
-            <AppText style={styles.profileIcon}>
-              {hasProfile ? '[P✓]' : '[P]'}
-            </AppText>
-          </TouchableOpacity>
+        <View style={styles.headerBar}>
+          <ScreenHeader
+            title="My Wardrobe"
+            onBack={() => navigation.goBack()}
+            right={
+              <TouchableOpacity
+                style={styles.profileBtn}
+                onPress={() => navigation.navigate('UserProfile')}
+                accessibilityLabel="Set up style profile"
+              >
+                <AppText style={styles.profileIcon}>
+                  {hasProfile ? '[P✓]' : '[P]'}
+                </AppText>
+              </TouchableOpacity>
+            }
+          />
         </View>
 
         <View style={styles.emptyState}>
-          <AppText style={styles.emptyIcon}>[ EMPTY ]</AppText>
+          <AppText style={styles.emptyIcon}>[EMPTY]</AppText>
           <AppText style={styles.emptyTitle}>Your wardrobe is empty</AppText>
           <AppText style={styles.emptySub}>
             Add your clothes to get outfit suggestions
@@ -91,29 +94,31 @@ export function WardrobeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AppText style={styles.backText}>← Back</AppText>
-        </TouchableOpacity>
-        <AppText style={styles.screenTitle}>My Wardrobe</AppText>
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={styles.profileBtn}
-            onPress={() => navigation.navigate('UserProfile')}
-            accessibilityLabel="Set up style profile"
-          >
-            <AppText style={styles.profileIcon}>
-              {hasProfile ? '[P✓]' : '[P]'}
-            </AppText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.addIconBtn}
-            onPress={() => navigation.navigate('AddItem')}
-            accessibilityLabel="Add item to wardrobe"
-          >
-            <AppText style={styles.addIconText}>＋</AppText>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.headerBar}>
+        <ScreenHeader
+          title="My Wardrobe"
+          onBack={() => navigation.goBack()}
+          right={
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.profileBtn}
+                onPress={() => navigation.navigate('UserProfile')}
+                accessibilityLabel="Set up style profile"
+              >
+                <AppText style={styles.profileIcon}>
+                  {hasProfile ? '[P✓]' : '[P]'}
+                </AppText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.addIconBtn}
+                onPress={() => navigation.navigate('AddItem')}
+                accessibilityLabel="Add item to wardrobe"
+              >
+                <AppText style={styles.addIconText}>＋</AppText>
+              </TouchableOpacity>
+            </View>
+          }
+        />
       </View>
 
       <FlatList
@@ -169,23 +174,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
+  headerBar: {
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-  },
-  backText: {
-    color: Colors.clothesAccent,
-    fontSize: 14,
-  },
-  screenTitle: {
-    flex: 1,
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    textAlign: 'center',
   },
   headerActions: {
     flexDirection: 'row',
@@ -199,7 +189,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   addIconBtn: {
-    backgroundColor: Colors.clothesAccent,
+    backgroundColor: Colors.accent,
     width: 32,
     height: 32,
     borderRadius: 0,
@@ -237,7 +227,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   addBtn: {
-    backgroundColor: Colors.clothesAccent,
+    backgroundColor: Colors.accent,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     borderRadius: 0,
@@ -246,7 +236,7 @@ const styles = StyleSheet.create({
   addBtnText: {
     color: '#000',
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 16,
   },
   grid: {
     paddingHorizontal: Spacing.md,
@@ -299,15 +289,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   buildBtn: {
-    backgroundColor: Colors.clothesAccent,
+    backgroundColor: Colors.accent,
     paddingVertical: Spacing.md,
     borderRadius: 0,
     alignItems: 'center',
   },
   buildBtnDisabled: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    opacity: 0.6,
   },
   buildBtnText: {
     color: '#000',

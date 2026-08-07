@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
 import { CaptureButton } from '../components/CaptureButton';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { RootStackParamList } from '../navigation/types';
 import { extractSkinTone } from '../services/tagService';
 import { clearUserProfile, getUserProfile, saveUserProfile } from '../storage/profileStorage';
@@ -132,7 +133,7 @@ export function UserProfileScreen() {
       return (
         <SafeAreaView style={styles.container}>
           <View style={styles.centreBox}>
-            <ActivityIndicator color={Colors.clothesAccent} size="large" />
+            <ActivityIndicator color={Colors.accent} size="large" />
             <AppText style={styles.subText}>Reading complexion details...</AppText>
           </View>
         </SafeAreaView>
@@ -142,10 +143,11 @@ export function UserProfileScreen() {
     return (
       <View style={styles.container}>
         <SafeAreaView edges={['top']} style={styles.topBar}>
-          <TouchableOpacity onPress={() => { setShowCamera(false); setCameraStep('preview'); }}>
-            <AppText style={styles.backText}>← Cancel</AppText>
-          </TouchableOpacity>
-          <AppText style={styles.screenTitle}>Reference Photo</AppText>
+          <ScreenHeader
+            title="Reference Photo"
+            onBack={() => { setShowCamera(false); setCameraStep('preview'); }}
+            backLabel="← Cancel"
+          />
         </SafeAreaView>
 
         <CameraView ref={cameraRef} style={styles.camera} facing="front" />
@@ -153,7 +155,7 @@ export function UserProfileScreen() {
         <View style={styles.bottomBar}>
           <AppText style={styles.hint}>Face the camera — tap to capture</AppText>
           {cameraStep === 'capturing' ? (
-            <ActivityIndicator color={Colors.clothesAccent} size="large" />
+            <ActivityIndicator color={Colors.accent} size="large" />
           ) : (
             <CaptureButton onPress={handleCapture} disabled={cameraStep !== 'preview'} />
           )}
@@ -166,10 +168,7 @@ export function UserProfileScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AppText style={styles.backText}>← Back</AppText>
-        </TouchableOpacity>
-        <AppText style={styles.screenTitle}>Style Profile</AppText>
+        <ScreenHeader title="Style Profile" onBack={() => navigation.goBack()} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -280,18 +279,6 @@ const styles = StyleSheet.create({
   },
   topBar: {
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.sm,
-    gap: Spacing.xs,
-  },
-  backText: {
-    color: Colors.clothesAccent,
-    fontSize: 14,
-    paddingVertical: Spacing.xs,
-  },
-  screenTitle: {
-    color: Colors.textPrimary,
-    fontWeight: '600',
-    fontSize: 18,
   },
   scroll: {
     padding: Spacing.lg,
@@ -336,7 +323,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   retakeLink: {
-    color: Colors.clothesAccent,
+    color: Colors.accent,
     fontSize: 13,
   },
   photoPlaceholder: {
@@ -373,7 +360,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   chipActive: {
-    borderColor: Colors.clothesAccent,
+    borderColor: Colors.accent,
   },
   chipLabel: {
     fontSize: 12,
@@ -381,11 +368,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   chipLabelActive: {
-    color: Colors.clothesAccent,
+    color: Colors.accent,
     fontWeight: '700',
   },
   primaryBtn: {
-    backgroundColor: Colors.clothesAccent,
+    backgroundColor: Colors.accent,
     paddingVertical: Spacing.md,
     borderRadius: 0,
     alignItems: 'center',

@@ -1,23 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
+import { Directory, File, Paths } from 'expo-file-system/next';
 
 import { WardrobeItem } from '../types/wardrobe';
 
 const WARDROBE_KEY = '@cba_wardrobe';
-const WARDROBE_DIR = FileSystem.documentDirectory + 'wardrobe/';
-
-async function ensureDir(): Promise<void> {
-  const info = await FileSystem.getInfoAsync(WARDROBE_DIR);
-  if (!info.exists) {
-    await FileSystem.makeDirectoryAsync(WARDROBE_DIR, { intermediates: true });
-  }
-}
+const wardrobeDir = new Directory(Paths.document, 'wardrobe');
 
 export async function copyPhotoToApp(tempUri: string, id: string): Promise<string> {
-  await ensureDir();
-  const dest = WARDROBE_DIR + id + '.jpg';
-  await FileSystem.copyAsync({ from: tempUri, to: dest });
-  return dest;
+  wardrobeDir.create({ intermediates: true, idempotent: true });
+  const dest = new File(wardrobeDir, `${id}.jpg`);
+  new File(tempUri).copy(dest);
+  return dest.uri;
 }
 
 export async function getWardrobe(): Promise<WardrobeItem[]> {

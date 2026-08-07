@@ -88,7 +88,7 @@ export function ClothesResultCard({ result }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.clothesAccentMuted,
+    backgroundColor: Colors.accentMuted,
     borderRadius: 0,
     padding: Spacing.lg,
     gap: Spacing.md,

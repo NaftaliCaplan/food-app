@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
 import { CaptureButton } from '../components/CaptureButton';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { RootStackParamList } from '../navigation/types';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
@@ -57,10 +58,7 @@ export function ClothesCheckerScreen() {
   return (
     <View style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AppText style={styles.backText}>← Back</AppText>
-        </TouchableOpacity>
-        <AppText style={styles.screenTitle}>Does it match?</AppText>
+        <ScreenHeader title="Does it match?" onBack={() => navigation.goBack()} />
       </SafeAreaView>
 
       <CameraView ref={cameraRef} style={styles.camera} facing="back" />
@@ -68,7 +66,7 @@ export function ClothesCheckerScreen() {
       <View style={styles.bottomBar}>
         <AppText style={styles.hint}>Point at your outfit — tap to capture</AppText>
         {capturing ? (
-          <ActivityIndicator color={Colors.clothesAccent} size="large" />
+          <ActivityIndicator color={Colors.accent} size="large" />
         ) : (
           <CaptureButton onPress={handleCapture} disabled={capturing} />
         )}
@@ -84,18 +82,6 @@ const styles = StyleSheet.create({
   },
   topBar: {
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.md,
-    gap: Spacing.xs,
-  },
-  backText: {
-    color: Colors.clothesAccent,
-    fontSize: 14,
-    paddingVertical: Spacing.xs,
-  },
-  screenTitle: {
-    color: Colors.textPrimary,
-    fontWeight: '600',
-    fontSize: 18,
   },
   camera: {
     flex: 1,
@@ -129,7 +115,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   permissionBtn: {
-    backgroundColor: Colors.clothesAccent,
+    backgroundColor: Colors.accent,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
     borderRadius: 0,

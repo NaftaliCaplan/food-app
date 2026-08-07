@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { useOutfitGenerator } from '../hooks/useOutfitGenerator';
 import { RootStackParamList } from '../navigation/types';
 import { getUserProfile } from '../storage/profileStorage';
@@ -114,7 +115,7 @@ export function OutfitResultsScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centerBox}>
-          <ActivityIndicator color={Colors.clothesAccent} size="large" />
+          <ActivityIndicator color={Colors.accent} size="large" />
           <AppText style={styles.loadingText}>
             {attemptCount > 0 ? 'Finding another combination...' : 'Styling your outfit...'}
           </AppText>
@@ -143,13 +144,15 @@ export function OutfitResultsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AppText style={styles.backText}>← Back</AppText>
-        </TouchableOpacity>
-        <AppText style={styles.screenTitle}>Your Outfit</AppText>
-        {attemptCount > 1 && (
-          <AppText style={styles.attemptText}>Attempt {attemptCount}</AppText>
-        )}
+        <ScreenHeader
+          title="Your Outfit"
+          onBack={() => navigation.goBack()}
+          right={
+            attemptCount > 1 ? (
+              <AppText style={styles.attemptText}>Attempt {attemptCount}</AppText>
+            ) : undefined
+          }
+        />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -242,7 +245,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   primaryBtn: {
-    backgroundColor: Colors.clothesAccent,
+    backgroundColor: Colors.accent,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     borderRadius: 0,
@@ -251,31 +254,17 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     color: '#000',
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 16,
   },
   skipBtn: {
     paddingVertical: Spacing.sm,
   },
   skipText: {
-    color: Colors.clothesAccent,
+    color: Colors.accent,
     fontSize: 14,
   },
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.sm,
-    gap: Spacing.sm,
-  },
-  backText: {
-    color: Colors.clothesAccent,
-    fontSize: 14,
-  },
-  screenTitle: {
-    flex: 1,
-    color: Colors.textPrimary,
-    fontWeight: '600',
-    fontSize: 18,
   },
   attemptText: {
     color: Colors.textDisabled,
@@ -326,13 +315,13 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   recommendationBox: {
-    backgroundColor: Colors.clothesAccentMuted,
+    backgroundColor: Colors.accentMuted,
     borderRadius: 0,
     padding: Spacing.md,
     marginTop: Spacing.sm,
   },
   recommendationText: {
-    color: Colors.clothesAccent,
+    color: Colors.accent,
     fontSize: 13,
     lineHeight: 19,
   },
@@ -354,11 +343,11 @@ const styles = StyleSheet.create({
   noBtnText: {
     color: Colors.textSecondary,
     fontWeight: '600',
-    fontSize: 15,
+    fontSize: 16,
   },
   yesBtn: {
     flex: 1,
-    backgroundColor: Colors.clothesAccent,
+    backgroundColor: Colors.accent,
     paddingVertical: Spacing.md,
     borderRadius: 0,
     alignItems: 'center',
@@ -366,7 +355,7 @@ const styles = StyleSheet.create({
   yesBtnText: {
     color: '#000',
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 16,
   },
   btnDisabled: {
     opacity: 0.6,

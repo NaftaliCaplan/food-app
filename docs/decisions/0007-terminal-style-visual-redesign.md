@@ -69,6 +69,24 @@ Verified via: (1) full jest suite green (20/20 suites, 135/135 tests) after upda
 * Good, because it preserves the food-vs-clothes wayfinding cue the two colors provided
 * Bad, because explicitly rejected by the user in favor of one unified accent — not pursued
 
+## Follow-up: header/spacing consistency pass (2026-07-25)
+
+A full-codebase audit (grouping every style mismatch across all 9 screens with a back button) found: three different header layouts in use (centered, left-aligned row, stacked column); `screenTitle` at three different font sizes/weights; `backText` split between two color tokens (`accent` vs `clothesAccent`) that only rendered identically because of this ADR's earlier token-repointing; inconsistent back-button tap-target padding; a stray-spaced `[ EMPTY ]` bracket tag; `WardrobeScreen`'s disabled Build button using a different disabled-state treatment than every other screen; and minor button-text size drift (15 vs 16).
+
+Resolved by extracting `src/components/ScreenHeader.tsx` — a single component now used by all 9 screens with a back button (`WardrobeScreen`, `AddItemScreen`, `ClothesCheckerScreen`, `ClothesResultsScreen`, `FoodCheckerScreen`, `OutfitBuilderScreen`, `OutfitResultsScreen`, `ResultsScreen`, `UserProfileScreen`). It renders a back button (`backLabel` overridable for "← Cancel"/"← Retake" cases) and a `flex:1, textAlign:'center'` title (18px/600, the `AddItemScreen` standard) between two equal `minWidth` side slots so the title stays centered whether or not a screen has right-side content (profile/add icons, attempt counter, or nothing). `backText` color unified to `Colors.clothesAccent` everywhere. `FoodCheckerScreen` gained a title ("Is it ready?") it never had. `[ EMPTY ]` → `[EMPTY]`. `WardrobeScreen`'s `buildBtnDisabled` switched to the app-wide `opacity: 0.6` pattern. This is exactly the class of drift a shared component prevents going forward — extracting it now, rather than earlier, was justified because the pattern only became provably identical (not just similar) once traced across all 9 screens.
+
+Verified via: full jest suite (21/21 suites, 138/138 tests, including a new `ScreenHeader.test.tsx`) and `tsc --noEmit` clean except the same pre-existing `wardrobeStorage.ts` error.
+
+## Follow-up: zero exceptions + confidence cap (2026-07-25)
+
+User asked to remove every remaining rounded element with no exceptions, including the `CaptureButton` shutter this ADR had previously carved out as deliberate (circular real-world camera-shutter affordance). Flattened it too (`borderRadius: 0` on both the outer ring and inner fill) — there are now zero non-zero `border*Radius` values anywhere in `src`.
+
+While re-auditing for uniformity, found the accent-color fragility this ADR flagged earlier (`clothesAccent`/`clothesAccentMuted` as separate tokens that only rendered identically because they'd been repointed to the same hex values as `accent`/`accentMuted`) was still latent in ~9 files beyond the `backText` fix already applied. Fully collapsed: every `Colors.clothesAccent(Muted)` reference renamed to `Colors.accent(Muted)`, then the now-dead `clothesAccent`/`clothesAccentMuted` keys deleted from `colors.ts` entirely — one canonical accent token, no duplicate aliases left to drift.
+
+Unrelated to the visual redesign but requested in the same pass: raised the food-checker's displayed confidence ceiling from 95 to 99 (`adjustConfidence()` in `cloudflareService.ts`, final `Math.min(95, adjusted)` → `Math.min(99, adjusted)`). Note the model-inflation compression formula in the same function (`75 + (adjusted - 85) * 0.4` for raw scores above 85) already caps realistic output around 81 in practice — the 95→99 ceiling change was the literal ask (the hard cap itself) and was left as the only change; the compression formula was intentionally not touched since recalibrating it is a separate, not-requested decision.
+
+Verified via: full jest suite (21/21 suites, 138/138 tests) and `tsc --noEmit` clean (same pre-existing error only).
+
 ## Known tech debt / open items (not addressed by this decision)
 
 * `expo-camera`'s `takePictureAsync()` does not appear to work in the browser (Expo web) build — capture silently stalls with no error surfaced. Suspected to be a web-only limitation of `expo-camera` rather than an app bug; unconfirmed on native until a full Expo Go session is run on-device.

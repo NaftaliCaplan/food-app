@@ -13,7 +13,7 @@ export function ClothesStatusOverlay({ status, error }: Props) {
   if (status === 'loading') {
     return (
       <View style={styles.container}>
-        <ActivityIndicator color={Colors.clothesAccent} size="large" />
+        <ActivityIndicator color={Colors.accent} size="large" />
         <AppText style={styles.loadingText}>Analyzing your outfit...</AppText>
       </View>
     );

@@ -29,9 +29,4 @@ export const Colors = {
   clothesNeutral:     '#94A3B8',
   clothesMildClash:   '#FACC15',
   clothesStrongClash: '#F87171',
-  // One accent color for the whole app (terminal-style) — clothesAccent used
-  // to be a separate purple, kept as its own token so call sites don't need
-  // touching, but it now points at the same green as `accent`.
-  clothesAccent:      '#4ADE80',
-  clothesAccentMuted: '#1A3D28',
 } as const;

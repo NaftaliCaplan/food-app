@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
   outer: {
     width: 72,
     height: 72,
-    borderRadius: 36,
+    borderRadius: 0,
     borderWidth: 3,
     borderColor: Colors.accent,
     alignItems: 'center',
@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
   inner: {
     width: 52,
     height: 52,
-    borderRadius: 26,
+    borderRadius: 0,
     backgroundColor: '#FFFFFF',
   },
   innerDisabled: {

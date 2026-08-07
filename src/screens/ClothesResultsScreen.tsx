@@ -1,12 +1,13 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
 import { CheckAnotherButton } from '../components/CheckAnotherButton';
 import { ClothesResultCard } from '../components/ClothesResultCard';
 import { ClothesStatusOverlay } from '../components/ClothesStatusOverlay';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { useClothesAnalysis } from '../hooks/useClothesAnalysis';
 import { RootStackParamList } from '../navigation/types';
 import { Colors } from '../theme/colors';
@@ -25,10 +26,7 @@ export function ClothesResultsScreen() {
   return (
     <View style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AppText style={styles.backText}>← Back</AppText>
-        </TouchableOpacity>
-        <AppText style={styles.screenTitle}>Outfit Check</AppText>
+        <ScreenHeader title="Outfit Check" onBack={() => navigation.goBack()} />
       </SafeAreaView>
 
       <ScrollView contentContainerStyle={styles.scroll} bounces={false}>
@@ -67,19 +65,6 @@ const styles = StyleSheet.create({
   },
   topBar: {
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
-  backText: {
-    color: Colors.clothesAccent,
-    fontSize: 14,
-  },
-  screenTitle: {
-    color: Colors.textPrimary,
-    fontWeight: '600',
-    fontSize: 16,
   },
   scroll: {
     flexGrow: 1,

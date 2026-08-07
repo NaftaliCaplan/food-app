@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
 import { CaptureButton } from '../components/CaptureButton';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { RootStackParamList } from '../navigation/types';
 import { tagClothingItem } from '../services/tagService';
 import { addItem, copyPhotoToApp } from '../storage/wardrobeStorage';
@@ -121,7 +122,7 @@ export function AddItemScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingBox}>
-          <ActivityIndicator color={Colors.clothesAccent} size="large" />
+          <ActivityIndicator color={Colors.accent} size="large" />
           <AppText style={styles.loadingText}>Identifying item...</AppText>
         </View>
       </SafeAreaView>
@@ -133,10 +134,7 @@ export function AddItemScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.topBar}>
-          <TouchableOpacity onPress={() => setStep('camera')}>
-            <AppText style={styles.backText}>← Retake</AppText>
-          </TouchableOpacity>
-          <AppText style={styles.screenTitle}>Review Item</AppText>
+          <ScreenHeader title="Review Item" onBack={() => setStep('camera')} backLabel="← Retake" />
         </View>
 
         <ScrollView contentContainerStyle={styles.reviewScroll}>
@@ -170,7 +168,7 @@ export function AddItemScreen() {
             onChangeText={setName}
             placeholder="e.g. white button-up shirt"
             placeholderTextColor={Colors.textDisabled}
-            selectionColor={Colors.clothesAccent}
+            selectionColor={Colors.accent}
           />
 
           {/* Tags */}
@@ -197,7 +195,7 @@ export function AddItemScreen() {
               onChangeText={setTagInput}
               placeholder="add a tag..."
               placeholderTextColor={Colors.textDisabled}
-              selectionColor={Colors.clothesAccent}
+              selectionColor={Colors.accent}
               onSubmitEditing={addTag}
               returnKeyType="done"
             />
@@ -227,10 +225,7 @@ export function AddItemScreen() {
   return (
     <View style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AppText style={styles.backText}>← Back</AppText>
-        </TouchableOpacity>
-        <AppText style={styles.screenTitle}>Add Item</AppText>
+        <ScreenHeader title="Add Item" onBack={() => navigation.goBack()} />
       </SafeAreaView>
 
       {/* Category picker */}
@@ -259,7 +254,7 @@ export function AddItemScreen() {
       <View style={styles.bottomBar}>
         <AppText style={styles.hint}>Point at the item — tap to capture</AppText>
         {capturing ? (
-          <ActivityIndicator color={Colors.clothesAccent} size="large" />
+          <ActivityIndicator color={Colors.accent} size="large" />
         ) : (
           <CaptureButton onPress={handleCapture} disabled={capturing} />
         )}
@@ -275,18 +270,6 @@ const styles = StyleSheet.create({
   },
   topBar: {
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.sm,
-    gap: Spacing.xs,
-  },
-  backText: {
-    color: Colors.clothesAccent,
-    fontSize: 14,
-    paddingVertical: Spacing.xs,
-  },
-  screenTitle: {
-    color: Colors.textPrimary,
-    fontWeight: '600',
-    fontSize: 18,
   },
   categoryRow: {
     flexDirection: 'row',
@@ -304,7 +287,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   catChipActive: {
-    borderColor: Colors.clothesAccent,
+    borderColor: Colors.accent,
   },
   catLabel: {
     fontSize: 11,
@@ -312,7 +295,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   catLabelActive: {
-    color: Colors.clothesAccent,
+    color: Colors.accent,
     fontWeight: '700',
   },
   camera: {
@@ -347,7 +330,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   permissionBtn: {
-    backgroundColor: Colors.clothesAccent,
+    backgroundColor: Colors.accent,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
     borderRadius: 0,
@@ -398,15 +381,15 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   tag: {
-    backgroundColor: Colors.clothesAccentMuted,
+    backgroundColor: Colors.accentMuted,
     borderRadius: 0,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderWidth: 1,
-    borderColor: Colors.clothesAccent,
+    borderColor: Colors.accent,
   },
   tagText: {
-    color: Colors.clothesAccent,
+    color: Colors.accent,
     fontSize: 13,
   },
   tagInputRow: {
@@ -427,7 +410,7 @@ const styles = StyleSheet.create({
     fontFamily: 'JetBrainsMono_400Regular',
   },
   tagAddBtn: {
-    backgroundColor: Colors.clothesAccent,
+    backgroundColor: Colors.accent,
     width: 36,
     height: 36,
     borderRadius: 0,
@@ -441,7 +424,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   saveBtn: {
-    backgroundColor: Colors.clothesAccent,
+    backgroundColor: Colors.accent,
     paddingVertical: Spacing.md,
     borderRadius: 0,
     alignItems: 'center',

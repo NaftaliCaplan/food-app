@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppText } from '../components/AppText';
 import { CaptureButton } from '../components/CaptureButton';
 import { PrimaryInput } from '../components/PrimaryInput';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
 import { RootStackParamList } from '../navigation/types';
@@ -64,9 +65,7 @@ export function FoodCheckerScreen() {
   return (
     <View style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AppText style={styles.backText}>← Back</AppText>
-        </TouchableOpacity>
+        <ScreenHeader title="Is it ready?" onBack={() => navigation.goBack()} />
         <AppText style={styles.label}>What are you checking?</AppText>
         <PrimaryInput
           value={foodLabel}
@@ -103,11 +102,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.md,
     gap: Spacing.sm,
-  },
-  backText: {
-    color: Colors.accent,
-    fontSize: 14,
-    paddingVertical: Spacing.xs,
   },
   label: {
     color: Colors.textSecondary,
