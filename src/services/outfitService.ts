@@ -294,15 +294,23 @@ export async function generateOutfit(options: GenerateOutfitOptions): Promise<Ou
     if (missingCategories.length === 0) break;
   }
 
-  // Structural guarantee: if the AI still didn't cover every required-and-
-  // available category after the retry, fill the gap in code rather than
-  // trusting a third AI call. Same principle as the style-tag fix — don't
-  // rely on the model to self-correct indefinitely when we can just
-  // guarantee the result directly from the candidate pool we already have.
-  if (best && missingCategories.length > 0) {
+  // Structural guarantee: recompute what's still missing directly from the
+  // final selection (not the loop's filtered-only tracking above) and fill
+  // every gap in code rather than trusting a third AI call. Try a style-
+  // matching candidate from `filtered` first, but fall back to the full
+  // wardrobe if the style filter left zero candidates for that category —
+  // a small wardrobe can easily have no item of some category that also
+  // matches the requested style, and a whole missing category is worse than
+  // one item that doesn't perfectly match the style goal.
+  if (best) {
     const selectedIds = new Set(best.items.map(i => i.id));
-    for (const cat of missingCategories) {
-      const fallbackItem = filtered.find(i => i.category === cat && !selectedIds.has(i.id));
+    const chosenCategories = new Set(best.items.map(i => i.category));
+    const stillMissing = requiredCategories.filter(c => !chosenCategories.has(c));
+
+    for (const cat of stillMissing) {
+      const fallbackItem =
+        filtered.find(i => i.category === cat && !selectedIds.has(i.id)) ??
+        wardrobe.find(i => i.category === cat && !selectedIds.has(i.id));
       if (fallbackItem) {
         best.items.push(fallbackItem);
         selectedIds.add(fallbackItem.id);

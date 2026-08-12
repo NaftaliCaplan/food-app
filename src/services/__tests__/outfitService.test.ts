@@ -253,6 +253,26 @@ describe('generateOutfit', () => {
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
+  it('falls back to the full wardrobe for a required category the style filter excluded entirely', async () => {
+    // Regression case: a small wardrobe where the only top doesn't carry a
+    // matching style tag (or 'casual'), so it's absent from the style-filtered
+    // candidate pool entirely — retrying can't help since the AI never even
+    // sees a top in its inventory. The final guarantee-fill must still pull
+    // one in from the full wardrobe rather than ship a topless outfit.
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['formal'] }), // excluded by filterByStyle for a 'sporty' request
+      makeItem({ id: '2', category: 'bottom', tags: ['sporty'] }),
+      makeItem({ id: '3', category: 'bottom', tags: ['casual'] }),
+    ];
+    mockFetch.mockResolvedValue(okResponseFor(['2']));
+
+    const result = await generateOutfit({ wardrobe, stylePrefs: ['sporty'] });
+    // No retry attempted for 'top' — it was never visible in the filtered
+    // inventory, so asking the AI again would have been pointless.
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(result.items.map(i => i.id).sort()).toEqual(['1', '2']);
+  });
+
   it('structurally fills in a missing category from the candidate pool if the AI still omits it after the retry', async () => {
     // The AI never includes the bottom, even on retry — code must guarantee it
     // anyway rather than shipping an incomplete outfit despite one being available.
