@@ -37,6 +37,16 @@ function mergeStyleTag(tags: string[], style: StylePreference | undefined): stri
   return style ? [...withoutStyle, style] : withoutStyle;
 }
 
+// Colors come back as their own field (not folded into the free-form tags
+// list by the model) so they get merged in here, deduplicated against
+// whatever the model may have also mentioned in tags.
+function mergeColorTags(tags: string[], colors: string[]): string[] {
+  const normalizedColors = colors.map(c => c.toLowerCase().trim().replace(/\s+/g, '-')).filter(Boolean);
+  const existing = new Set(tags.map(t => t.toLowerCase()));
+  const newColors = normalizedColors.filter(c => !existing.has(c));
+  return [...tags, ...newColors];
+}
+
 const ACCOUNT_ID = process.env.EXPO_PUBLIC_CF_ACCOUNT_ID;
 const API_TOKEN = process.env.EXPO_PUBLIC_CF_API_TOKEN;
 const MODEL = '@cf/meta/llama-3.2-11b-vision-instruct';
@@ -57,36 +67,40 @@ export interface SkinToneResult {
 }
 
 function buildTagPrompt(category: ItemCategory): string {
-  return `You are a clothing identification expert helping a colorblind user catalog their wardrobe.
+  return `You are a clothing identification expert helping a user catalog their wardrobe so an AI stylist can build outfits from it.
 
-STEP 0 — CHECK: Does this photo actually show a piece of clothing or a wearable accessory, being worn or laid out on its own? It does NOT count if the photo shows furniture, walls, appliances, packaging, a sticker, a logo, printed text, a person's face with no clothing in frame, or a blank/blurry shot. If you do not see an actual garment or accessory, set "isClothing" to false, leave "name" as an empty string, "tags" as an empty array, and skip the remaining steps.
+STEP 0 — CHECK: Does this photo actually show a piece of clothing or a wearable accessory (something worn on the body — jewelry, a belt, a bag, a hat, a scarf, sunglasses, a watch), being worn or laid out on its own? It does NOT count if the photo shows furniture, walls, appliances, packaging, a sticker, a logo, printed text, a person's face with no clothing in frame, small handheld electronics or gadgets (phones, computer mice, remotes, keys, chargers — these are NOT accessories just because they're small), or a blank/blurry shot. If you do not see an actual garment or wearable accessory, set "isClothing" to false, leave "name" as an empty string, "colors" and "tags" as empty arrays, and skip the remaining steps.
 
-STEP 1 — CATEGORY: Independently judge the category from the photo itself — choose exactly one: top, bottom, shoes, accessory. The user had selected "${category}" before taking the photo, but that may be wrong (e.g. they meant to photograph a top but the camera caught pants instead) — trust what you actually see over what they selected, and report your own judgment in the "category" field.
+STEP 1 — COLOR: Look at the garment itself, not the background or surroundings. Identify its actual color(s) using real color names (e.g. "navy", "olive green", "white", "burgundy"). List 1-2 colors — the dominant color first, then a secondary color if the item is clearly two-toned or patterned in a second color. This is the most important thing to get right, since color is the main thing people use to match an outfit.
 
-STEP 2 — IDENTIFY: Give the item a SHORT, simple name a person would naturally use — 2 to 3 words, no more. Skip color words and skip technical construction jargon.
-Good: "striped sweater", "plaid pajama pants", "canvas sneakers", "denim jacket".
+STEP 2 — CATEGORY: Independently judge the category from the photo itself — choose exactly one: top, bottom, shoes, accessory. The user had selected "${category}" before taking the photo, but that may be wrong (e.g. they meant to photograph a top but the camera caught pants instead) — trust what you actually see over what they selected, and report your own judgment in the "category" field.
+
+STEP 3 — IDENTIFY: Give the item a SHORT, simple name a person would naturally use — 2 to 4 words, including the main color from Step 1. Skip technical construction jargon.
+Good: "navy sweater", "plaid pajama pants", "white canvas sneakers", "denim jacket".
 Too complex, avoid: "light-toned solid ribbed crew-neck pullover", "slim-fit mid-rise straight-leg chino trouser".
 
-STEP 3 — DESCRIBE using only these attributes (never color names alone):
-- Brightness: light / dark / vivid / muted
+STEP 4 — DESCRIBE the pattern and texture (secondary to color, but still useful for matching):
 - Pattern: solid / striped / plaid / checked / floral / textured / graphic
-- Tone: warm / cool / neutral
+- Brightness: light / dark / vivid / muted
+- Weight/fit: lightweight / heavyweight / fitted / loose
 
-STEP 4 — STYLE: Pick EXACTLY ONE style — they are mutually exclusive, never pick two:
-- casual: relaxed everyday wear — plain t-shirts, jeans, sneakers, hoodies, loungewear, pajamas, sleepwear
-- smart_casual: has some polish but isn't formal — polo shirts, collared shirts, button-ups (tucked or untucked), chinos, loafers, casual blazers
+STEP 5 — STYLE: Pick EXACTLY ONE style — they are mutually exclusive, never pick two. Judge by garment TYPE first, not vibe:
+- First check: does it have a collar, a button placket, or structured tailoring? If yes, it is at minimum smart_casual — never plain casual, even if it's worn in a relaxed way.
+- casual: ONLY plain basics with no collar and no structure — t-shirts, jeans, hoodies, sweatshirts, loungewear, pajamas, sleepwear
+- smart_casual: has a collar, buttons, or tailoring but isn't formal-only — polo shirts, collared/button-up shirts, chinos, khakis, loafers, casual blazers
 - formal: suits, dress shirts with ties, dress shoes, gowns, suit blazers
 - sporty: activewear, gym clothes, athletic shoes, performance fabrics
-A collared or button-up shirt is smart_casual, not casual, even if it's worn casually. If genuinely unsure between casual and smart_casual, pick casual. Pajamas and sleepwear are always casual, never formal.
+Make your single best guess based on what the garment actually is — do not default to casual just because you're not fully certain. Pajamas and sleepwear are always casual, never formal, regardless of pattern.
 
-STEP 5 — TAGS: Create a tag list of short lowercase words or hyphenated phrases from the Step 3 attributes plus fit/weight/texture words. Do NOT put any style word (casual, smart_casual, formal, sporty) in this list — the style you picked in Step 4 goes in its own "style" field below, not in "tags".
-Good tag examples: light, dark, warm-tone, cool-tone, neutral-tone, solid, striped, plaid, textured, fitted, loose, lightweight, heavyweight
+STEP 6 — TAGS: Create a tag list combining: the color(s) from Step 1, the pattern/brightness/fit words from Step 4, and any other accurate short descriptive words. Do NOT put any style word (casual, smart_casual, formal, sporty) in this list — the style you picked in Step 5 goes in its own "style" field below, not in "tags".
+Good tag examples: navy, olive-green, white, solid, striped, plaid, textured, fitted, loose, lightweight, heavyweight
 
-STEP 6 — OUTPUT: Respond with ONLY a raw JSON object. No markdown. Start with { end with }:
+STEP 7 — OUTPUT: Respond with ONLY a raw JSON object. No markdown. Start with { end with }:
 {
   "isClothing": <true|false>,
+  "colors": ["<primary color>", "<secondary color if any>"],
   "category": "<top|bottom|shoes|accessory>",
-  "name": "<short simple name, e.g. 'striped sweater'>",
+  "name": "<short simple name including the color, e.g. 'navy sweater'>",
   "style": "<casual|smart_casual|formal|sporty>",
   "tags": ["<tag1>", "<tag2>", "<tag3>", "..."]
 }`;
@@ -154,10 +168,13 @@ export async function tagClothingItem(photoUri: string, category: ItemCategory):
   const obj = raw && typeof raw === 'object' ? raw as Record<string, unknown> : null;
   if (obj && typeof obj.name === 'string' && Array.isArray(obj.tags)) {
     const rawTags = (obj.tags as unknown[]).filter(t => typeof t === 'string') as string[];
+    const rawColors = Array.isArray(obj.colors)
+      ? (obj.colors as unknown[]).filter(c => typeof c === 'string') as string[]
+      : [];
     return {
       isClothing: obj.isClothing !== false,
       name: obj.name,
-      tags: mergeStyleTag(rawTags, parseStyle(obj.style)),
+      tags: mergeColorTags(mergeStyleTag(rawTags, parseStyle(obj.style)), rawColors),
       detectedCategory: parseCategory(obj.category),
     };
   }
@@ -174,15 +191,19 @@ export async function tagClothingItem(photoUri: string, category: ItemCategory):
   const styleMatch = text.match(/"style"\s*:\s*"([^"]+)"/);
   const categoryMatch = text.match(/"category"\s*:\s*"([^"]+)"/);
   const tagsMatch = text.match(/"tags"\s*:\s*\[([^\]]+)\]/);
+  const colorsMatch = text.match(/"colors"\s*:\s*\[([^\]]+)\]/);
   const tags = tagsMatch
     ? tagsMatch[1].match(/"([^"]+)"/g)?.map(t => t.replace(/"/g, '')) ?? []
+    : [];
+  const colors = colorsMatch
+    ? colorsMatch[1].match(/"([^"]+)"/g)?.map(c => c.replace(/"/g, '')) ?? []
     : [];
   return {
     // Default true (rather than false) on a parse miss — a garbled response
     // shouldn't block a legitimate save more often than it lets a bad one through.
     isClothing: isClothingMatch ? isClothingMatch[1] === 'true' : true,
     name: nameMatch ? nameMatch[1] : `${category} item`,
-    tags: mergeStyleTag(tags, parseStyle(styleMatch?.[1])),
+    tags: mergeColorTags(mergeStyleTag(tags, parseStyle(styleMatch?.[1])), colors),
     detectedCategory: parseCategory(categoryMatch?.[1]),
   };
 }

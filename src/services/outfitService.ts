@@ -286,5 +286,21 @@ export async function generateOutfit(options: GenerateOutfitOptions): Promise<Ou
     if (missingCategories.length === 0) break;
   }
 
+  // Structural guarantee: if the AI still didn't cover every required-and-
+  // available category after the retry, fill the gap in code rather than
+  // trusting a third AI call. Same principle as the style-tag fix — don't
+  // rely on the model to self-correct indefinitely when we can just
+  // guarantee the result directly from the candidate pool we already have.
+  if (best && missingCategories.length > 0) {
+    const selectedIds = new Set(best.items.map(i => i.id));
+    for (const cat of missingCategories) {
+      const fallbackItem = filtered.find(i => i.category === cat && !selectedIds.has(i.id));
+      if (fallbackItem) {
+        best.items.push(fallbackItem);
+        selectedIds.add(fallbackItem.id);
+      }
+    }
+  }
+
   return best!;
 }

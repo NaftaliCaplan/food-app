@@ -167,9 +167,12 @@ describe('generateOutfit', () => {
   });
 
   it('drops hallucinated item ids that do not exist in the wardrobe', async () => {
+    // Both items are 'top' so no other required category is available in the
+    // pool — isolates hallucination-dropping from the missing-category
+    // guarantee-fill behavior, which is covered by its own tests below.
     const wardrobe = [
       makeItem({ id: '1', category: 'top', tags: ['casual'] }),
-      makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
+      makeItem({ id: '2', category: 'top', tags: ['casual'] }),
     ];
     mockFetch.mockResolvedValue(makeResponse({
       result: {
@@ -220,7 +223,6 @@ describe('generateOutfit', () => {
     const wardrobe = [
       makeItem({ id: '1', category: 'top', tags: ['casual'] }),
       makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
-      makeItem({ id: '3', category: 'shoes', tags: ['casual'] }),
     ];
     const topOnlyResponse = makeResponse({
       result: { response: { itemIds: ['1'], reasoning: 'ok', styleNotes: [], recommendation: '' } },
@@ -251,7 +253,9 @@ describe('generateOutfit', () => {
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
-  it('falls back to the first attempt if a retry still cannot satisfy the missing category', async () => {
+  it('structurally fills in a missing category from the candidate pool if the AI still omits it after the retry', async () => {
+    // The AI never includes the bottom, even on retry — code must guarantee it
+    // anyway rather than shipping an incomplete outfit despite one being available.
     const wardrobe = [
       makeItem({ id: '1', category: 'top', tags: ['casual'] }),
       makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
@@ -260,10 +264,10 @@ describe('generateOutfit', () => {
 
     const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
     expect(mockFetch).toHaveBeenCalledTimes(2);
-    expect(result.items.map(i => i.id)).toEqual(['1']);
+    expect(result.items.map(i => i.id).sort()).toEqual(['1', '2']);
   });
 
-  it('treats accessory as required-if-available when includeAccessories is true', async () => {
+  it('treats accessory as required-if-available when includeAccessories is true, filling it in if the AI omits it', async () => {
     const wardrobe = [
       makeItem({ id: '1', category: 'top', tags: ['casual'] }),
       makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
@@ -271,10 +275,11 @@ describe('generateOutfit', () => {
     ];
     mockFetch.mockResolvedValue(okResponseFor(['1', '2']));
 
-    await generateOutfit({ wardrobe, stylePrefs: ['casual'], includeAccessories: true });
+    const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'], includeAccessories: true });
     const prompt = promptFrom(mockFetch.mock.calls[0]);
     expect(prompt).toContain('accessory');
     expect(mockFetch).toHaveBeenCalledTimes(2); // retried since the accessory was available but unused
+    expect(result.items.map(i => i.id).sort()).toEqual(['1', '2', '3']); // guaranteed in anyway
   });
 
   it('does not require an accessory when includeAccessories is false', async () => {

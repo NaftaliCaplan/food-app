@@ -147,4 +147,62 @@ describe('tagClothingItem', () => {
     const result = await tagClothingItem('file://test.jpg', 'top');
     expect(result.detectedCategory).toBeUndefined();
   });
+
+  it('merges detected colors into tags', async () => {
+    mockFetch.mockResolvedValue(makeResponse({
+      result: {
+        response: {
+          isClothing: true,
+          colors: ['navy', 'white'],
+          category: 'top',
+          name: 'navy polo',
+          style: 'smart_casual',
+          tags: ['solid'],
+        },
+      },
+    }));
+    const result = await tagClothingItem('file://test.jpg', 'top');
+    expect(result.tags).toEqual(expect.arrayContaining(['solid', 'navy', 'white']));
+  });
+
+  it('does not duplicate a color already present in the raw tags list', async () => {
+    mockFetch.mockResolvedValue(makeResponse({
+      result: {
+        response: {
+          isClothing: true,
+          colors: ['navy'],
+          category: 'top',
+          name: 'navy polo',
+          style: 'smart_casual',
+          tags: ['navy', 'solid'],
+        },
+      },
+    }));
+    const result = await tagClothingItem('file://test.jpg', 'top');
+    expect(result.tags.filter(t => t === 'navy')).toHaveLength(1);
+  });
+
+  it('normalizes multi-word colors to hyphenated form', async () => {
+    mockFetch.mockResolvedValue(makeResponse({
+      result: {
+        response: {
+          isClothing: true,
+          colors: ['olive green'],
+          category: 'top',
+          name: 'olive jacket',
+          style: 'casual',
+          tags: [],
+        },
+      },
+    }));
+    const result = await tagClothingItem('file://test.jpg', 'top');
+    expect(result.tags).toContain('olive-green');
+  });
+
+  it('parses colors from the markdown-fence fallback path too', async () => {
+    const fenced = '```json\n{"isClothing": true, "colors": ["burgundy"], "category": "top", "name": "burgundy sweater", "style": "casual", "tags": ["solid"]}\n```';
+    mockFetch.mockResolvedValue(makeResponse({ result: { response: fenced } }));
+    const result = await tagClothingItem('file://test.jpg', 'top');
+    expect(result.tags).toEqual(expect.arrayContaining(['solid', 'burgundy']));
+  });
 });
