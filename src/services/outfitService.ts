@@ -110,6 +110,10 @@ ${rejectedIdSets.map((ids, i) => `  Rejected ${i + 1}: ${ids.join(', ')}`).join(
     ? `You must include at least one item from each of these categories: ${requiredCategories.join(', ')}.`
     : `You must include at least one top and one bottom. Accessories are optional.`;
 
+  const groundingBlock = `GROUNDING — Do not suggest adding, pairing with, or wearing any garment that is not one of the ids you put in "itemIds" — if you think of something that would improve the outfit, either select it (if it's in the inventory) or leave it unmentioned entirely.
+
+`;
+
   return `You are a personal stylist helping a colorblind user build an outfit from their wardrobe.
 
 INVENTORY — Here are the available clothing items. Each line: [id] category (name) — tags:
@@ -118,10 +122,14 @@ ${inventory}
 STYLE GOAL — The user wants an outfit that feels: ${stylePrefs.join(', ').replace(/_/g, ' ')}.
 Pick items that work well together for this style. ${requirementLine}
 
-${personBlock}${correctionBlock}${rejectedBlock}STEP 1 — Select the items for one coherent outfit: one top, one bottom, and one pair of shoes when available and appropriate, plus any accessories that genuinely complement it (a hat, bag, belt, watch, etc.). Include as many accessories as actually make sense together — do not force one in just to add it, but do not artificially cap the total item count either. A minimal outfit (e.g. a swimsuit plus sandals) can be as few as 2 items; a fully accessorized outfit can be 6 or more. Let the wardrobe and style goal decide, not a fixed number.
-STEP 2 — Explain in 1–2 sentences why these items work together (focus on contrast, pattern balance, style alignment — no color names).
-STEP 3 — List 2–4 style notes (short bullet points about what makes this combination work for a colorblind wearer — brightness contrast, texture mix, pattern rule, etc.).
-STEP 4 — Write a 1–2 sentence recommendation the user can act on (e.g. "pair with clean shoes for a smart finish").
+${personBlock}${groundingBlock}${correctionBlock}${rejectedBlock}STEP 1 — Select the items for one coherent outfit: one top, one bottom, and one pair of shoes when available and appropriate, plus any accessories that genuinely complement it (a hat, bag, belt, watch, etc.). Include as many accessories as actually make sense together — do not force one in just to add it, but do not artificially cap the total item count either. A minimal outfit (e.g. a swimsuit plus sandals) can be as few as 2 items; a fully accessorized outfit can be 6 or more. Let the wardrobe and style goal decide, not a fixed number.
+
+STEP 2 — Explain in 1–2 sentences why these items work together. Every time you refer to one of your selected items by name, you MUST copy its exact name from the inventory above, in quotes — never paraphrase it into a different garment or color. Required format example (for illustration only, not your actual items):
+  The "navy polo" pairs with the "khaki chinos" for a clean smart-casual look, and the "brown loafers" keep the palette warm.
+
+STEP 3 — List 2–4 style notes (short bullet points about contrast, texture mix, pattern rule, etc.). Every note that mentions a specific item must use its exact quoted name the same way as Step 2.
+
+STEP 4 — Write a 1–2 sentence recommendation about how to WEAR the items you selected (tucking, rolling sleeves, layering, etc.) — not a suggestion to add a different garment. If you name a specific item, use its exact quoted name.
 
 OUTPUT — Respond with ONLY a raw JSON object. No markdown. Start with { end with }:
 {

@@ -82,7 +82,11 @@ Too complex, avoid: "light-toned solid ribbed crew-neck pullover", "slim-fit mid
 STEP 4 — DESCRIBE the pattern and texture (secondary to color, but still useful for matching):
 - Pattern: solid / striped / plaid / checked / floral / textured / graphic
 - Brightness: light / dark / vivid / muted
-- Weight/fit: lightweight / heavyweight / fitted / loose
+${category === 'top' || category === 'bottom'
+    ? '- Weight/fit: lightweight / heavyweight / fitted / loose'
+    : category === 'shoes'
+      ? '- Material/type: canvas / leather / suede / athletic / slip-on / lace-up'
+      : '- Material: leather / metal / fabric / knit / woven'}
 
 STEP 5 — STYLE: Pick EXACTLY ONE style — they are mutually exclusive, never pick two. Judge by garment TYPE first, not vibe:
 - First check: does it have a collar, a button placket, or structured tailoring? If yes, it is at minimum smart_casual — never plain casual, even if it's worn in a relaxed way.
@@ -92,8 +96,8 @@ STEP 5 — STYLE: Pick EXACTLY ONE style — they are mutually exclusive, never 
 - sporty: activewear, gym clothes, athletic shoes, performance fabrics
 Make your single best guess based on what the garment actually is — do not default to casual just because you're not fully certain. Pajamas and sleepwear are always casual, never formal, regardless of pattern.
 
-STEP 6 — TAGS: Create a tag list combining: the color(s) from Step 1, the pattern/brightness/fit words from Step 4, and any other accurate short descriptive words. Do NOT put any style word (casual, smart_casual, formal, sporty) in this list — the style you picked in Step 5 goes in its own "style" field below, not in "tags".
-Good tag examples: navy, olive-green, white, solid, striped, plaid, textured, fitted, loose, lightweight, heavyweight
+STEP 6 — TAGS: Create a tag list combining: the color(s) from Step 1, the words from Step 4 (pattern, brightness, and whichever category-appropriate attribute you used), and any other accurate short descriptive words. Do NOT put any style word (casual, smart_casual, formal, sporty) in this list — the style you picked in Step 5 goes in its own "style" field below, not in "tags".
+Good tag examples: navy, olive-green, white, solid, striped, plaid, textured, canvas, leather, fitted, loose, lightweight, heavyweight
 
 STEP 7 — OUTPUT: Respond with ONLY a raw JSON object. No markdown. Start with { end with }:
 {

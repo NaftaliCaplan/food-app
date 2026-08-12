@@ -292,4 +292,16 @@ describe('generateOutfit', () => {
     await generateOutfit({ wardrobe, stylePrefs: ['casual'], includeAccessories: false });
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
+
+  it('instructs the AI to ground reasoning in exact item names and not suggest unselected garments', async () => {
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
+    ];
+    mockFetch.mockResolvedValue(makeResponse(okOutfitResponse));
+    await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
+    const prompt = promptFrom(mockFetch.mock.calls[0]);
+    expect(prompt).toContain('GROUNDING');
+    expect(prompt).toContain('exact name');
+  });
 });

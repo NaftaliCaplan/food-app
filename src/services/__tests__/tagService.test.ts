@@ -16,6 +16,24 @@ const makeResponse = (body: unknown, ok = true, status = 200) => ({
   text: jest.fn().mockResolvedValue(String(body)),
 });
 
+function promptFrom(mockFetchCall: unknown[]): string {
+  const [, options] = mockFetchCall as [string, { body: string }];
+  return JSON.parse(options.body).messages[0].content[1].text;
+}
+
+const okTagResponse = {
+  result: {
+    response: {
+      isClothing: true,
+      colors: ['navy'],
+      category: 'top',
+      name: 'navy tee',
+      style: 'casual',
+      tags: [],
+    },
+  },
+};
+
 describe('tagClothingItem', () => {
   beforeEach(() => {
     mockFetch.mockReset();
@@ -204,5 +222,30 @@ describe('tagClothingItem', () => {
     mockFetch.mockResolvedValue(makeResponse({ result: { response: fenced } }));
     const result = await tagClothingItem('file://test.jpg', 'top');
     expect(result.tags).toEqual(expect.arrayContaining(['solid', 'burgundy']));
+  });
+
+  it('asks for fit/weight attributes for top and bottom categories', async () => {
+    mockFetch.mockResolvedValue(makeResponse(okTagResponse));
+    await tagClothingItem('file://test.jpg', 'top');
+    expect(promptFrom(mockFetch.mock.calls[0])).toContain('Weight/fit');
+
+    await tagClothingItem('file://test.jpg', 'bottom');
+    expect(promptFrom(mockFetch.mock.calls[1])).toContain('Weight/fit');
+  });
+
+  it('asks for material/type attributes for shoes instead of fit', async () => {
+    mockFetch.mockResolvedValue(makeResponse(okTagResponse));
+    await tagClothingItem('file://test.jpg', 'shoes');
+    const prompt = promptFrom(mockFetch.mock.calls[0]);
+    expect(prompt).toContain('Material/type');
+    expect(prompt).not.toContain('Weight/fit');
+  });
+
+  it('asks for material attributes for accessories instead of fit', async () => {
+    mockFetch.mockResolvedValue(makeResponse(okTagResponse));
+    await tagClothingItem('file://test.jpg', 'accessory');
+    const prompt = promptFrom(mockFetch.mock.calls[0]);
+    expect(prompt).toContain('Material:');
+    expect(prompt).not.toContain('Weight/fit');
   });
 });
