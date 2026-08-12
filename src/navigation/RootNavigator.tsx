@@ -6,6 +6,7 @@ import { FoodCheckerScreen } from '../screens/FoodCheckerScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ResultsScreen } from '../screens/ResultsScreen';
 import { AddItemScreen } from '../screens/AddItemScreen';
+import { EditItemScreen } from '../screens/EditItemScreen';
 import { OutfitBuilderScreen } from '../screens/OutfitBuilderScreen';
 import { OutfitResultsScreen } from '../screens/OutfitResultsScreen';
 import { UserProfileScreen } from '../screens/UserProfileScreen';
@@ -31,6 +32,7 @@ export function RootNavigator() {
       <Stack.Screen name="ClothesResults" component={ClothesResultsScreen} />
       <Stack.Screen name="Wardrobe" component={WardrobeScreen} />
       <Stack.Screen name="AddItem" component={AddItemScreen} />
+      <Stack.Screen name="EditItem" component={EditItemScreen} />
       <Stack.Screen name="UserProfile" component={UserProfileScreen} />
       <Stack.Screen name="OutfitBuilder" component={OutfitBuilderScreen} />
       <Stack.Screen name="OutfitResults" component={OutfitResultsScreen} />

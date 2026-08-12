@@ -129,7 +129,12 @@ export function WardrobeScreen() {
         columnWrapperStyle={styles.row}
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <Image source={{ uri: item.photoUri }} style={styles.thumb} resizeMode="cover" />
+            <TouchableOpacity
+              onPress={() => navigation.navigate('EditItem', { item })}
+              accessibilityLabel={`Edit ${item.name ?? item.category}`}
+            >
+              <Image source={{ uri: item.photoUri }} style={styles.thumb} resizeMode="cover" />
+            </TouchableOpacity>
             <View style={styles.cardFooter}>
               <AppText style={styles.cardIcon}>{CATEGORY_ICON[item.category]}</AppText>
               <AppText style={styles.cardLabel} numberOfLines={1}>

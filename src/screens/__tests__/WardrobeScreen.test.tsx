@@ -80,6 +80,17 @@ describe('WardrobeScreen', () => {
     expect(screen.getByText('[BOT]')).toBeTruthy();
   });
 
+  it('tapping an item image navigates to EditItem with that item', async () => {
+    const item = makeItem({ id: '1', category: 'top', name: 'White tee' });
+    getWardrobe.mockResolvedValue([item, makeItem({ id: '2', category: 'bottom' })]);
+    getUserProfile.mockResolvedValue(null);
+    render(<WardrobeScreen />);
+    await act(async () => {});
+
+    fireEvent.press(screen.getByLabelText('Edit White tee'));
+    expect(mockNavigate).toHaveBeenCalledWith('EditItem', { item });
+  });
+
   it('removes an item when its delete button is pressed', async () => {
     getWardrobe.mockResolvedValue([
       makeItem({ id: '1', category: 'top', name: 'White tee' }),

@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -14,7 +13,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
 import { CaptureButton } from '../components/CaptureButton';
+import { CategoryPicker } from '../components/CategoryPicker';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { WardrobeItemForm } from '../components/WardrobeItemForm';
 import { RootStackParamList } from '../navigation/types';
 import { tagClothingItem } from '../services/tagService';
 import { addItem, copyPhotoToApp } from '../storage/wardrobeStorage';
@@ -23,13 +24,6 @@ import { Spacing } from '../theme/spacing';
 import { ItemCategory, WardrobeItem } from '../types/wardrobe';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'AddItem'>;
-
-const CATEGORIES: { key: ItemCategory; label: string }[] = [
-  { key: 'top',       label: 'Top' },
-  { key: 'bottom',    label: 'Bottom' },
-  { key: 'shoes',     label: 'Shoes' },
-  { key: 'accessory', label: 'Accessory' },
-];
 
 type Step = 'camera' | 'tagging' | 'notClothing' | 'review';
 
@@ -42,7 +36,6 @@ export function AddItemScreen() {
   const [photoUri, setPhotoUri] = useState<string>('');
   const [name, setName] = useState('');
   const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
   const [saving, setSaving] = useState(false);
   const cameraRef = useRef<CameraView>(null);
 
@@ -94,16 +87,8 @@ export function AddItemScreen() {
     }
   }
 
-  function removeTag(tag: string) {
-    setTags(prev => prev.filter(t => t !== tag));
-  }
-
-  function addTag() {
-    const t = tagInput.trim().toLowerCase().replace(/\s+/g, '-');
-    if (t && !tags.includes(t)) {
-      setTags(prev => [...prev, t]);
-    }
-    setTagInput('');
+  function toggleTag(tag: string) {
+    setTags(prev => (prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]));
   }
 
   async function handleSave() {
@@ -165,84 +150,17 @@ export function AddItemScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.reviewScroll}>
-          {/* Category row */}
-          <AppText style={styles.sectionLabel}>CATEGORY</AppText>
-          <View style={styles.categoryRow}>
-            {CATEGORIES.map(c => {
-              const active = category === c.key;
-              return (
-                <TouchableOpacity
-                  key={c.key}
-                  style={[styles.catChip, active && styles.catChipActive]}
-                  onPress={() => setCategory(c.key)}
-                  accessibilityLabel={c.label}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: active }}
-                >
-                  <AppText style={[styles.catLabel, active && styles.catLabelActive]}>
-                    {active ? '(x)' : '( )'} {c.label}
-                  </AppText>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {/* Name */}
-          <AppText style={styles.sectionLabel}>NAME (optional)</AppText>
-          <TextInput
-            style={styles.nameInput}
-            value={name}
-            onChangeText={setName}
-            placeholder="e.g. white button-up shirt"
-            placeholderTextColor={Colors.textDisabled}
-            selectionColor={Colors.accent}
+          <WardrobeItemForm
+            category={category}
+            onCategoryChange={setCategory}
+            name={name}
+            onNameChange={setName}
+            tags={tags}
+            onToggleTag={toggleTag}
+            onSave={handleSave}
+            saving={saving}
+            saveLabel="✓ Save to Wardrobe"
           />
-
-          {/* Tags */}
-          <AppText style={styles.sectionLabel}>TAGS</AppText>
-          <AppText style={styles.tagHint}>Tap to remove · More tags = better outfit matching</AppText>
-          <View style={styles.tagWrap}>
-            {tags.map(tag => (
-              <TouchableOpacity
-                key={tag}
-                style={styles.tag}
-                onPress={() => removeTag(tag)}
-                accessibilityLabel={`Remove tag ${tag}`}
-              >
-                <AppText style={styles.tagText}>{tag} ✕</AppText>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Add tag */}
-          <View style={styles.tagInputRow}>
-            <TextInput
-              style={styles.tagInput}
-              value={tagInput}
-              onChangeText={setTagInput}
-              placeholder="add a tag..."
-              placeholderTextColor={Colors.textDisabled}
-              selectionColor={Colors.accent}
-              onSubmitEditing={addTag}
-              returnKeyType="done"
-            />
-            <TouchableOpacity style={styles.tagAddBtn} onPress={addTag}>
-              <AppText style={styles.tagAddText}>＋</AppText>
-            </TouchableOpacity>
-          </View>
-
-          {/* Save */}
-          <TouchableOpacity
-            style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
-            onPress={handleSave}
-            disabled={saving}
-          >
-            {saving ? (
-              <ActivityIndicator color="#000" />
-            ) : (
-              <AppText style={styles.saveBtnText}>✓ Save to Wardrobe</AppText>
-            )}
-          </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
     );
@@ -255,25 +173,8 @@ export function AddItemScreen() {
         <ScreenHeader title="Add Item" onBack={() => navigation.goBack()} />
       </SafeAreaView>
 
-      {/* Category picker */}
       <View style={styles.categoryRow}>
-        {CATEGORIES.map(c => {
-          const active = category === c.key;
-          return (
-            <TouchableOpacity
-              key={c.key}
-              style={[styles.catChip, active && styles.catChipActive]}
-              onPress={() => setCategory(c.key)}
-              accessibilityLabel={c.label}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: active }}
-            >
-              <AppText style={[styles.catLabel, active && styles.catLabelActive]}>
-                {active ? '(x)' : '( )'} {c.label}
-              </AppText>
-            </TouchableOpacity>
-          );
-        })}
+        <CategoryPicker category={category} onChange={setCategory} />
       </View>
 
       <CameraView ref={cameraRef} style={styles.camera} facing="back" />
@@ -299,33 +200,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
   categoryRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    gap: Spacing.sm,
-  },
-  catChip: {
-    flexGrow: 1,
-    minWidth: '45%',
-    alignItems: 'center',
-    paddingVertical: Spacing.sm,
-    borderRadius: 0,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: 'transparent',
-  },
-  catChipActive: {
-    borderColor: Colors.accent,
-  },
-  catLabel: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-  },
-  catLabelActive: {
-    color: Colors.accent,
-    fontWeight: '700',
   },
   camera: {
     flex: 1,
@@ -394,90 +270,5 @@ const styles = StyleSheet.create({
   reviewScroll: {
     padding: Spacing.lg,
     gap: Spacing.md,
-  },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.textSecondary,
-    letterSpacing: 1.5,
-    marginTop: Spacing.sm,
-  },
-  nameInput: {
-    backgroundColor: Colors.surface,
-    borderRadius: 0,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    color: Colors.textPrimary,
-    fontSize: 15,
-    fontFamily: 'JetBrainsMono_400Regular',
-  },
-  tagHint: {
-    fontSize: 12,
-    color: Colors.textDisabled,
-  },
-  tagWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-  },
-  tag: {
-    backgroundColor: Colors.accentMuted,
-    borderRadius: 0,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderWidth: 1,
-    borderColor: Colors.accent,
-  },
-  tagText: {
-    color: Colors.accent,
-    fontSize: 13,
-  },
-  tagInputRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    alignItems: 'center',
-  },
-  tagInput: {
-    flex: 1,
-    backgroundColor: Colors.surface,
-    borderRadius: 0,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    color: Colors.textPrimary,
-    fontSize: 14,
-    fontFamily: 'JetBrainsMono_400Regular',
-  },
-  tagAddBtn: {
-    backgroundColor: Colors.accent,
-    width: 36,
-    height: 36,
-    borderRadius: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tagAddText: {
-    color: '#000',
-    fontSize: 20,
-    fontWeight: '700',
-    lineHeight: 24,
-  },
-  saveBtn: {
-    backgroundColor: Colors.accent,
-    paddingVertical: Spacing.md,
-    borderRadius: 0,
-    alignItems: 'center',
-    marginTop: Spacing.md,
-  },
-  saveBtnDisabled: {
-    opacity: 0.6,
-  },
-  saveBtnText: {
-    color: '#000',
-    fontWeight: '700',
-    fontSize: 16,
   },
 });

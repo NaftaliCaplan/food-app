@@ -1,3 +1,5 @@
+import { WardrobeItem } from '../types/wardrobe';
+
 export type RootStackParamList = {
   Home: undefined;
   FoodChecker: undefined;
@@ -11,6 +13,9 @@ export type RootStackParamList = {
   };
   Wardrobe: undefined;
   AddItem: undefined;
+  EditItem: {
+    item: WardrobeItem;
+  };
   UserProfile: undefined;
   OutfitBuilder: undefined;
   OutfitResults: {
