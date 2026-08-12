@@ -107,4 +107,44 @@ describe('tagClothingItem', () => {
     expect(result.tags).toEqual(expect.arrayContaining(['denim', 'casual']));
     expect(result.tags).not.toContain('formal');
   });
+
+  it('returns the AI\'s independently detected category, overriding a wrong pre-selection', async () => {
+    // Regression case: user had "top" selected but photographed bottoms.
+    mockFetch.mockResolvedValue(makeResponse({
+      result: {
+        response: {
+          isClothing: true,
+          category: 'bottom',
+          name: 'jeans',
+          style: 'casual',
+          tags: [],
+        },
+      },
+    }));
+    const result = await tagClothingItem('file://test.jpg', 'top');
+    expect(result.detectedCategory).toBe('bottom');
+  });
+
+  it('parses detectedCategory from the markdown-fence fallback path too', async () => {
+    const fenced = '```json\n{"isClothing": true, "category": "shoes", "name": "sneakers", "style": "casual", "tags": []}\n```';
+    mockFetch.mockResolvedValue(makeResponse({ result: { response: fenced } }));
+    const result = await tagClothingItem('file://test.jpg', 'top');
+    expect(result.detectedCategory).toBe('shoes');
+  });
+
+  it('leaves detectedCategory undefined for an invalid or missing category value', async () => {
+    mockFetch.mockResolvedValue(makeResponse({
+      result: {
+        response: {
+          isClothing: true,
+          category: 'not-a-real-category',
+          name: 'sweater',
+          style: 'casual',
+          tags: [],
+        },
+      },
+    }));
+    const result = await tagClothingItem('file://test.jpg', 'top');
+    expect(result.detectedCategory).toBeUndefined();
+  });
 });

@@ -1,4 +1,27 @@
-import { OutfitSuggestion, StylePreference, UserProfile, WardrobeItem } from '../types/wardrobe';
+import { ItemCategory, OutfitSuggestion, StylePreference, UserProfile, WardrobeItem } from '../types/wardrobe';
+
+// top/bottom/shoes are always required-if-available. Accessory joins that
+// list only when the user has opted into accessories — when they have, "let
+// suggestions add hats, scarves, etc." should mean the outfit actually tries
+// to include one whenever the candidate pool has one, not just "allowed to."
+function requiredCategoriesFor(includeAccessories: boolean): ItemCategory[] {
+  return includeAccessories
+    ? ['top', 'bottom', 'shoes', 'accessory']
+    : ['top', 'bottom', 'shoes'];
+}
+
+// Only flags a category as missing if the candidate pool could have supplied
+// one — asking the AI to include a bottom when the filtered wardrobe has none
+// would be an impossible, wasted retry.
+function missingRequiredCategories(
+  selected: WardrobeItem[],
+  candidatePool: WardrobeItem[],
+  required: ItemCategory[],
+): ItemCategory[] {
+  const available = new Set(candidatePool.map(i => i.category));
+  const chosen = new Set(selected.map(i => i.category));
+  return required.filter(c => available.has(c) && !chosen.has(c));
+}
 
 const ACCOUNT_ID = process.env.EXPO_PUBLIC_CF_ACCOUNT_ID;
 const API_TOKEN = process.env.EXPO_PUBLIC_CF_API_TOKEN;
@@ -54,6 +77,8 @@ function buildOutfitPrompt(
   stylePrefs: StylePreference[],
   rejectedIdSets: string[][],
   profile: UserProfile | null,
+  requiredCategories: ItemCategory[],
+  missingCategories: ItemCategory[] = [],
 ): string {
   const inventory = items.map(serializeItem).join('\n');
 
@@ -74,15 +99,26 @@ ${rejectedIdSets.map((ids, i) => `  Rejected ${i + 1}: ${ids.join(', ')}`).join(
 `
       : '';
 
+  const correctionBlock =
+    missingCategories.length > 0
+      ? `CORRECTION — Your previous attempt was missing required categories: ${missingCategories.join(', ')}. This time you MUST include at least one item from each of: ${missingCategories.join(', ')}.
+
+`
+      : '';
+
+  const requirementLine = requiredCategories.includes('accessory')
+    ? `You must include at least one item from each of these categories: ${requiredCategories.join(', ')}.`
+    : `You must include at least one top and one bottom. Accessories are optional.`;
+
   return `You are a personal stylist helping a colorblind user build an outfit from their wardrobe.
 
 INVENTORY — Here are the available clothing items. Each line: [id] category (name) — tags:
 ${inventory}
 
 STYLE GOAL — The user wants an outfit that feels: ${stylePrefs.join(', ').replace(/_/g, ' ')}.
-Pick items that work well together for this style. You must include at least one top and one bottom. Accessories are optional.
+Pick items that work well together for this style. ${requirementLine}
 
-${personBlock}${rejectedBlock}STEP 1 — Select 2–5 items from the inventory that make a coherent outfit.
+${personBlock}${correctionBlock}${rejectedBlock}STEP 1 — Select the items for one coherent outfit: one top, one bottom, and one pair of shoes when available and appropriate, plus any accessories that genuinely complement it (a hat, bag, belt, watch, etc.). Include as many accessories as actually make sense together — do not force one in just to add it, but do not artificially cap the total item count either. A minimal outfit (e.g. a swimsuit plus sandals) can be as few as 2 items; a fully accessorized outfit can be 6 or more. Let the wardrobe and style goal decide, not a fixed number.
 STEP 2 — Explain in 1–2 sentences why these items work together (focus on contrast, pattern balance, style alignment — no color names).
 STEP 3 — List 2–4 style notes (short bullet points about what makes this combination work for a colorblind wearer — brightness contrast, texture mix, pattern rule, etc.).
 STEP 4 — Write a 1–2 sentence recommendation the user can act on (e.g. "pair with clean shoes for a smart finish").
@@ -207,30 +243,48 @@ export async function generateOutfit(options: GenerateOutfitOptions): Promise<Ou
     );
   }
 
-  const prompt = buildOutfitPrompt(filtered, stylePrefs, rejectedIdSets, profile);
-  const raw = await callCloudflareText(prompt);
-  const parsed = parseOutfitResponse(raw);
-
-  if (!parsed || parsed.itemIds.length === 0) {
-    throw new Error('The AI could not generate an outfit from your current wardrobe. Try a different style.');
-  }
-
-  // Map the IDs the AI returned back to full WardrobeItem objects.
-  // We look up from the full wardrobe (not just filtered) in case the AI picked
-  // an item the filter didn't include — it shouldn't, but defensive lookup is free.
   const idMap = new Map(wardrobe.map(item => [item.id, item]));
-  const selectedItems = parsed.itemIds
-    .map(id => idMap.get(id))
-    .filter((item): item is WardrobeItem => item !== undefined);
+  const requiredCategories = requiredCategoriesFor(includeAccessories);
 
-  if (selectedItems.length === 0) {
-    throw new Error('The AI returned item IDs that do not match your wardrobe. Please try again.');
+  // Up to one retry: if the first attempt is missing a required category that
+  // was actually available, ask again with an explicit correction. We keep the
+  // best result seen so far so a still-imperfect retry doesn't throw away a
+  // perfectly usable (if incomplete) outfit from the first attempt.
+  let best: OutfitSuggestion | null = null;
+  let missingCategories: ItemCategory[] = [];
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const prompt = buildOutfitPrompt(filtered, stylePrefs, rejectedIdSets, profile, requiredCategories, missingCategories);
+    const raw = await callCloudflareText(prompt);
+    const parsed = parseOutfitResponse(raw);
+
+    if (!parsed || parsed.itemIds.length === 0) {
+      if (best) break;
+      throw new Error('The AI could not generate an outfit from your current wardrobe. Try a different style.');
+    }
+
+    // Map the IDs the AI returned back to full WardrobeItem objects.
+    // We look up from the full wardrobe (not just filtered) in case the AI picked
+    // an item the filter didn't include — it shouldn't, but defensive lookup is free.
+    const selectedItems = parsed.itemIds
+      .map(id => idMap.get(id))
+      .filter((item): item is WardrobeItem => item !== undefined);
+
+    if (selectedItems.length === 0) {
+      if (best) break;
+      throw new Error('The AI returned item IDs that do not match your wardrobe. Please try again.');
+    }
+
+    best = {
+      items: selectedItems,
+      reasoning: parsed.reasoning,
+      styleNotes: parsed.styleNotes,
+      recommendation: parsed.recommendation,
+    };
+
+    missingCategories = missingRequiredCategories(selectedItems, filtered, requiredCategories);
+    if (missingCategories.length === 0) break;
   }
 
-  return {
-    items: selectedItems,
-    reasoning: parsed.reasoning,
-    styleNotes: parsed.styleNotes,
-    recommendation: parsed.recommendation,
-  };
+  return best!;
 }

@@ -77,6 +77,12 @@ export function AddItemScreen() {
         setStep('notClothing');
         return;
       }
+      // The AI's category read is advisory — apply it when it disagrees with
+      // what was selected before capture, but the chip picker on the review
+      // step still lets the user override it either way.
+      if (result.detectedCategory && result.detectedCategory !== category) {
+        setCategory(result.detectedCategory);
+      }
       setName(result.name);
       setTags(result.tags);
       setStep('review');

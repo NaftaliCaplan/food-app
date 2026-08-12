@@ -27,6 +27,12 @@ function promptFrom(mockFetchCall: unknown[]): string {
   return JSON.parse(options.body).messages[0].content;
 }
 
+function okResponseFor(itemIds: string[]) {
+  return makeResponse({
+    result: { response: { itemIds, reasoning: 'ok', styleNotes: [], recommendation: '' } },
+  });
+}
+
 const okOutfitResponse = {
   result: {
     response: {
@@ -208,5 +214,77 @@ describe('generateOutfit', () => {
     await expect(generateOutfit({ wardrobe, stylePrefs: ['casual'] })).rejects.toThrow(
       'could not generate an outfit',
     );
+  });
+
+  it('retries once with a correction block when a required, available category is missing', async () => {
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
+      makeItem({ id: '3', category: 'shoes', tags: ['casual'] }),
+    ];
+    const topOnlyResponse = makeResponse({
+      result: { response: { itemIds: ['1'], reasoning: 'ok', styleNotes: [], recommendation: '' } },
+    });
+    const fixedResponse = makeResponse({
+      result: { response: { itemIds: ['1', '2'], reasoning: 'fixed', styleNotes: [], recommendation: '' } },
+    });
+    mockFetch.mockResolvedValueOnce(topOnlyResponse).mockResolvedValueOnce(fixedResponse);
+
+    const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    const retryPrompt = promptFrom(mockFetch.mock.calls[1]);
+    expect(retryPrompt).toContain('CORRECTION');
+    expect(retryPrompt).toContain('bottom');
+    expect(result.items.map(i => i.id)).toEqual(['1', '2']);
+  });
+
+  it('does not retry for a category that has no candidates at all', async () => {
+    // No shoes anywhere in the wardrobe — requiring them would be an impossible retry.
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
+    ];
+    mockFetch.mockResolvedValue(okResponseFor(['1', '2']));
+
+    await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to the first attempt if a retry still cannot satisfy the missing category', async () => {
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
+    ];
+    mockFetch.mockResolvedValue(okResponseFor(['1']));
+
+    const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(result.items.map(i => i.id)).toEqual(['1']);
+  });
+
+  it('treats accessory as required-if-available when includeAccessories is true', async () => {
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
+      makeItem({ id: '3', category: 'accessory', tags: [] }),
+    ];
+    mockFetch.mockResolvedValue(okResponseFor(['1', '2']));
+
+    await generateOutfit({ wardrobe, stylePrefs: ['casual'], includeAccessories: true });
+    const prompt = promptFrom(mockFetch.mock.calls[0]);
+    expect(prompt).toContain('accessory');
+    expect(mockFetch).toHaveBeenCalledTimes(2); // retried since the accessory was available but unused
+  });
+
+  it('does not require an accessory when includeAccessories is false', async () => {
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
+    ];
+    mockFetch.mockResolvedValue(okResponseFor(['1', '2']));
+
+    await generateOutfit({ wardrobe, stylePrefs: ['casual'], includeAccessories: false });
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 });
