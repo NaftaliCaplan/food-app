@@ -4,9 +4,11 @@ import { ActivityIndicator, StyleSheet, TextInput, TouchableOpacity, View } from
 import { BRIGHTNESS_TAGS, COLOR_TAGS, PATTERN_TAGS, secondaryTagGroup } from '../constants/tagVocabulary';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
-import { ItemCategory } from '../types/wardrobe';
+import { ItemCategory, StylePreference } from '../types/wardrobe';
+import { extractStyle, isStyleWord, replaceStyle } from '../utils/styleTags';
 import { AppText } from './AppText';
 import { CategoryPicker } from './CategoryPicker';
+import { StylePicker } from './StylePicker';
 
 interface Props {
   category: ItemCategory;
@@ -15,6 +17,7 @@ interface Props {
   onNameChange: (name: string) => void;
   tags: string[];
   onToggleTag: (tag: string) => void;
+  onTagsChange: (tags: string[]) => void;
   onSave: () => void;
   saving: boolean;
   saveLabel: string;
@@ -62,12 +65,14 @@ export function WardrobeItemForm({
   onNameChange,
   tags,
   onToggleTag,
+  onTagsChange,
   onSave,
   saving,
   saveLabel,
 }: Props) {
   const [customInput, setCustomInput] = useState('');
   const secondary = secondaryTagGroup(category);
+  const style = extractStyle(tags);
 
   function addCustomTag() {
     const t = customInput.trim().toLowerCase().replace(/\s+/g, '-');
@@ -75,10 +80,17 @@ export function WardrobeItemForm({
     setCustomInput('');
   }
 
+  function handleStyleChange(newStyle: StylePreference) {
+    onTagsChange(replaceStyle(tags, newStyle));
+  }
+
   return (
     <View style={styles.form}>
       <AppText style={styles.sectionLabel}>CATEGORY</AppText>
       <CategoryPicker category={category} onChange={onCategoryChange} />
+
+      <AppText style={styles.sectionLabel}>STYLE</AppText>
+      <StylePicker style={style} onChange={handleStyleChange} />
 
       <AppText style={styles.sectionLabel}>NAME (optional)</AppText>
       <TextInput
@@ -93,7 +105,9 @@ export function WardrobeItemForm({
       <AppText style={styles.sectionLabel}>TAGS</AppText>
       <AppText style={styles.tagHint}>Tap to remove · More tags = better outfit matching</AppText>
       <View style={styles.tagWrap}>
-        {tags.map(tag => (
+        {/* Style lives in its own picker above — hide it here so it isn't
+            shown (and editable) twice. */}
+        {tags.filter(t => !isStyleWord(t)).map(tag => (
           <TouchableOpacity
             key={tag}
             style={styles.tag}

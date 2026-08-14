@@ -59,6 +59,7 @@ export function EditItemScreen() {
           onNameChange={setName}
           tags={tags}
           onToggleTag={toggleTag}
+          onTagsChange={setTags}
           onSave={handleSave}
           saving={saving}
           saveLabel="✓ Save Changes"

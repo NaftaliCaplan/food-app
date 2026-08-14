@@ -10,6 +10,31 @@ function requiredCategoriesFor(includeAccessories: boolean): ItemCategory[] {
     : ['top', 'bottom', 'shoes'];
 }
 
+// You wear exactly one bottom and one pair of shoes — never two. Tops are the
+// one exception: a base layer plus one outer layer (t-shirt under a sweater,
+// shirt under a jacket) is normal, so top allows up to 2. Accessories are
+// uncapped (a hat + a bag + a belt is normal). This is enforced in code, not
+// just requested in the prompt, because the prompt already asks for this
+// ("one top, one bottom...") and the AI has ignored explicit singular wording
+// before (see ADR 0009's khakis case).
+const CATEGORY_MAX: Partial<Record<ItemCategory, number>> = {
+  bottom: 1,
+  shoes: 1,
+  top: 2,
+};
+
+function capDuplicateCategories(items: WardrobeItem[]): WardrobeItem[] {
+  const counts = new Map<ItemCategory, number>();
+  return items.filter(item => {
+    const max = CATEGORY_MAX[item.category];
+    if (max === undefined) return true; // uncapped (accessory)
+    const count = counts.get(item.category) ?? 0;
+    if (count >= max) return false;
+    counts.set(item.category, count + 1);
+    return true;
+  });
+}
+
 // Only flags a category as missing if the candidate pool could have supplied
 // one — asking the AI to include a bottom when the filtered wardrobe has none
 // would be an impossible, wasted retry.
@@ -122,20 +147,13 @@ ${inventory}
 STYLE GOAL — The user wants an outfit that feels: ${stylePrefs.join(', ').replace(/_/g, ' ')}.
 Pick items that work well together for this style. ${requirementLine}
 
-${personBlock}${groundingBlock}${correctionBlock}${rejectedBlock}STEP 1 — Select the items for one coherent outfit: one top, one bottom, and one pair of shoes when available and appropriate, plus any accessories that genuinely complement it (a hat, bag, belt, watch, etc.). Include as many accessories as actually make sense together — do not force one in just to add it, but do not artificially cap the total item count either. A minimal outfit (e.g. a swimsuit plus sandals) can be as few as 2 items; a fully accessorized outfit can be 6 or more. Let the wardrobe and style goal decide, not a fixed number.
+${personBlock}${groundingBlock}${correctionBlock}${rejectedBlock}STEP 1 — Select the items for one coherent outfit: exactly one bottom and one pair of shoes when available and appropriate, one top (a second top ONLY if it's a genuine layering piece over the first, like a sweater or jacket over a t-shirt or button-up — never two of the same kind of top, and never two bottoms or two pairs of shoes), plus any accessories that genuinely complement it (a hat, bag, belt, watch, etc.). Include as many accessories as actually make sense together — do not force one in just to add it, but do not artificially cap the total item count either. A minimal outfit (e.g. a swimsuit plus sandals) can be as few as 2 items; a fully accessorized outfit can be 6 or more. Let the wardrobe and style goal decide, not a fixed number.
 
-STEP 2 — Explain in 1–2 sentences why these items work together. Every time you refer to one of your selected items by name, you MUST copy its exact name from the inventory above, in quotes — never paraphrase it into a different garment or color. Required format example (for illustration only, not your actual items):
-  The "navy polo" pairs with the "khaki chinos" for a clean smart-casual look, and the "brown loafers" keep the palette warm.
-
-STEP 3 — List 2–4 style notes (short bullet points about contrast, texture mix, pattern rule, etc.). Every note that mentions a specific item must use its exact quoted name the same way as Step 2.
-
-STEP 4 — Write a 1–2 sentence recommendation about how to WEAR the items you selected (tucking, rolling sleeves, layering, etc.) — not a suggestion to add a different garment. If you name a specific item, use its exact quoted name.
+STEP 2 — Write a single short, actionable tip (1 sentence) about how to WEAR the items you selected (tucking, rolling sleeves, layering, etc.) — not a suggestion to add a different garment. If you name a specific item, use its exact name from the inventory above in single quotes, e.g. 'navy polo' — never double quotes (this text goes inside a JSON string, and a double quote would break it), and never paraphrase it into a different garment or color.
 
 OUTPUT — Respond with ONLY a raw JSON object. No markdown. Start with { end with }:
 {
   "itemIds": ["<id1>", "<id2>", "<id3>"],
-  "reasoning": "<why this works>",
-  "styleNotes": ["<note1>", "<note2>"],
   "recommendation": "<actionable tip>"
 }`;
 }
@@ -175,8 +193,6 @@ async function callCloudflareText(promptText: string, maxTokens = 500): Promise<
 
 interface RawOutfitResponse {
   itemIds: string[];
-  reasoning: string;
-  styleNotes: string[];
   recommendation: string;
 }
 
@@ -184,16 +200,9 @@ function parseOutfitResponse(raw: unknown): RawOutfitResponse | null {
   // Try direct object parse — Llama occasionally returns a pre-parsed object
   if (raw && typeof raw === 'object') {
     const obj = raw as Record<string, unknown>;
-    if (
-      Array.isArray(obj.itemIds) &&
-      typeof obj.reasoning === 'string' &&
-      Array.isArray(obj.styleNotes) &&
-      typeof obj.recommendation === 'string'
-    ) {
+    if (Array.isArray(obj.itemIds) && typeof obj.recommendation === 'string') {
       return {
         itemIds: (obj.itemIds as unknown[]).filter(id => typeof id === 'string') as string[],
-        reasoning: obj.reasoning,
-        styleNotes: (obj.styleNotes as unknown[]).filter(n => typeof n === 'string') as string[],
         recommendation: obj.recommendation,
       };
     }
@@ -205,20 +214,14 @@ function parseOutfitResponse(raw: unknown): RawOutfitResponse | null {
   // fallback pattern used in tagService.ts.
   const text = typeof raw === 'string' ? raw : '';
   const itemIdsMatch = text.match(/"itemIds"\s*:\s*\[([^\]]+)\]/);
-  const reasoningMatch = text.match(/"reasoning"\s*:\s*"([^"]+)"/);
-  const styleNotesMatch = text.match(/"styleNotes"\s*:\s*\[([^\]]+)\]/);
   const recommendationMatch = text.match(/"recommendation"\s*:\s*"([^"]+)"/);
 
-  if (!itemIdsMatch || !reasoningMatch) return null;
+  if (!itemIdsMatch) return null;
 
   const itemIds = itemIdsMatch[1].match(/"([^"]+)"/g)?.map(s => s.replace(/"/g, '')) ?? [];
-  const styleNotes =
-    styleNotesMatch?.[1].match(/"([^"]+)"/g)?.map(s => s.replace(/"/g, '')) ?? [];
 
   return {
     itemIds,
-    reasoning: reasoningMatch[1],
-    styleNotes,
     recommendation: recommendationMatch?.[1] ?? '',
   };
 }
@@ -274,9 +277,11 @@ export async function generateOutfit(options: GenerateOutfitOptions): Promise<Ou
     // Map the IDs the AI returned back to full WardrobeItem objects.
     // We look up from the full wardrobe (not just filtered) in case the AI picked
     // an item the filter didn't include — it shouldn't, but defensive lookup is free.
-    const selectedItems = parsed.itemIds
-      .map(id => idMap.get(id))
-      .filter((item): item is WardrobeItem => item !== undefined);
+    const selectedItems = capDuplicateCategories(
+      parsed.itemIds
+        .map(id => idMap.get(id))
+        .filter((item): item is WardrobeItem => item !== undefined),
+    );
 
     if (selectedItems.length === 0) {
       if (best) break;
@@ -285,8 +290,6 @@ export async function generateOutfit(options: GenerateOutfitOptions): Promise<Ou
 
     best = {
       items: selectedItems,
-      reasoning: parsed.reasoning,
-      styleNotes: parsed.styleNotes,
       recommendation: parsed.recommendation,
     };
 

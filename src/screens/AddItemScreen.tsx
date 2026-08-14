@@ -157,6 +157,7 @@ export function AddItemScreen() {
             onNameChange={setName}
             tags={tags}
             onToggleTag={toggleTag}
+            onTagsChange={setTags}
             onSave={handleSave}
             saving={saving}
             saveLabel="✓ Save to Wardrobe"

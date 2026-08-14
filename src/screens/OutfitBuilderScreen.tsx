@@ -92,7 +92,7 @@ export function OutfitBuilderScreen() {
         <ScreenHeader title="Build an Outfit" onBack={() => navigation.goBack()} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scroll}>
         <AppText style={styles.intro}>
           Pick the styles you're going for. Leave them all off for an anything-goes
           suggestion.
@@ -158,6 +158,9 @@ const styles = StyleSheet.create({
   },
   topBar: {
     paddingHorizontal: Spacing.lg,
+  },
+  scrollView: {
+    flex: 1,
   },
   scroll: {
     padding: Spacing.lg,

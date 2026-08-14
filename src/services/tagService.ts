@@ -1,18 +1,9 @@
 import { File } from 'expo-file-system/next';
 
 import { ItemCategory, StylePreference } from '../types/wardrobe';
+import { normalizeStyle, replaceStyle, STYLE_KEYS } from '../utils/styleTags';
 
-const STYLE_KEYS: StylePreference[] = ['casual', 'smart_casual', 'formal', 'sporty'];
 const CATEGORY_KEYS: ItemCategory[] = ['top', 'bottom', 'shoes', 'accessory'];
-
-function normalizeStyle(s: string): string {
-  return s.toLowerCase().replace(/[-_]/g, '');
-}
-
-function isStyleWord(tag: string): boolean {
-  const n = normalizeStyle(tag);
-  return STYLE_KEYS.some(k => normalizeStyle(k) === n);
-}
 
 function parseStyle(value: unknown): StylePreference | undefined {
   return typeof value === 'string' && STYLE_KEYS.some(k => normalizeStyle(k) === normalizeStyle(value))
@@ -29,12 +20,11 @@ function parseCategory(value: unknown): ItemCategory | undefined {
 // The model is asked for a single "style" field precisely so we don't have to
 // trust it to keep the free-form tags list internally consistent — we've seen
 // it tag the same item both "casual" and "formal". Stripping any style words
-// out of the raw tags and re-adding only the one resolved style makes a
-// contradictory result structurally impossible, regardless of what the model
-// put in the tags array.
+// out of the raw tags and re-adding only the one resolved style (via the same
+// replaceStyle used by the manual StylePicker) makes a contradictory result
+// structurally impossible, regardless of what the model put in the tags array.
 function mergeStyleTag(tags: string[], style: StylePreference | undefined): string[] {
-  const withoutStyle = tags.filter(t => !isStyleWord(t));
-  return style ? [...withoutStyle, style] : withoutStyle;
+  return replaceStyle(tags, style);
 }
 
 // Colors come back as their own field (not folded into the free-form tags

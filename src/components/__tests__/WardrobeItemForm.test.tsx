@@ -9,6 +9,7 @@ function renderForm(overrides: Partial<Parameters<typeof WardrobeItemForm>[0]> =
     onNameChange: jest.fn(),
     tags: [] as string[],
     onToggleTag: jest.fn(),
+    onTagsChange: jest.fn(),
     onSave: jest.fn(),
     saving: false,
     saveLabel: '✓ Save',
@@ -84,5 +85,23 @@ describe('WardrobeItemForm', () => {
     const props = renderForm();
     fireEvent.changeText(screen.getByPlaceholderText('e.g. white button-up shirt'), 'My Sweater');
     expect(props.onNameChange).toHaveBeenCalledWith('My Sweater');
+  });
+
+  it('derives the current style from tags and shows it checked in the StylePicker', () => {
+    renderForm({ tags: ['navy', 'smart_casual'] });
+    expect(screen.getByLabelText('Smart Casual').props.accessibilityState?.checked).toBe(true);
+    expect(screen.getByLabelText('Casual').props.accessibilityState?.checked).toBe(false);
+  });
+
+  it('changing style replaces the old style tag via onTagsChange, not onToggleTag', () => {
+    const props = renderForm({ tags: ['navy', 'casual', 'solid'] });
+    fireEvent.press(screen.getByLabelText('Formal'));
+    expect(props.onTagsChange).toHaveBeenCalledWith(['navy', 'solid', 'formal']);
+  });
+
+  it('hides the style tag from the generic current-tags list', () => {
+    renderForm({ tags: ['navy', 'casual'] });
+    expect(screen.getByText('navy ✕')).toBeTruthy();
+    expect(screen.queryByText('casual ✕')).toBeNull();
   });
 });

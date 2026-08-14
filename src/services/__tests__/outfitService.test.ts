@@ -29,7 +29,7 @@ function promptFrom(mockFetchCall: unknown[]): string {
 
 function okResponseFor(itemIds: string[]) {
   return makeResponse({
-    result: { response: { itemIds, reasoning: 'ok', styleNotes: [], recommendation: '' } },
+    result: { response: { itemIds, recommendation: '' } },
   });
 }
 
@@ -37,8 +37,6 @@ const okOutfitResponse = {
   result: {
     response: {
       itemIds: ['1', '2'],
-      reasoning: 'Contrast and balance work well.',
-      styleNotes: ['Bright top pairs with dark bottom'],
       recommendation: 'Add clean shoes to finish it off.',
     },
   },
@@ -150,7 +148,6 @@ describe('generateOutfit', () => {
     mockFetch.mockResolvedValue(makeResponse(okOutfitResponse));
     const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
     expect(result.items.map(i => i.id)).toEqual(['1', '2']);
-    expect(result.reasoning).toBe('Contrast and balance work well.');
     expect(result.recommendation).toBe('Add clean shoes to finish it off.');
   });
 
@@ -159,11 +156,11 @@ describe('generateOutfit', () => {
       makeItem({ id: '1', category: 'top', tags: ['casual'] }),
       makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
     ];
-    const fenced = '```json\n{"itemIds": ["1", "2"], "reasoning": "Works well together", "styleNotes": ["Balanced"], "recommendation": "Wear it out"}\n```';
+    const fenced = '```json\n{"itemIds": ["1", "2"], "recommendation": "Wear it out"}\n```';
     mockFetch.mockResolvedValue(makeResponse({ result: { response: fenced } }));
     const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
     expect(result.items.map(i => i.id)).toEqual(['1', '2']);
-    expect(result.reasoning).toBe('Works well together');
+    expect(result.recommendation).toBe('Wear it out');
   });
 
   it('drops hallucinated item ids that do not exist in the wardrobe', async () => {
@@ -178,8 +175,6 @@ describe('generateOutfit', () => {
       result: {
         response: {
           itemIds: ['1', '999'],
-          reasoning: 'ok',
-          styleNotes: [],
           recommendation: '',
         },
       },
@@ -197,8 +192,6 @@ describe('generateOutfit', () => {
       result: {
         response: {
           itemIds: ['999'],
-          reasoning: 'ok',
-          styleNotes: [],
           recommendation: '',
         },
       },
@@ -225,10 +218,10 @@ describe('generateOutfit', () => {
       makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
     ];
     const topOnlyResponse = makeResponse({
-      result: { response: { itemIds: ['1'], reasoning: 'ok', styleNotes: [], recommendation: '' } },
+      result: { response: { itemIds: ['1'], recommendation: '' } },
     });
     const fixedResponse = makeResponse({
-      result: { response: { itemIds: ['1', '2'], reasoning: 'fixed', styleNotes: [], recommendation: '' } },
+      result: { response: { itemIds: ['1', '2'], recommendation: '' } },
     });
     mockFetch.mockResolvedValueOnce(topOnlyResponse).mockResolvedValueOnce(fixedResponse);
 
@@ -323,5 +316,71 @@ describe('generateOutfit', () => {
     const prompt = promptFrom(mockFetch.mock.calls[0]);
     expect(prompt).toContain('GROUNDING');
     expect(prompt).toContain('exact name');
+  });
+
+  it('trims a second bottom the AI incorrectly included down to one', async () => {
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
+      makeItem({ id: '3', category: 'bottom', tags: ['casual'] }),
+      makeItem({ id: '4', category: 'shoes', tags: ['casual'] }),
+    ];
+    mockFetch.mockResolvedValue(okResponseFor(['1', '2', '3', '4']));
+
+    const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
+    const bottoms = result.items.filter(i => i.category === 'bottom');
+    expect(bottoms).toHaveLength(1);
+    expect(bottoms[0].id).toBe('2'); // keeps the first one the AI listed
+  });
+
+  it('trims a second pair of shoes the AI incorrectly included down to one', async () => {
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
+      makeItem({ id: '3', category: 'shoes', tags: ['casual'] }),
+      makeItem({ id: '4', category: 'shoes', tags: ['casual'] }),
+    ];
+    mockFetch.mockResolvedValue(okResponseFor(['1', '2', '3', '4']));
+
+    const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
+    expect(result.items.filter(i => i.category === 'shoes')).toHaveLength(1);
+  });
+
+  it('allows a second top for layering (e.g. a sweater over a t-shirt)', async () => {
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '2', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '3', category: 'bottom', tags: ['casual'] }),
+    ];
+    mockFetch.mockResolvedValue(okResponseFor(['1', '2', '3']));
+
+    const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
+    expect(result.items.filter(i => i.category === 'top')).toHaveLength(2);
+  });
+
+  it('caps tops at two even if the AI selects three', async () => {
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '2', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '3', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '4', category: 'bottom', tags: ['casual'] }),
+    ];
+    mockFetch.mockResolvedValue(okResponseFor(['1', '2', '3', '4']));
+
+    const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
+    expect(result.items.filter(i => i.category === 'top')).toHaveLength(2);
+  });
+
+  it('does not cap accessories — multiple are legitimate', async () => {
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
+      makeItem({ id: '3', category: 'accessory', tags: [] }),
+      makeItem({ id: '4', category: 'accessory', tags: [] }),
+    ];
+    mockFetch.mockResolvedValue(okResponseFor(['1', '2', '3', '4']));
+
+    const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'], includeAccessories: true });
+    expect(result.items.filter(i => i.category === 'accessory')).toHaveLength(2);
   });
 });

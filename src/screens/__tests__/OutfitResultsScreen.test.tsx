@@ -35,8 +35,6 @@ const mockSuggestion = {
     { id: '1', photoUri: 'file://1.jpg', category: 'top', tags: [], addedAt: 0, name: 'White tee' },
     { id: '2', photoUri: 'file://2.jpg', category: 'bottom', tags: [], addedAt: 0 },
   ],
-  reasoning: 'Contrast and balance work well.',
-  styleNotes: ['Bright top pairs with dark bottom'],
   recommendation: 'Add clean shoes to finish it off.',
 };
 
@@ -114,8 +112,6 @@ describe('OutfitResultsScreen', () => {
     await act(async () => {});
 
     expect(screen.getByText(/White tee/)).toBeTruthy();
-    expect(screen.getByText('Contrast and balance work well.')).toBeTruthy();
-    expect(screen.getByText(/Bright top pairs with dark bottom/)).toBeTruthy();
     expect(screen.getByText(/Add clean shoes to finish it off\./)).toBeTruthy();
   });
 

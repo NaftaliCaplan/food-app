@@ -12,8 +12,6 @@ const wardrobe: WardrobeItem[] = [
 
 const mockSuggestion = {
   items: wardrobe,
-  reasoning: 'Works well together.',
-  styleNotes: ['Balanced'],
   recommendation: 'Wear it out.',
 };
 
@@ -83,7 +81,7 @@ describe('useOutfitGenerator', () => {
       expect.objectContaining({ rejectedIdSets: [] }),
     );
 
-    const secondSuggestion = { ...mockSuggestion, reasoning: 'A different combo.' };
+    const secondSuggestion = { ...mockSuggestion, recommendation: 'A different combo.' };
     generateOutfit.mockResolvedValue(secondSuggestion);
 
     await act(async () => {

@@ -155,7 +155,7 @@ export function OutfitResultsScreen() {
         />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scroll}>
         <View style={styles.itemRow}>
           {suggestion?.items.map(item => (
             <View key={item.id} style={styles.itemCard}>
@@ -166,22 +166,6 @@ export function OutfitResultsScreen() {
             </View>
           ))}
         </View>
-
-        <AppText style={styles.sectionLabel}>WHY IT WORKS</AppText>
-        <AppText style={styles.reasoning}>{suggestion?.reasoning}</AppText>
-
-        {suggestion && suggestion.styleNotes.length > 0 && (
-          <>
-            <AppText style={styles.sectionLabel}>STYLE NOTES</AppText>
-            <View style={styles.notesList}>
-              {suggestion.styleNotes.map((note, i) => (
-                <AppText key={i} style={styles.noteItem}>
-                  •  {note}
-                </AppText>
-              ))}
-            </View>
-          </>
-        )}
 
         {suggestion?.recommendation ? (
           <View style={styles.recommendationBox}>
@@ -270,6 +254,9 @@ const styles = StyleSheet.create({
     color: Colors.textDisabled,
     fontSize: 12,
   },
+  scrollView: {
+    flex: 1,
+  },
   scroll: {
     padding: Spacing.lg,
     gap: Spacing.md,
@@ -293,26 +280,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Colors.textSecondary,
     padding: Spacing.xs,
-  },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.textSecondary,
-    letterSpacing: 1.5,
-    marginTop: Spacing.sm,
-  },
-  reasoning: {
-    color: Colors.textPrimary,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  notesList: {
-    gap: Spacing.xs,
-  },
-  noteItem: {
-    color: Colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 18,
   },
   recommendationBox: {
     backgroundColor: Colors.accentMuted,

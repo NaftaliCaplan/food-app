@@ -20,8 +20,6 @@ export interface UserProfile {
 
 export interface OutfitSuggestion {
   items: WardrobeItem[];
-  reasoning: string;
-  styleNotes: string[];
   recommendation: string;
 }
 
