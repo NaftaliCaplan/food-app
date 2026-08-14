@@ -96,6 +96,7 @@ export function OutfitResultsScreen() {
         itemIds: suggestion.items.map(i => i.id),
         styleName: formatStyleName(stylePrefs as StylePreference[]),
         savedAt: Date.now(),
+        recommendation: suggestion.recommendation,
       });
       navigation.navigate('Wardrobe');
     } catch (e) {
@@ -301,28 +302,34 @@ const styles = StyleSheet.create({
   },
   noBtn: {
     flex: 1,
+    minHeight: 52,
     paddingVertical: Spacing.md,
     borderRadius: 0,
     borderWidth: 1,
     borderColor: Colors.border,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   noBtnText: {
     color: Colors.textSecondary,
     fontWeight: '600',
     fontSize: 16,
+    textAlign: 'center',
   },
   yesBtn: {
     flex: 1,
+    minHeight: 52,
     backgroundColor: Colors.accent,
     paddingVertical: Spacing.md,
     borderRadius: 0,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   yesBtnText: {
     color: '#000',
     fontWeight: '700',
     fontSize: 16,
+    textAlign: 'center',
   },
   btnDisabled: {
     opacity: 0.6,

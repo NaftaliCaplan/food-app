@@ -28,4 +28,5 @@ export interface SavedOutfit {
   itemIds: string[];
   styleName: string;
   savedAt: number;
+  recommendation?: string;
 }

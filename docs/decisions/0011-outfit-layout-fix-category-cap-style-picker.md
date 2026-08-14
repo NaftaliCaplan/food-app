@@ -56,3 +56,11 @@ Added 5 new `outfitService.test.ts` tests (trims excess bottom, trims excess sho
 
 * The top-layering cap (2) is a fixed number, not a judgment of whether two tops actually form a coherent layered look — it prevents obvious over-selection but doesn't validate quality.
 * Other screens with a ScrollView followed by a fixed sibling weren't audited beyond `OutfitBuilderScreen` — if a similar shape exists elsewhere and its content ever grows, the same class of bug could recur there too.
+
+## Follow-up: Try Again / Keep This Outfit button centering (2026-08-13)
+
+User reported the two `OutfitResultsScreen` bottom-bar buttons looked "pushed over" — the shorter "✕ Try Again" button's text sat off-center relative to "✓ Keep This Outfit." Root cause: `bottomBar` is a `flexDirection: 'row'` container with default `alignItems: 'stretch'`, so when the longer "✓ Keep This Outfit" label wraps to two lines (its button grows taller), the row stretches the shorter button to match that height too — but `noBtn`/`yesBtn` only had `alignItems: 'center'` (horizontal centering), not `justifyContent: 'center'` (vertical), so the now-taller-but-still-single-line button's text stayed pinned to the top instead of centering in the extra space.
+
+User explicitly confirmed the fix should preserve equal-size buttons and accept that "Keep This Outfit" may wrap to two lines on narrower screens (it won't fit unwrapped at 50/50 width) — the ask was for that wrapped state to still look intentional, not to avoid wrapping. Fixed by adding `justifyContent: 'center'` to both buttons (so content centers vertically regardless of which one wraps), a shared `minHeight: 52` (keeps both buttons' tap targets and baseline size consistent), and `textAlign: 'center'` on both button texts (keeps multi-line wrapped text centered horizontally within its own lines, not just as a block).
+
+No test coverage added — this is a pure style/layout fix with no new conditional logic to assert on; verified by reasoning through the flexbox behavior. Full suite unaffected: 27/27 suites, 197/197 tests, `tsc --noEmit` clean (0 errors).

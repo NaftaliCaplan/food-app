@@ -158,17 +158,26 @@ export function WardrobeScreen() {
             Add at least 2 items to build an outfit
           </AppText>
         )}
-        <TouchableOpacity
-          style={[styles.buildBtn, !canBuild && styles.buildBtnDisabled]}
-          onPress={() => canBuild && navigation.navigate('OutfitBuilder')}
-          disabled={!canBuild}
-          accessibilityLabel="Build an outfit"
-          accessibilityState={{ disabled: !canBuild }}
-        >
-          <AppText style={[styles.buildBtnText, !canBuild && styles.buildBtnTextDisabled]}>
-            Build an Outfit →
-          </AppText>
-        </TouchableOpacity>
+        <View style={styles.bottomRow}>
+          <TouchableOpacity
+            style={styles.savedBtn}
+            onPress={() => navigation.navigate('SavedOutfits')}
+            accessibilityLabel="View saved outfits"
+          >
+            <AppText style={styles.savedBtnText}>Saved</AppText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.buildBtn, !canBuild && styles.buildBtnDisabled]}
+            onPress={() => canBuild && navigation.navigate('OutfitBuilder')}
+            disabled={!canBuild}
+            accessibilityLabel="Build an outfit"
+            accessibilityState={{ disabled: !canBuild }}
+          >
+            <AppText style={[styles.buildBtnText, !canBuild && styles.buildBtnTextDisabled]}>
+              Build an Outfit →
+            </AppText>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -293,7 +302,26 @@ const styles = StyleSheet.create({
     color: Colors.textDisabled,
     textAlign: 'center',
   },
+  bottomRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  savedBtn: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    borderRadius: 0,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  savedBtnText: {
+    color: Colors.textSecondary,
+    fontWeight: '600',
+    fontSize: 14,
+  },
   buildBtn: {
+    flex: 1,
     backgroundColor: Colors.accent,
     paddingVertical: Spacing.md,
     borderRadius: 0,

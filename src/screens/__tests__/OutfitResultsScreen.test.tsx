@@ -132,7 +132,11 @@ describe('OutfitResultsScreen', () => {
     });
 
     expect(saveOutfit).toHaveBeenCalledWith(
-      expect.objectContaining({ itemIds: ['1', '2'], styleName: 'Casual' }),
+      expect.objectContaining({
+        itemIds: ['1', '2'],
+        styleName: 'Casual',
+        recommendation: 'Add clean shoes to finish it off.',
+      }),
     );
     expect(mockNavigate).toHaveBeenCalledWith('Wardrobe');
   });

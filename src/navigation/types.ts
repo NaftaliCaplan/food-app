@@ -12,6 +12,7 @@ export type RootStackParamList = {
     photoUri: string;
   };
   Wardrobe: undefined;
+  SavedOutfits: undefined;
   AddItem: undefined;
   EditItem: {
     item: WardrobeItem;

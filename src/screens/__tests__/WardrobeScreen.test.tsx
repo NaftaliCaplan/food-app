@@ -108,6 +108,18 @@ describe('WardrobeScreen', () => {
     expect(screen.queryByText('White tee')).toBeNull();
   });
 
+  it('navigates to SavedOutfits when the Saved button is pressed', async () => {
+    getWardrobe.mockResolvedValue([
+      makeItem({ id: '1', category: 'top' }),
+      makeItem({ id: '2', category: 'bottom' }),
+    ]);
+    getUserProfile.mockResolvedValue(null);
+    render(<WardrobeScreen />);
+    await act(async () => {});
+    fireEvent.press(screen.getByLabelText('View saved outfits'));
+    expect(mockNavigate).toHaveBeenCalledWith('SavedOutfits');
+  });
+
   it('shows [P] when no profile exists and [P✓] when one does', async () => {
     getWardrobe.mockResolvedValue([]);
     getUserProfile.mockResolvedValue(null);

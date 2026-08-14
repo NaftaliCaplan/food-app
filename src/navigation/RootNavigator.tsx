@@ -9,6 +9,7 @@ import { AddItemScreen } from '../screens/AddItemScreen';
 import { EditItemScreen } from '../screens/EditItemScreen';
 import { OutfitBuilderScreen } from '../screens/OutfitBuilderScreen';
 import { OutfitResultsScreen } from '../screens/OutfitResultsScreen';
+import { SavedOutfitsScreen } from '../screens/SavedOutfitsScreen';
 import { UserProfileScreen } from '../screens/UserProfileScreen';
 import { WardrobeScreen } from '../screens/WardrobeScreen';
 import { Colors } from '../theme/colors';
@@ -31,6 +32,7 @@ export function RootNavigator() {
       <Stack.Screen name="ClothesChecker" component={ClothesCheckerScreen} />
       <Stack.Screen name="ClothesResults" component={ClothesResultsScreen} />
       <Stack.Screen name="Wardrobe" component={WardrobeScreen} />
+      <Stack.Screen name="SavedOutfits" component={SavedOutfitsScreen} />
       <Stack.Screen name="AddItem" component={AddItemScreen} />
       <Stack.Screen name="EditItem" component={EditItemScreen} />
       <Stack.Screen name="UserProfile" component={UserProfileScreen} />
