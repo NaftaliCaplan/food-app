@@ -23,16 +23,45 @@ const CATEGORY_MAX: Partial<Record<ItemCategory, number>> = {
   top: 2,
 };
 
-function capDuplicateCategories(items: WardrobeItem[]): WardrobeItem[] {
-  const counts = new Map<ItemCategory, number>();
-  return items.filter(item => {
-    const max = CATEGORY_MAX[item.category];
-    if (max === undefined) return true; // uncapped (accessory)
-    const count = counts.get(item.category) ?? 0;
-    if (count >= max) return false;
-    counts.set(item.category, count + 1);
-    return true;
-  });
+// The prompt requires any item the recommendation names specifically to be
+// quoted with its exact inventory name in single quotes (buildOutfitPrompt's
+// STEP 2). Extracted here so capDuplicateCategories can use it as a
+// tie-breaker signal, not just to validate the text after the fact.
+function extractQuotedNames(text: string): Set<string> {
+  const matches = text.match(/'([^']+)'/g) ?? [];
+  return new Set(matches.map(m => m.slice(1, -1).toLowerCase()));
+}
+
+// When the AI over-selects a capped category (e.g. two bottoms), which
+// duplicate should survive isn't arbitrary: the recommendation text is the
+// AI's own record of which one it actually meant to build the outfit around.
+// Preferring whichever duplicate the recommendation names keeps the final
+// item set consistent with the tip instead of silently dropping the item the
+// tip is actually about in favor of whichever happened to come first in the
+// AI's itemIds array. Falls back to array order when nothing is named (or
+// the named item isn't among the duplicates), same as the old behavior.
+function capDuplicateCategories(items: WardrobeItem[], recommendation: string): WardrobeItem[] {
+  const namedItems = extractQuotedNames(recommendation);
+  const byCategory = new Map<ItemCategory, WardrobeItem[]>();
+  for (const item of items) {
+    const group = byCategory.get(item.category) ?? [];
+    group.push(item);
+    byCategory.set(item.category, group);
+  }
+
+  const kept = new Set<string>();
+  for (const [category, group] of byCategory) {
+    const max = CATEGORY_MAX[category];
+    if (max === undefined) {
+      group.forEach(i => kept.add(i.id));
+      continue;
+    }
+    const named = group.filter(i => namedItems.has((i.name ?? '').toLowerCase()));
+    const unnamed = group.filter(i => !named.includes(i));
+    [...named, ...unnamed].slice(0, max).forEach(i => kept.add(i.id));
+  }
+
+  return items.filter(i => kept.has(i.id));
 }
 
 // Only flags a category as missing if the candidate pool could have supplied
@@ -281,6 +310,7 @@ export async function generateOutfit(options: GenerateOutfitOptions): Promise<Ou
       parsed.itemIds
         .map(id => idMap.get(id))
         .filter((item): item is WardrobeItem => item !== undefined),
+      parsed.recommendation,
     );
 
     if (selectedItems.length === 0) {

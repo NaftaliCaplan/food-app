@@ -333,6 +333,28 @@ describe('generateOutfit', () => {
     expect(bottoms[0].id).toBe('2'); // keeps the first one the AI listed
   });
 
+  it('keeps the duplicate bottom the recommendation actually names, even if it was listed second', async () => {
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '2', category: 'bottom', name: 'black pants', tags: ['casual'] }),
+      makeItem({ id: '3', category: 'bottom', name: 'khaki pants', tags: ['casual'] }),
+      makeItem({ id: '4', category: 'shoes', tags: ['casual'] }),
+    ];
+    mockFetch.mockResolvedValue(makeResponse({
+      result: {
+        response: {
+          itemIds: ['1', '2', '3', '4'],
+          recommendation: "Tuck in your shirt with the 'khaki pants' for a clean look.",
+        },
+      },
+    }));
+
+    const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
+    const bottoms = result.items.filter(i => i.category === 'bottom');
+    expect(bottoms).toHaveLength(1);
+    expect(bottoms[0].id).toBe('3'); // keeps 'khaki pants', not the array-order-first 'black pants'
+  });
+
   it('trims a second pair of shoes the AI incorrectly included down to one', async () => {
     const wardrobe = [
       makeItem({ id: '1', category: 'top', tags: ['casual'] }),
