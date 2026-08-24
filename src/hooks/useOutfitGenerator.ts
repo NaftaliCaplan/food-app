@@ -28,6 +28,7 @@ export function useOutfitGenerator(
   stylePrefs: StylePreference[],
   profile: UserProfile | null,
   includeAccessories: boolean = true,
+  temperatureF?: number,
 ): UseOutfitGeneratorResult {
   const [status, setStatus] = useState<GeneratorStatus>('idle');
   const [suggestion, setSuggestion] = useState<OutfitSuggestion | null>(null);
@@ -52,6 +53,7 @@ export function useOutfitGenerator(
         rejectedIdSets: rejectedIdSetsRef.current,
         profile,
         includeAccessories,
+        temperatureF,
       });
       setSuggestion(result);
       setStatus('success');
@@ -61,7 +63,7 @@ export function useOutfitGenerator(
       setError(msg);
       setStatus('error');
     }
-  }, [wardrobe, stylePrefs, profile, includeAccessories]);
+  }, [wardrobe, stylePrefs, profile, includeAccessories, temperatureF]);
 
   const generate = useCallback(() => {
     run();

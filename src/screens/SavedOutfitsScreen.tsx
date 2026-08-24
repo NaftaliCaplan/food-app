@@ -80,9 +80,10 @@ export function SavedOutfitsScreen() {
         contentContainerStyle={styles.list}
         renderItem={({ item: outfit }) => {
           const expanded = expandedId === outfit.id;
+          const hasLaundryItem = outfit.itemIds.some(id => itemMap.get(id)?.inLaundry);
           return (
             <TouchableOpacity
-              style={styles.card}
+              style={[styles.card, hasLaundryItem && styles.cardLaundry]}
               activeOpacity={0.7}
               onPress={() => setExpandedId(expanded ? null : outfit.id)}
               accessibilityLabel={`${expanded ? 'Hide' : 'Show'} details for ${outfit.styleName} outfit from ${formatSavedDate(outfit.savedAt)}`}
@@ -110,6 +111,18 @@ export function SavedOutfitsScreen() {
                       </View>
                     );
                   }
+                  if (item.inLaundry) {
+                    return (
+                      <View key={id} style={styles.laundryTile}>
+                        <Image
+                          source={{ uri: item.photoUri }}
+                          style={[styles.itemThumb, styles.itemThumbDimmed]}
+                          resizeMode="cover"
+                        />
+                        <AppText style={styles.laundryLabel}>[LAUNDRY]</AppText>
+                      </View>
+                    );
+                  }
                   return (
                     <Image
                       key={id}
@@ -128,7 +141,7 @@ export function SavedOutfitsScreen() {
                     return (
                       <AppText key={id} style={styles.detailItemText}>
                         {item
-                          ? `${CATEGORY_ICON[item.category]} ${item.name ?? CATEGORY_LABEL[item.category]}`
+                          ? `${CATEGORY_ICON[item.category]} ${item.name ?? CATEGORY_LABEL[item.category]}${item.inLaundry ? ' — [LAUNDRY]' : ''}`
                           : '[MISSING] Item no longer in wardrobe'}
                       </AppText>
                     );
@@ -189,6 +202,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     gap: Spacing.sm,
   },
+  cardLaundry: {
+    opacity: 0.6,
+  },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -220,6 +236,18 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 0,
+  },
+  itemThumbDimmed: {
+    opacity: 0.4,
+  },
+  laundryTile: {
+    width: 72,
+  },
+  laundryLabel: {
+    fontSize: 8,
+    color: Colors.textDisabled,
+    textAlign: 'center',
+    marginTop: 2,
   },
   missingTile: {
     width: 72,

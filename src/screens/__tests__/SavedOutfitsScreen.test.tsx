@@ -124,6 +124,22 @@ describe('SavedOutfitsScreen', () => {
     expect(screen.getByText(/Item no longer in wardrobe/)).toBeTruthy();
   });
 
+  it('shows a [LAUNDRY] tag for an item currently in laundry, distinct from [MISSING]', async () => {
+    getSavedOutfits.mockResolvedValue([makeOutfit()]);
+    getWardrobe.mockResolvedValue([
+      makeItem({ id: '1', category: 'top', name: 'White tee' }),
+      makeItem({ id: '2', category: 'bottom', name: 'Blue jeans', inLaundry: true }),
+    ]);
+    render(<SavedOutfitsScreen />);
+    await act(async () => {});
+
+    expect(screen.getByText('[LAUNDRY]')).toBeTruthy();
+    expect(screen.queryByText('[MISSING]')).toBeNull();
+
+    fireEvent.press(screen.getByLabelText('Show details for Smart Casual outfit from Jul 26'));
+    expect(screen.getByText(/Blue jeans — \[LAUNDRY\]/)).toBeTruthy();
+  });
+
   it('deletes a saved outfit when its delete button is pressed', async () => {
     getSavedOutfits.mockResolvedValue([makeOutfit()]);
     getWardrobe.mockResolvedValue([

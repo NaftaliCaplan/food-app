@@ -9,6 +9,7 @@ export interface WardrobeItem {
   category: ItemCategory;
   tags: string[];
   addedAt: number;
+  inLaundry?: boolean;
 }
 
 export interface UserProfile {

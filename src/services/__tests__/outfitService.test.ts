@@ -118,10 +118,36 @@ describe('generateOutfit', () => {
       stylePrefs: ['casual'],
       profile: { heightRange: 'tall', build: 'slim' },
     });
-    const promptWithProfile = promptFrom(mockFetch.mock.calls[1]);
+    const promptWithProfile = promptFrom(mockFetch.mock.calls[3]);
     expect(promptWithProfile).toContain('PERSON');
     expect(promptWithProfile).toContain('tall');
     expect(promptWithProfile).toContain('slim');
+  });
+
+  it('only includes the WEATHER block when a temperature is provided, as advisory context', async () => {
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
+    ];
+    mockFetch.mockResolvedValue(makeResponse(okOutfitResponse));
+
+    await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
+    expect(promptFrom(mockFetch.mock.calls[0])).not.toContain('WEATHER');
+
+    await generateOutfit({ wardrobe, stylePrefs: ['casual'], temperatureF: 95 });
+    const promptWithWeather = promptFrom(mockFetch.mock.calls[3]);
+    expect(promptWithWeather).toContain('WEATHER');
+    expect(promptWithWeather).toContain('95°F (35°C)');
+  });
+
+  it('does not exclude items by weight tag even at an extreme temperature — advisory only, not a hard filter', async () => {
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['casual', 'heavyweight'] }),
+      makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
+    ];
+    mockFetch.mockResolvedValue(okResponseFor(['1', '2']));
+    const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'], temperatureF: 100 });
+    expect(result.items.map(i => i.id)).toEqual(['1', '2']);
   });
 
   it('only includes the CONSTRAINTS block when rejectedIdSets is non-empty', async () => {
@@ -135,7 +161,7 @@ describe('generateOutfit', () => {
     expect(promptFrom(mockFetch.mock.calls[0])).not.toContain('CONSTRAINTS');
 
     await generateOutfit({ wardrobe, stylePrefs: ['casual'], rejectedIdSets: [['1', '2']] });
-    const promptWithRejects = promptFrom(mockFetch.mock.calls[1]);
+    const promptWithRejects = promptFrom(mockFetch.mock.calls[3]);
     expect(promptWithRejects).toContain('CONSTRAINTS');
     expect(promptWithRejects).toContain('1, 2');
   });
@@ -227,7 +253,11 @@ describe('generateOutfit', () => {
 
     const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
 
-    expect(mockFetch).toHaveBeenCalledTimes(2);
+    // 2 calls for the winning candidate's own retry, plus 1 more for a second
+    // candidate attempt that fails once the mocked queue runs out — that
+    // failure is expected and non-fatal (see generateOutfit's per-candidate
+    // try/catch); only the first, successful candidate is scored and returned.
+    expect(mockFetch).toHaveBeenCalledTimes(3);
     const retryPrompt = promptFrom(mockFetch.mock.calls[1]);
     expect(retryPrompt).toContain('CORRECTION');
     expect(retryPrompt).toContain('bottom');
@@ -243,7 +273,7 @@ describe('generateOutfit', () => {
     mockFetch.mockResolvedValue(okResponseFor(['1', '2']));
 
     await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
-    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFetch).toHaveBeenCalledTimes(3); // 1 fetch per candidate (3 candidates), no retries needed
   });
 
   it('falls back to the full wardrobe for a required category the style filter excluded entirely', async () => {
@@ -262,7 +292,8 @@ describe('generateOutfit', () => {
     const result = await generateOutfit({ wardrobe, stylePrefs: ['sporty'] });
     // No retry attempted for 'top' — it was never visible in the filtered
     // inventory, so asking the AI again would have been pointless.
-    expect(mockFetch).toHaveBeenCalledTimes(1);
+    // 1 fetch per candidate (3 candidates), same guarantee-fill result each time.
+    expect(mockFetch).toHaveBeenCalledTimes(3);
     expect(result.items.map(i => i.id).sort()).toEqual(['1', '2']);
   });
 
@@ -276,7 +307,7 @@ describe('generateOutfit', () => {
     mockFetch.mockResolvedValue(okResponseFor(['1']));
 
     const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
-    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch).toHaveBeenCalledTimes(6); // 2 fetches (1 retry) per candidate, 3 candidates
     expect(result.items.map(i => i.id).sort()).toEqual(['1', '2']);
   });
 
@@ -291,7 +322,7 @@ describe('generateOutfit', () => {
     const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'], includeAccessories: true });
     const prompt = promptFrom(mockFetch.mock.calls[0]);
     expect(prompt).toContain('accessory');
-    expect(mockFetch).toHaveBeenCalledTimes(2); // retried since the accessory was available but unused
+    expect(mockFetch).toHaveBeenCalledTimes(6); // retried since the accessory was available but unused, x3 candidates
     expect(result.items.map(i => i.id).sort()).toEqual(['1', '2', '3']); // guaranteed in anyway
   });
 
@@ -303,7 +334,7 @@ describe('generateOutfit', () => {
     mockFetch.mockResolvedValue(okResponseFor(['1', '2']));
 
     await generateOutfit({ wardrobe, stylePrefs: ['casual'], includeAccessories: false });
-    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFetch).toHaveBeenCalledTimes(3); // 1 fetch per candidate, 3 candidates
   });
 
   it('instructs the AI to ground reasoning in exact item names and not suggest unselected garments', async () => {
@@ -404,5 +435,79 @@ describe('generateOutfit', () => {
 
     const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'], includeAccessories: true });
     expect(result.items.filter(i => i.category === 'accessory')).toHaveLength(2);
+  });
+
+  it('excludes items marked inLaundry from the candidate pool sent to the AI', async () => {
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '2', category: 'bottom', tags: ['casual'], inLaundry: true }),
+      makeItem({ id: '3', category: 'bottom', tags: ['casual'] }),
+    ];
+    mockFetch.mockResolvedValue(makeResponse(okOutfitResponse));
+    await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
+    const prompt = promptFrom(mockFetch.mock.calls[0]);
+    expect(prompt).not.toContain('[2]');
+    expect(prompt).toContain('[3]');
+  });
+
+  it('drops an AI-selected item that is actually in laundry, since it was never in the id map', async () => {
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '2', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '3', category: 'bottom', tags: ['casual'], inLaundry: true }),
+    ];
+    // The AI shouldn't be able to select '3' since it's excluded from the prompt,
+    // but this guards the defensive path too: even if it somehow did, the id map
+    // built from the laundry-excluded set won't resolve it to a WardrobeItem.
+    mockFetch.mockResolvedValue(okResponseFor(['1', '3']));
+    const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
+    expect(result.items.map(i => i.id)).toEqual(['1']);
+  });
+
+  it('does not fill a missing category from the guarantee-fill fallback with a laundry item', async () => {
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '2', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '3', category: 'bottom', tags: ['casual'], inLaundry: true }),
+    ];
+    mockFetch.mockResolvedValue(okResponseFor(['1']));
+    const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
+    expect(result.items.some(i => i.id === '3')).toBe(false);
+  });
+
+  describe('candidate generation and aesthetic ranking', () => {
+    it('generates multiple candidates and returns the one with the best color score, not just the first', async () => {
+      const wardrobe = [
+        makeItem({ id: '1', category: 'top', name: 'red top', tags: ['casual', 'red'] }),
+        makeItem({ id: '2', category: 'bottom', name: 'green bottom', tags: ['casual', 'green'] }),
+        makeItem({ id: '3', category: 'top', name: 'black top', tags: ['casual', 'black'] }),
+        makeItem({ id: '4', category: 'bottom', name: 'white bottom', tags: ['casual', 'white'] }),
+        makeItem({ id: '5', category: 'top', name: 'blue top', tags: ['casual', 'blue'] }),
+        makeItem({ id: '6', category: 'bottom', name: 'purple bottom', tags: ['casual', 'purple'] }),
+      ];
+      mockFetch
+        .mockResolvedValueOnce(okResponseFor(['1', '2'])) // red+green: a known clash — worst
+        .mockResolvedValueOnce(okResponseFor(['3', '4'])) // black+white: all-neutral — best (score 0)
+        .mockResolvedValueOnce(okResponseFor(['5', '6'])); // blue+purple: two accents, no listed clash — middling
+
+      const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
+
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+      expect(result.items.map(i => i.id).sort()).toEqual(['3', '4']);
+    });
+
+    it('still returns a result if a later candidate attempt fails, using only the ones that succeeded', async () => {
+      const wardrobe = [
+        makeItem({ id: '1', category: 'top', tags: ['casual'] }),
+        makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
+      ];
+      mockFetch
+        .mockResolvedValueOnce(okResponseFor(['1', '2']))
+        .mockResolvedValueOnce(makeResponse({}, false, 500))
+        .mockResolvedValueOnce(makeResponse({}, false, 500));
+
+      const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
+      expect(result.items.map(i => i.id)).toEqual(['1', '2']);
+    });
   });
 });

@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppText } from '../components/AppText';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { RootStackParamList } from '../navigation/types';
-import { getWardrobe, removeItem } from '../storage/wardrobeStorage';
+import { getWardrobe, removeItem, updateItem } from '../storage/wardrobeStorage';
 import { getUserProfile } from '../storage/profileStorage';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
@@ -50,6 +50,12 @@ export function WardrobeScreen() {
   async function handleDelete(id: string) {
     await removeItem(id);
     setItems(prev => prev.filter(i => i.id !== id));
+  }
+
+  async function handleToggleLaundry(item: WardrobeItem) {
+    const inLaundry = !item.inLaundry;
+    await updateItem(item.id, { inLaundry });
+    setItems(prev => prev.map(i => (i.id === item.id ? { ...i, inLaundry } : i)));
   }
 
   const canBuild = items.length >= 2;
@@ -133,13 +139,26 @@ export function WardrobeScreen() {
               onPress={() => navigation.navigate('EditItem', { item })}
               accessibilityLabel={`Edit ${item.name ?? item.category}`}
             >
-              <Image source={{ uri: item.photoUri }} style={styles.thumb} resizeMode="cover" />
+              <Image
+                source={{ uri: item.photoUri }}
+                style={[styles.thumb, item.inLaundry && styles.thumbDimmed]}
+                resizeMode="cover"
+              />
             </TouchableOpacity>
             <View style={styles.cardFooter}>
               <AppText style={styles.cardIcon}>{CATEGORY_ICON[item.category]}</AppText>
               <AppText style={styles.cardLabel} numberOfLines={1}>
                 {item.name ?? CATEGORY_LABEL[item.category]}
               </AppText>
+              <TouchableOpacity
+                onPress={() => handleToggleLaundry(item)}
+                accessibilityLabel={
+                  item.inLaundry ? `Mark ${item.name ?? item.category} as clean` : `Mark ${item.name ?? item.category} as in laundry`
+                }
+                style={styles.laundryBtn}
+              >
+                <AppText style={styles.laundryIcon}>{item.inLaundry ? '[W✓]' : '[W]'}</AppText>
+              </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => handleDelete(item.id)}
                 accessibilityLabel={`Remove ${item.name ?? item.category}`}
@@ -270,6 +289,9 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 1,
   },
+  thumbDimmed: {
+    opacity: 0.4,
+  },
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -283,6 +305,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     color: Colors.textSecondary,
+  },
+  laundryBtn: {
+    padding: 2,
+  },
+  laundryIcon: {
+    fontSize: 11,
+    color: Colors.textDisabled,
   },
   deleteBtn: {
     padding: 2,

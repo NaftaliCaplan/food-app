@@ -44,7 +44,7 @@ function formatStyleName(prefs: StylePreference[]): string {
 export function OutfitResultsScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Rt>();
-  const { stylePrefs, useProfile, includeAccessories } = route.params;
+  const { stylePrefs, useProfile, includeAccessories, temperatureF } = route.params;
 
   const [wardrobe, setWardrobe] = useState<WardrobeItem[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -75,6 +75,7 @@ export function OutfitResultsScreen() {
     stylePrefs as StylePreference[],
     profile,
     includeAccessories,
+    temperatureF,
   );
 
   // Fire the first generation once wardrobe/profile have loaded. Guarded by a

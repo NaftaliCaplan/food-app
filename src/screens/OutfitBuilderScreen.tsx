@@ -1,5 +1,6 @@
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Slider from '@react-native-community/slider';
 import { useCallback, useState } from 'react';
 import {
   ScrollView,
@@ -18,6 +19,12 @@ import { Spacing } from '../theme/spacing';
 import { StylePreference } from '../types/wardrobe';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'OutfitBuilder'>;
+
+function fahrenheitToCelsius(f: number): number {
+  return Math.round((f - 32) * (5 / 9));
+}
+
+const DEFAULT_TEMPERATURE_F = 70;
 
 const STYLE_OPTIONS: { key: StylePreference; label: string }[] = [
   { key: 'casual',       label: 'Casual' },
@@ -59,6 +66,7 @@ export function OutfitBuilderScreen() {
   const [includeAccessories, setIncludeAccessories] = useState(true);
   const [useProfile, setUseProfile] = useState(false);
   const [hasProfile, setHasProfile] = useState(false);
+  const [temperatureF, setTemperatureF] = useState(DEFAULT_TEMPERATURE_F);
 
   // Only offer the personalize toggle when a profile actually exists. We reset
   // useProfile to false each visit — personalization is opt-in per generation.
@@ -83,6 +91,7 @@ export function OutfitBuilderScreen() {
       stylePrefs: selected,
       useProfile,
       includeAccessories,
+      temperatureF,
     });
   }
 
@@ -118,6 +127,27 @@ export function OutfitBuilderScreen() {
               </TouchableOpacity>
             );
           })}
+        </View>
+
+        {/* Temperature — advisory context for the AI, not a hard filter */}
+        <View style={styles.temperatureBlock}>
+          <AppText style={styles.sectionLabel}>TEMPERATURE</AppText>
+          <AppText style={styles.temperatureValue}>
+            {temperatureF}°F ({fahrenheitToCelsius(temperatureF)}°C)
+          </AppText>
+          <Slider
+            style={styles.slider}
+            minimumValue={0}
+            maximumValue={100}
+            step={1}
+            value={temperatureF}
+            onValueChange={setTemperatureF}
+            minimumTrackTintColor={Colors.accent}
+            maximumTrackTintColor={Colors.border}
+            thumbTintColor={Colors.accent}
+            accessibilityLabel="Current temperature"
+            accessibilityValue={{ min: 0, max: 100, now: temperatureF, text: `${temperatureF} degrees Fahrenheit` }}
+          />
         </View>
 
         <ToggleRow
@@ -177,6 +207,18 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     letterSpacing: 1.5,
     marginTop: Spacing.sm,
+  },
+  temperatureBlock: {
+    gap: 2,
+  },
+  temperatureValue: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  slider: {
+    width: '100%',
+    height: 36,
   },
   chipGrid: {
     flexDirection: 'row',

@@ -13,11 +13,12 @@ jest.mock('@react-navigation/native', () => ({
 jest.mock('../../storage/wardrobeStorage', () => ({
   getWardrobe: jest.fn(),
   removeItem: jest.fn(),
+  updateItem: jest.fn(),
 }));
 jest.mock('../../storage/profileStorage', () => ({
   getUserProfile: jest.fn(),
 }));
-const { getWardrobe, removeItem } = require('../../storage/wardrobeStorage');
+const { getWardrobe, removeItem, updateItem } = require('../../storage/wardrobeStorage');
 const { getUserProfile } = require('../../storage/profileStorage');
 
 function makeItem(overrides: Partial<WardrobeItem> = {}): WardrobeItem {
@@ -37,6 +38,7 @@ describe('WardrobeScreen', () => {
     mockGoBack.mockClear();
     getWardrobe.mockReset();
     removeItem.mockReset().mockResolvedValue(undefined);
+    updateItem.mockReset().mockResolvedValue(undefined);
     getUserProfile.mockReset();
   });
 
@@ -106,6 +108,31 @@ describe('WardrobeScreen', () => {
 
     expect(removeItem).toHaveBeenCalledWith('1');
     expect(screen.queryByText('White tee')).toBeNull();
+  });
+
+  it('toggles laundry status and updates the icon/thumb', async () => {
+    getWardrobe.mockResolvedValue([
+      makeItem({ id: '1', category: 'top', name: 'White tee' }),
+      makeItem({ id: '2', category: 'bottom' }),
+    ]);
+    getUserProfile.mockResolvedValue(null);
+    render(<WardrobeScreen />);
+    await act(async () => {});
+
+    expect(screen.getByLabelText('Mark White tee as in laundry')).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Mark White tee as in laundry'));
+    });
+
+    expect(updateItem).toHaveBeenCalledWith('1', { inLaundry: true });
+    expect(screen.getByLabelText('Mark White tee as clean')).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Mark White tee as clean'));
+    });
+
+    expect(updateItem).toHaveBeenCalledWith('1', { inLaundry: false });
   });
 
   it('navigates to SavedOutfits when the Saved button is pressed', async () => {

@@ -1,4 +1,5 @@
 import { ItemCategory, OutfitSuggestion, StylePreference, UserProfile, WardrobeItem } from '../types/wardrobe';
+import { scoreOutfitAesthetics } from '../utils/outfitAesthetics';
 
 // top/bottom/shoes are always required-if-available. Accessory joins that
 // list only when the user has opted into accessories — when they have, "let
@@ -126,6 +127,10 @@ function filterByStyle(
   });
 }
 
+function fahrenheitToCelsius(f: number): number {
+  return Math.round((f - 32) * (5 / 9));
+}
+
 function buildOutfitPrompt(
   items: WardrobeItem[],
   stylePrefs: StylePreference[],
@@ -133,6 +138,7 @@ function buildOutfitPrompt(
   profile: UserProfile | null,
   requiredCategories: ItemCategory[],
   missingCategories: ItemCategory[] = [],
+  temperatureF?: number,
 ): string {
   const inventory = items.map(serializeItem).join('\n');
 
@@ -144,6 +150,15 @@ function buildOutfitPrompt(
 
 `
     : '';
+
+  // Advisory only, not a hard filter — tag data (lightweight/heavyweight)
+  // isn't reliable enough yet to safely exclude items on. See ADR 0014.
+  const weatherBlock =
+    temperatureF !== undefined
+      ? `WEATHER — It's currently ${temperatureF}°F (${fahrenheitToCelsius(temperatureF)}°C) where the wearer is. Factor this into fabric weight and coverage choices where the wardrobe allows, but still prioritize the style goal and item availability above.
+
+`
+      : '';
 
   const rejectedBlock =
     rejectedIdSets.length > 0
@@ -176,7 +191,7 @@ ${inventory}
 STYLE GOAL — The user wants an outfit that feels: ${stylePrefs.join(', ').replace(/_/g, ' ')}.
 Pick items that work well together for this style. ${requirementLine}
 
-${personBlock}${groundingBlock}${correctionBlock}${rejectedBlock}STEP 1 — Select the items for one coherent outfit: exactly one bottom and one pair of shoes when available and appropriate, one top (a second top ONLY if it's a genuine layering piece over the first, like a sweater or jacket over a t-shirt or button-up — never two of the same kind of top, and never two bottoms or two pairs of shoes), plus any accessories that genuinely complement it (a hat, bag, belt, watch, etc.). Include as many accessories as actually make sense together — do not force one in just to add it, but do not artificially cap the total item count either. A minimal outfit (e.g. a swimsuit plus sandals) can be as few as 2 items; a fully accessorized outfit can be 6 or more. Let the wardrobe and style goal decide, not a fixed number.
+${personBlock}${weatherBlock}${groundingBlock}${correctionBlock}${rejectedBlock}STEP 1 — Select the items for one coherent outfit: exactly one bottom and one pair of shoes when available and appropriate, one top (a second top ONLY if it's a genuine layering piece over the first, like a sweater or jacket over a t-shirt or button-up — never two of the same kind of top, and never two bottoms or two pairs of shoes), plus any accessories that genuinely complement it (a hat, bag, belt, watch, etc.). Include as many accessories as actually make sense together — do not force one in just to add it, but do not artificially cap the total item count either. A minimal outfit (e.g. a swimsuit plus sandals) can be as few as 2 items; a fully accessorized outfit can be 6 or more. Let the wardrobe and style goal decide, not a fixed number.
 
 STEP 2 — Write a single short, actionable tip (1 sentence) about how to WEAR the items you selected (tucking, rolling sleeves, layering, etc.) — not a suggestion to add a different garment. If you name a specific item, use its exact name from the inventory above in single quotes, e.g. 'navy polo' — never double quotes (this text goes inside a JSON string, and a double quote would break it), and never paraphrase it into a different garment or color.
 
@@ -269,13 +284,26 @@ export interface GenerateOutfitOptions {
   profile?: UserProfile | null;
   // When false, accessory-category items are excluded from the candidate pool.
   includeAccessories?: boolean;
+  // Current temperature in Fahrenheit, if the user set one. Passed to the AI
+  // as advisory context only — not a hard filter (see ADR 0014).
+  temperatureF?: number;
 }
 
-export async function generateOutfit(options: GenerateOutfitOptions): Promise<OutfitSuggestion> {
-  const { wardrobe, stylePrefs, rejectedIdSets = [], profile = null, includeAccessories = true } = options;
+// Generates a single candidate outfit end to end: prompt, one retry for a
+// missing-but-available category, and the structural guarantee-fill. This
+// used to be the entire public API; it's now an internal building block that
+// generateOutfit calls multiple times to produce candidates to rank (see
+// ADR 0015) — its own behavior and guarantees are unchanged.
+async function generateOneOutfit(options: GenerateOutfitOptions): Promise<OutfitSuggestion> {
+  const { wardrobe, stylePrefs, rejectedIdSets = [], profile = null, includeAccessories = true, temperatureF } = options;
+
+  // Items in the laundry are unavailable to wear, full stop — excluded here
+  // (not just left up to the style filter) so neither the AI's candidate pool
+  // nor the guarantee-fill fallback below can ever select one.
+  const available = wardrobe.filter(item => !item.inLaundry);
 
   // Filter wardrobe to style-relevant items before building prompt
-  const filtered = filterByStyle(wardrobe, stylePrefs, includeAccessories);
+  const filtered = filterByStyle(available, stylePrefs, includeAccessories);
 
   if (filtered.length < 2) {
     throw new Error(
@@ -283,7 +311,7 @@ export async function generateOutfit(options: GenerateOutfitOptions): Promise<Ou
     );
   }
 
-  const idMap = new Map(wardrobe.map(item => [item.id, item]));
+  const idMap = new Map(available.map(item => [item.id, item]));
   const requiredCategories = requiredCategoriesFor(includeAccessories);
 
   // Up to one retry: if the first attempt is missing a required category that
@@ -294,7 +322,7 @@ export async function generateOutfit(options: GenerateOutfitOptions): Promise<Ou
   let missingCategories: ItemCategory[] = [];
 
   for (let attempt = 0; attempt < 2; attempt++) {
-    const prompt = buildOutfitPrompt(filtered, stylePrefs, rejectedIdSets, profile, requiredCategories, missingCategories);
+    const prompt = buildOutfitPrompt(filtered, stylePrefs, rejectedIdSets, profile, requiredCategories, missingCategories, temperatureF);
     const raw = await callCloudflareText(prompt);
     const parsed = parseOutfitResponse(raw);
 
@@ -331,10 +359,11 @@ export async function generateOutfit(options: GenerateOutfitOptions): Promise<Ou
   // final selection (not the loop's filtered-only tracking above) and fill
   // every gap in code rather than trusting a third AI call. Try a style-
   // matching candidate from `filtered` first, but fall back to the full
-  // wardrobe if the style filter left zero candidates for that category —
-  // a small wardrobe can easily have no item of some category that also
-  // matches the requested style, and a whole missing category is worse than
-  // one item that doesn't perfectly match the style goal.
+  // laundry-excluded `available` set if the style filter left zero
+  // candidates for that category — a small wardrobe can easily have no item
+  // of some category that also matches the requested style, and a whole
+  // missing category is worse than one item that doesn't perfectly match the
+  // style goal.
   if (best) {
     const selectedIds = new Set(best.items.map(i => i.id));
     const chosenCategories = new Set(best.items.map(i => i.category));
@@ -343,7 +372,7 @@ export async function generateOutfit(options: GenerateOutfitOptions): Promise<Ou
     for (const cat of stillMissing) {
       const fallbackItem =
         filtered.find(i => i.category === cat && !selectedIds.has(i.id)) ??
-        wardrobe.find(i => i.category === cat && !selectedIds.has(i.id));
+        available.find(i => i.category === cat && !selectedIds.has(i.id));
       if (fallbackItem) {
         best.items.push(fallbackItem);
         selectedIds.add(fallbackItem.id);
@@ -352,4 +381,42 @@ export async function generateOutfit(options: GenerateOutfitOptions): Promise<Ou
   }
 
   return best!;
+}
+
+// How many independent candidate outfits to generate and rank before
+// returning the best one. Each candidate costs one extra text-only
+// Cloudflare call (plus its own possible category-retry) — 3 was chosen as a
+// floor worth the added latency without ballooning cost; see ADR 0015.
+const CANDIDATE_COUNT = 3;
+
+export async function generateOutfit(options: GenerateOutfitOptions): Promise<OutfitSuggestion> {
+  const candidates: OutfitSuggestion[] = [];
+  // Each successive candidate is asked to avoid every combination generated
+  // so far, reusing the exact same CONSTRAINTS mechanism the user-facing
+  // "Try Again" flow uses for real rejections — without this, the model
+  // tends to return the same handful of items across separate calls (a
+  // repetition issue already observed with actual Try-Again presses).
+  let rejections = [...(options.rejectedIdSets ?? [])];
+  let lastError: unknown;
+
+  for (let i = 0; i < CANDIDATE_COUNT; i++) {
+    try {
+      const candidate = await generateOneOutfit({ ...options, rejectedIdSets: rejections });
+      candidates.push(candidate);
+      rejections = [...rejections, candidate.items.map(item => item.id)];
+    } catch (e) {
+      // A later candidate failing (e.g. the wardrobe/style combo is too
+      // small to produce another distinct option) isn't fatal as long as at
+      // least one candidate succeeded — stop trying for more and rank what
+      // we have.
+      lastError = e;
+      break;
+    }
+  }
+
+  if (candidates.length === 0) throw lastError;
+
+  return candidates.reduce((best, candidate) =>
+    scoreOutfitAesthetics(candidate.items) < scoreOutfitAesthetics(best.items) ? candidate : best,
+  );
 }

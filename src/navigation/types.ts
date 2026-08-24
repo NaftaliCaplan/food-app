@@ -23,5 +23,6 @@ export type RootStackParamList = {
     stylePrefs: string[];
     useProfile: boolean;
     includeAccessories: boolean;
+    temperatureF: number;
   };
 };

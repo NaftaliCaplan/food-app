@@ -69,6 +69,19 @@ describe('useOutfitGenerator', () => {
     );
   });
 
+  it('passes temperatureF through to generateOutfit when provided', async () => {
+    generateOutfit.mockResolvedValue(mockSuggestion);
+    const { result } = renderHook(() => useOutfitGenerator(wardrobe, ['casual'], null, true, 85));
+
+    await act(async () => {
+      result.current.generate();
+    });
+
+    expect(generateOutfit).toHaveBeenCalledWith(
+      expect.objectContaining({ temperatureF: 85 }),
+    );
+  });
+
   it('reject() records the current suggestion as rejected and regenerates', async () => {
     generateOutfit.mockResolvedValue(mockSuggestion);
     const { result } = renderHook(() => useOutfitGenerator(wardrobe, ['casual'], null));

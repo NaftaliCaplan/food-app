@@ -74,6 +74,7 @@ describe('OutfitBuilderScreen', () => {
       stylePrefs: [],
       useProfile: false,
       includeAccessories: true,
+      temperatureF: 70,
     });
   });
 
@@ -92,6 +93,24 @@ describe('OutfitBuilderScreen', () => {
       stylePrefs: ['casual', 'sporty'],
       useProfile: true,
       includeAccessories: false,
+      temperatureF: 70,
     });
+  });
+
+  it('shows the default temperature and passes an adjusted value through on generate', async () => {
+    getUserProfile.mockResolvedValue(null);
+    render(<OutfitBuilderScreen />);
+    await act(async () => {});
+
+    expect(screen.getByText('70°F (21°C)')).toBeTruthy();
+
+    fireEvent(screen.getByLabelText('Current temperature'), 'valueChange', 90);
+    expect(screen.getByText('90°F (32°C)')).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText('Generate outfit'));
+    expect(mockNavigate).toHaveBeenCalledWith(
+      'OutfitResults',
+      expect.objectContaining({ temperatureF: 90 }),
+    );
   });
 });
