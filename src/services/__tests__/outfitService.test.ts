@@ -209,6 +209,16 @@ describe('generateOutfit', () => {
     expect(result.items.map(i => i.id)).toEqual(['1']);
   });
 
+  it('dedupes a repeated item id so the same item never appears twice in the output', async () => {
+    const wardrobe = [
+      makeItem({ id: '1', category: 'top', tags: ['casual'] }),
+      makeItem({ id: '2', category: 'bottom', tags: ['casual'] }),
+    ];
+    mockFetch.mockResolvedValue(okResponseFor(['1', '1', '2']));
+    const result = await generateOutfit({ wardrobe, stylePrefs: ['casual'] });
+    expect(result.items.map(i => i.id)).toEqual(['1', '2']);
+  });
+
   it('throws when none of the returned item ids match the wardrobe', async () => {
     const wardrobe = [
       makeItem({ id: '1', category: 'top', tags: ['casual'] }),

@@ -135,30 +135,34 @@ export function WardrobeScreen() {
         columnWrapperStyle={styles.row}
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('EditItem', { item })}
-              accessibilityLabel={`Edit ${item.name ?? item.category}`}
-            >
-              <Image
-                source={{ uri: item.photoUri }}
-                style={[styles.thumb, item.inLaundry && styles.thumbDimmed]}
-                resizeMode="cover"
-              />
-            </TouchableOpacity>
-            <View style={styles.cardFooter}>
-              <AppText style={styles.cardIcon}>{CATEGORY_ICON[item.category]}</AppText>
-              <AppText style={styles.cardLabel} numberOfLines={1}>
-                {item.name ?? CATEGORY_LABEL[item.category]}
-              </AppText>
+            <View style={styles.thumbWrap}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('EditItem', { item })}
+                accessibilityLabel={`Edit ${item.name ?? item.category}`}
+              >
+                <Image
+                  source={{ uri: item.photoUri }}
+                  style={[styles.thumb, item.inLaundry && styles.thumbDimmed]}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => handleToggleLaundry(item)}
                 accessibilityLabel={
                   item.inLaundry ? `Mark ${item.name ?? item.category} as clean` : `Mark ${item.name ?? item.category} as in laundry`
                 }
-                style={styles.laundryBtn}
+                style={[styles.laundryBadge, item.inLaundry && styles.laundryBadgeActive]}
               >
-                <AppText style={styles.laundryIcon}>{item.inLaundry ? '[W✓]' : '[W]'}</AppText>
+                <AppText style={[styles.laundryBadgeText, item.inLaundry && styles.laundryBadgeTextActive]}>
+                  [L]
+                </AppText>
               </TouchableOpacity>
+            </View>
+            <View style={styles.cardFooter}>
+              <AppText style={styles.cardIcon}>{CATEGORY_ICON[item.category]}</AppText>
+              <AppText style={styles.cardLabel} numberOfLines={1}>
+                {item.name ?? CATEGORY_LABEL[item.category]}
+              </AppText>
               <TouchableOpacity
                 onPress={() => handleDelete(item.id)}
                 accessibilityLabel={`Remove ${item.name ?? item.category}`}
@@ -285,12 +289,38 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     overflow: 'hidden',
   },
+  thumbWrap: {
+    position: 'relative',
+  },
   thumb: {
     width: '100%',
     aspectRatio: 1,
   },
   thumbDimmed: {
     opacity: 0.4,
+  },
+  laundryBadge: {
+    position: 'absolute',
+    top: Spacing.xs,
+    left: Spacing.xs,
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: 3,
+    borderRadius: 0,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
+  },
+  laundryBadgeActive: {
+    borderColor: Colors.stateWarning,
+    backgroundColor: Colors.stateWarning,
+  },
+  laundryBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.textSecondary,
+  },
+  laundryBadgeTextActive: {
+    color: '#000',
   },
   cardFooter: {
     flexDirection: 'row',
@@ -305,13 +335,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     color: Colors.textSecondary,
-  },
-  laundryBtn: {
-    padding: 2,
-  },
-  laundryIcon: {
-    fontSize: 11,
-    color: Colors.textDisabled,
   },
   deleteBtn: {
     padding: 2,

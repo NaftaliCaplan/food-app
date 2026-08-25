@@ -334,8 +334,13 @@ async function generateOneOutfit(options: GenerateOutfitOptions): Promise<Outfit
     // Map the IDs the AI returned back to full WardrobeItem objects.
     // We look up from the full wardrobe (not just filtered) in case the AI picked
     // an item the filter didn't include — it shouldn't, but defensive lookup is free.
+    // Deduped first: the AI can echo the same id twice in itemIds, which would
+    // otherwise put the same WardrobeItem in the output array twice — capDuplicateCategories
+    // only caps by category *count*, not by identity, so it wouldn't catch this
+    // on its own (this was a real reported bug: React "duplicate key" warning
+    // from the exact same item rendering twice in the results grid).
     const selectedItems = capDuplicateCategories(
-      parsed.itemIds
+      Array.from(new Set(parsed.itemIds))
         .map(id => idMap.get(id))
         .filter((item): item is WardrobeItem => item !== undefined),
       parsed.recommendation,
