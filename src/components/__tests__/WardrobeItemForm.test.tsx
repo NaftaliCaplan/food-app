@@ -50,6 +50,21 @@ describe('WardrobeItemForm', () => {
     expect(screen.getByLabelText('fitted')).toBeTruthy();
   });
 
+  it('shows an outerwear tag option for tops but not bottoms', () => {
+    renderForm({ category: 'top' });
+    expect(screen.getByLabelText('outerwear')).toBeTruthy();
+
+    renderForm({ category: 'bottom' });
+    expect(screen.queryByLabelText('outerwear')).toBeNull();
+  });
+
+  it('allows outerwear and a fit/weight tag to both be selected at once', () => {
+    const props = renderForm({ category: 'top', tags: ['lightweight'] });
+    expect(screen.getByLabelText('lightweight').props.accessibilityState?.checked).toBe(true);
+    fireEvent.press(screen.getByLabelText('outerwear'));
+    expect(props.onToggleTag).toHaveBeenCalledWith('outerwear');
+  });
+
   it('shows material/type secondary attributes for shoes instead of fit', () => {
     renderForm({ category: 'shoes' });
     expect(screen.getByText('MATERIAL/TYPE')).toBeTruthy();

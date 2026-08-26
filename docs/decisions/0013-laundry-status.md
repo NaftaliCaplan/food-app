@@ -49,3 +49,13 @@ Queued for a while behind tagging/outfit-generation accuracy work: users need a 
 ### Confirmation
 
 Added tests: `WardrobeScreen.test.tsx` (toggle flips `updateItem` calls and the button label), `outfitService.test.ts` (laundry item excluded from the prompt sent to the AI, a hallucinated/leaked laundry id doesn't resolve through the id map, and the guarantee-fill fallback specifically does not reach for a laundry item), `SavedOutfitsScreen.test.tsx` (`[LAUNDRY]` tag distinct from `[MISSING]`, shown in both the collapsed thumbnail and the expanded detail line). Full suite: 27/27 suites, 203/203 tests, `tsc --noEmit` clean (0 errors).
+
+## Follow-up: toggle redesigned — clearer label, moved off the delete row (2026-08-23)
+
+Live testing found the `[W]`/`[W✓]` toggle (buried in the card footer, directly adjacent to the delete `✕`) hard to understand at a glance and risky to tap by accident next to delete. User feedback: unclear why "W" stood for laundry, and the size/position needed to change.
+
+Moved to a badge overlaid on the top-left corner of the item's photo, using `[L]`/`[L✓]` instead (mirrors the existing `[P]`/`[P✓]` profile-icon convention) — larger, visually separated from the delete action entirely, and dims the item's thumbnail the same way as before when active.
+
+Caught one accessibility regression while implementing this: the first pass only changed the badge's background/border color between states, with the same `[L]` text either way — a color-only signal, which directly conflicts with this app's own established rule that verdict/state colors are always paired with an icon or text change, never used alone (colorblind users can't rely on color alone). Fixed by making the bracket text itself change (`[L]` → `[L✓]`), matching the `[P]`/`[P✓]` pattern exactly, so the distinction never depends on color perception.
+
+Verified via updated `WardrobeScreen.test.tsx` assertions (both the accessibility label and the visible bracket text change between states). Full suite green.

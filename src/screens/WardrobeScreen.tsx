@@ -154,7 +154,7 @@ export function WardrobeScreen() {
                 style={[styles.laundryBadge, item.inLaundry && styles.laundryBadgeActive]}
               >
                 <AppText style={[styles.laundryBadgeText, item.inLaundry && styles.laundryBadgeTextActive]}>
-                  [L]
+                  {item.inLaundry ? '[L✓]' : '[L]'}
                 </AppText>
               </TouchableOpacity>
             </View>

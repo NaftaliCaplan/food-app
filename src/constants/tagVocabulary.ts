@@ -15,8 +15,20 @@ export const BRIGHTNESS_TAGS = ['light', 'dark', 'vivid', 'muted'];
 // Secondary attribute group depends on category, same split as the AI prompt:
 // fit/weight only makes sense for top/bottom, shoes/accessories get
 // material-type words instead.
+//
+// 'outerwear' is a deliberate exception to the "mirrors the AI prompt"
+// comment above — it's manually-set only, never AI-suggested. It exists
+// solely to gate the layering bonus in scoreOutfitAesthetics (a genuinely
+// clash-free 2-top pairing only counts as "layering" if one of the tops can
+// actually function as an outer layer — a cardigan over a tee, not two flat
+// tees). Not adding it to the AI prompt is intentional: unlike color/pattern,
+// this is exactly the kind of judgment the user explicitly didn't want left
+// to AI guessing (see ADR 0016).
 export function secondaryTagGroup(category: ItemCategory): { label: string; tags: string[] } {
-  if (category === 'top' || category === 'bottom') {
+  if (category === 'top') {
+    return { label: 'FIT', tags: ['fitted', 'loose', 'lightweight', 'heavyweight', 'outerwear'] };
+  }
+  if (category === 'bottom') {
     return { label: 'FIT', tags: ['fitted', 'loose', 'lightweight', 'heavyweight'] };
   }
   if (category === 'shoes') {

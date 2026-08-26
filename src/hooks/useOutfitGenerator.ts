@@ -43,6 +43,16 @@ export function useOutfitGenerator(
   //    A ref is always current.
   const rejectedIdSetsRef = useRef<string[][]>([]);
 
+  // Only the most recent MAX_REMEMBERED_REJECTIONS combinations stay
+  // excluded — a rolling window, not a permanent blacklist. With outfit
+  // selection now fully enumerating every valid combination (see ADR 0016),
+  // a small wardrobe can have very few genuinely good options; a
+  // never-forgetting rejection list would let a few Try-Agains permanently
+  // exhaust them, leaving nothing but worse options for the rest of the
+  // session. A combo that was "solid but not the vibe right then" becomes
+  // eligible again once it's aged out of the window.
+  const MAX_REMEMBERED_REJECTIONS = 3;
+
   const run = useCallback(async () => {
     setStatus('loading');
     setError(null);
@@ -72,13 +82,14 @@ export function useOutfitGenerator(
   const reject = useCallback(
     (_feedback?: string) => {
       // Record the current suggestion's item IDs as a rejected combination.
-      // On the next call, generateOutfit passes all rejectedIdSets to the AI
-      // so it avoids reproducing the same combination.
+      // generateOutfit excludes any exact match to these when picking the
+      // next-best candidate (falling back to ignoring them if that would
+      // leave nothing at all — see selectBestOutfit).
       if (suggestion) {
         rejectedIdSetsRef.current = [
           ...rejectedIdSetsRef.current,
           suggestion.items.map(i => i.id),
-        ];
+        ].slice(-MAX_REMEMBERED_REJECTIONS);
       }
       run();
     },

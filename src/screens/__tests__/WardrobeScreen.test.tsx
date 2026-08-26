@@ -120,6 +120,7 @@ describe('WardrobeScreen', () => {
     await act(async () => {});
 
     expect(screen.getByLabelText('Mark White tee as in laundry')).toBeTruthy();
+    expect(screen.getAllByText('[L]')).toHaveLength(2); // both items start clean
 
     await act(async () => {
       fireEvent.press(screen.getByLabelText('Mark White tee as in laundry'));
@@ -127,6 +128,8 @@ describe('WardrobeScreen', () => {
 
     expect(updateItem).toHaveBeenCalledWith('1', { inLaundry: true });
     expect(screen.getByLabelText('Mark White tee as clean')).toBeTruthy();
+    expect(screen.getByText('[L✓]')).toBeTruthy();
+    expect(screen.getAllByText('[L]')).toHaveLength(1); // the other item is still clean
 
     await act(async () => {
       fireEvent.press(screen.getByLabelText('Mark White tee as clean'));

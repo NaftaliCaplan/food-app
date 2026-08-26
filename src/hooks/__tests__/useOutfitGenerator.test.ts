@@ -135,4 +135,38 @@ describe('useOutfitGenerator', () => {
       expect.objectContaining({ rejectedIdSets: [['1', '2'], ['1']] }),
     );
   });
+
+  it('only remembers the last 3 rejections — the oldest ages out once a 4th is rejected', async () => {
+    const suggestionWith = (id: string) => ({ ...mockSuggestion, items: [{ ...wardrobe[0], id }] });
+
+    generateOutfit.mockResolvedValue(mockSuggestion); // A: ['1', '2']
+    const { result } = renderHook(() => useOutfitGenerator(wardrobe, ['casual'], null));
+    await act(async () => {
+      result.current.generate();
+    });
+
+    generateOutfit.mockResolvedValue(suggestionWith('10')); // B
+    await act(async () => {
+      result.current.reject(); // rejects A
+    });
+
+    generateOutfit.mockResolvedValue(suggestionWith('11')); // C
+    await act(async () => {
+      result.current.reject(); // rejects B
+    });
+
+    generateOutfit.mockResolvedValue(suggestionWith('12')); // D
+    await act(async () => {
+      result.current.reject(); // rejects C — window now full: [A, B, C]
+    });
+
+    generateOutfit.mockResolvedValue(suggestionWith('13')); // E
+    await act(async () => {
+      result.current.reject(); // rejects D — A should age out
+    });
+
+    expect(generateOutfit).toHaveBeenLastCalledWith(
+      expect.objectContaining({ rejectedIdSets: [['10'], ['11'], ['12']] }),
+    );
+  });
 });
