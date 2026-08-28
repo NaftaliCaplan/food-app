@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
-import { BRIGHTNESS_TAGS, COLOR_TAGS, PATTERN_TAGS, secondaryTagGroup } from '../constants/tagVocabulary';
+import { ACCESSORY_TYPE_TAGS, BRIGHTNESS_TAGS, COLOR_TAGS, PATTERN_TAGS, secondaryTagGroup } from '../constants/tagVocabulary';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
 import { ItemCategory, StylePreference } from '../types/wardrobe';
@@ -124,6 +124,9 @@ export function WardrobeItemForm({
       <CuratedTagSection label="PATTERN" tags={PATTERN_TAGS} activeTags={tags} onToggleTag={onToggleTag} />
       <CuratedTagSection label="BRIGHTNESS" tags={BRIGHTNESS_TAGS} activeTags={tags} onToggleTag={onToggleTag} />
       <CuratedTagSection label={secondary.label} tags={secondary.tags} activeTags={tags} onToggleTag={onToggleTag} />
+      {category === 'accessory' && (
+        <CuratedTagSection label="TYPE" tags={ACCESSORY_TYPE_TAGS} activeTags={tags} onToggleTag={onToggleTag} />
+      )}
 
       <View style={styles.tagInputRow}>
         <TextInput

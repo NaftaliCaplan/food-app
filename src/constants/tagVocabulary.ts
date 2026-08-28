@@ -12,6 +12,13 @@ export const PATTERN_TAGS = ['solid', 'striped', 'plaid', 'checked', 'floral', '
 
 export const BRIGHTNESS_TAGS = ['light', 'dark', 'vivid', 'muted'];
 
+// Manual-only, never AI-suggested (same reasoning as 'outerwear' below) —
+// identifies which "slot" an accessory occupies, so the outfit generator can
+// enforce at most one per slot (you can wear one hat, not two). Accessories
+// without any of these tags are treated as slot-less and stay uncapped
+// relative to each other, same as before this existed.
+export const ACCESSORY_TYPE_TAGS = ['hat', 'belt', 'bag', 'watch', 'scarf', 'jewelry'];
+
 // Secondary attribute group depends on category, same split as the AI prompt:
 // fit/weight only makes sense for top/bottom, shoes/accessories get
 // material-type words instead.

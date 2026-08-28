@@ -10,11 +10,14 @@ function normalizeStyle(s: string): string {
 }
 
 // Pre-filter: only consider items whose tags overlap with the requested
-// style prefs. Casual-tagged items always pass through as a universal base
-// regardless of the requested style — a deliberate design choice (ADR 0009)
-// that's also the actual explanation for the "crocs showing up in a
-// smart-casual outfit" complaint (crocs tagged 'casual' pass through
-// unconditionally). Flagged as a candidate to revisit, not changed here.
+// style prefs. Casual-tagged items always pass through as a universal
+// fallback base regardless of the requested style — a deliberate design
+// choice (ADR 0009), and the actual explanation for the "crocs showing up in
+// a smart-casual outfit" complaint (crocs tagged 'casual' pass through
+// unconditionally). Eligibility is intentionally unchanged here — casual
+// still needs to be a real fallback for a small wardrobe — but
+// scoreOutfitAesthetics now penalizes a style mismatch (see ADR 0017), so a
+// casual item only wins when nothing genuinely matching is available.
 //
 // Accessories normally complement any style and pass through unconditionally.
 // When includeAccessories is false, the user has asked for an outfit without
@@ -76,6 +79,7 @@ export function generateOutfit(options: GenerateOutfitOptions): OutfitSuggestion
     pool: filtered,
     includeAccessories,
     temperatureF,
+    stylePrefs,
     rejectedIdSets,
   });
 

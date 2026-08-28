@@ -1,5 +1,6 @@
 import { COLOR_TAGS } from '../constants/tagVocabulary';
-import { WardrobeItem } from '../types/wardrobe';
+import { StylePreference, WardrobeItem } from '../types/wardrobe';
+import { extractStyle } from './styleTags';
 
 // Colors that read as neutral in outfit pairing — they pair safely with
 // anything, including each other, so they never count toward the
@@ -47,14 +48,29 @@ const COLD_THRESHOLD_F = 45;
 // outfit still outweighs it.
 const LAYERING_BONUS = 0.5;
 
+// Same weight as a color clash — `filterByStyle` still lets a 'casual'-tagged
+// item through as a fallback base regardless of requested style (so a small
+// wardrobe never comes up empty), but nothing used to prefer an item that
+// genuinely matches the requested style over one that only qualified via
+// that fallback. Without this, a neutral-colored casual item could
+// out-score (or tie, and then win on stable sort order) a real smart-casual
+// match on color grounds alone — this makes casual a true fallback, not a
+// default, while still letting it win when nothing else is eligible at all.
+const STYLE_MISMATCH_PENALTY = 2;
+
 // Lower is better; 0 means no detected issues. This ranks already-valid
 // candidate outfits against each other (see ADR 0016) — it never excludes an
 // item, only helps choose between finished options. Deliberately limited to
-// color, pattern, and (optionally) temperature-vs-weight-tag, which have
-// well-established or directly-measurable bases; fit/silhouette balance was
-// considered and dropped — "loose top with fitted bottom is always good" and
-// "two loose pieces is sloppy" aren't reliable enough rules to encode.
-export function scoreOutfitAesthetics(items: WardrobeItem[], temperatureF?: number): number {
+// color, pattern, style match, and (optionally) temperature-vs-weight-tag,
+// which have well-established or directly-measurable bases; fit/silhouette
+// balance was considered and dropped — "loose top with fitted bottom is
+// always good" and "two loose pieces is sloppy" aren't reliable enough rules
+// to encode.
+export function scoreOutfitAesthetics(
+  items: WardrobeItem[],
+  temperatureF?: number,
+  stylePrefs?: StylePreference[],
+): number {
   const colors = new Set<string>();
   let busyPatternCount = 0;
   let weightMismatchCount = 0;
@@ -85,6 +101,20 @@ export function scoreOutfitAesthetics(items: WardrobeItem[], temperatureF?: numb
 
   // A heavyweight piece in the heat, or a lightweight piece in the cold.
   penalty += weightMismatchCount;
+
+  // Every item whose own style doesn't match any requested style — including
+  // 'casual' ones, which are only an *eligible fallback*, not automatically
+  // preferred. No penalty at all if no style was requested (in which case
+  // filterByStyle only lets casual items through anyway, so penalizing them
+  // would be counterproductive — they'd be the only options).
+  if (stylePrefs && stylePrefs.length > 0) {
+    for (const item of items) {
+      const itemStyle = extractStyle(item.tags);
+      if (itemStyle && !stylePrefs.includes(itemStyle)) {
+        penalty += STYLE_MISMATCH_PENALTY;
+      }
+    }
+  }
 
   // Reward layering only when it's otherwise clean AND at least one of the
   // two tops is manually tagged 'outerwear' — two flat base-layer tees with
