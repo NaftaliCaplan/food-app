@@ -38,6 +38,39 @@ describe('scoreOutfitAesthetics', () => {
     expect(clashing).toBeGreaterThan(arbitrary);
   });
 
+  it('flags pink+green as a clash (a confirmed live-testing gap in the original list)', () => {
+    const clashing = scoreOutfitAesthetics([makeItem(['pink', 'solid']), makeItem(['green', 'solid'])]);
+    const arbitrary = scoreOutfitAesthetics([makeItem(['blue', 'solid']), makeItem(['purple', 'solid'])]);
+    expect(clashing).toBeGreaterThan(arbitrary);
+  });
+
+  it.each([
+    ['red', 'purple'],
+    ['red', 'yellow'],
+    ['orange', 'yellow'],
+    ['orange', 'green'],
+    ['yellow', 'pink'],
+    ['purple', 'green'],
+  ])('flags %s+%s as a clash', (colorA, colorB) => {
+    const clashing = scoreOutfitAesthetics([makeItem([colorA, 'solid']), makeItem([colorB, 'solid'])]);
+    const arbitrary = scoreOutfitAesthetics([makeItem(['blue', 'solid']), makeItem(['purple', 'solid'])]);
+    expect(clashing).toBeGreaterThan(arbitrary);
+  });
+
+  it.each([
+    ['red', 'blue'],
+    ['orange', 'blue'],
+    ['pink', 'blue'],
+    ['pink', 'purple'],
+    ['yellow', 'blue'],
+    ['blue', 'green'],
+  ])('does not flag the classic combo %s+%s as a clash', (colorA, colorB) => {
+    const result = scoreOutfitAesthetics([makeItem([colorA, 'solid']), makeItem([colorB, 'solid'])]);
+    // Just the baseline "2 distinct accent colors" penalty (+1), no extra
+    // known-clash penalty (which would push it to 3: +1 for the count, +2 for the clash).
+    expect(result).toBe(1);
+  });
+
   it('penalizes mixing two busy patterns', () => {
     const items = [makeItem(['black', 'plaid']), makeItem(['white', 'floral'])];
     expect(scoreOutfitAesthetics(items)).toBeGreaterThan(0);
@@ -112,5 +145,48 @@ describe('scoreOutfitAesthetics', () => {
   it('does not apply the layering bonus to a solo outerwear-tagged top', () => {
     const items = [makeItem(['navy', 'solid', 'outerwear'])];
     expect(scoreOutfitAesthetics(items)).toBe(0);
+  });
+
+  it('penalizes an item whose style does not match any requested style', () => {
+    const items = [makeItem(['black', 'solid', 'casual'])];
+    expect(scoreOutfitAesthetics(items, undefined, ['smart_casual'])).toBeGreaterThan(0);
+  });
+
+  it('does not penalize an item whose style matches the requested style', () => {
+    const items = [makeItem(['black', 'solid', 'smart_casual'])];
+    expect(scoreOutfitAesthetics(items, undefined, ['smart_casual'])).toBe(0);
+  });
+
+  it('does not penalize style at all when no style was requested', () => {
+    const items = [makeItem(['black', 'solid', 'casual'])];
+    expect(scoreOutfitAesthetics(items, undefined, [])).toBe(0);
+  });
+
+  it('does not penalize a casual item when casual is itself the requested style', () => {
+    const items = [makeItem(['black', 'solid', 'casual'])];
+    expect(scoreOutfitAesthetics(items, undefined, ['casual'])).toBe(0);
+  });
+
+  it('weighs a style mismatch at the same +2 tier as the known-clashing-pair penalty', () => {
+    const styleMismatch = scoreOutfitAesthetics(
+      [makeItem(['black', 'solid', 'casual'])],
+      undefined,
+      ['smart_casual'],
+    );
+    expect(styleMismatch).toBe(2);
+  });
+
+  it('penalizes a casual fallback item enough that a genuine style match wins between them', () => {
+    const casualFallback = scoreOutfitAesthetics(
+      [makeItem(['black', 'solid', 'casual'])],
+      undefined,
+      ['smart_casual'],
+    );
+    const genuineMatch = scoreOutfitAesthetics(
+      [makeItem(['black', 'solid', 'smart_casual'])],
+      undefined,
+      ['smart_casual'],
+    );
+    expect(genuineMatch).toBeLessThan(casualFallback);
   });
 });

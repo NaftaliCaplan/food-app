@@ -84,6 +84,18 @@ describe('generateOutfit', () => {
     );
   });
 
+  it('prefers a genuinely style-matching item over a casual fallback with the same colors', () => {
+    const wardrobe = [
+      makeItem({ category: 'bottom', tags: ['black', 'solid', 'casual'] }),
+      makeItem({ category: 'shoes', tags: ['black', 'solid', 'casual'] }),
+      makeItem({ category: 'top', name: 'casual tee', tags: ['black', 'solid', 'casual'] }),
+      makeItem({ category: 'top', name: 'smart casual polo', tags: ['black', 'solid', 'smart_casual'] }),
+    ];
+    const result = generateOutfit({ wardrobe, stylePrefs: ['smart_casual'] });
+    expect(result.items.some(i => i.name === 'smart casual polo')).toBe(true);
+    expect(result.items.some(i => i.name === 'casual tee')).toBe(false);
+  });
+
   it('returns a recommendation built from the actual final items', () => {
     const wardrobe = [
       makeItem({ category: 'top', name: 'navy tee', tags: ['casual'] }),

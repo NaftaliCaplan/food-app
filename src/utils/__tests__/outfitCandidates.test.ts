@@ -1,5 +1,5 @@
 import { selectBestOutfit } from '../outfitCandidates';
-import { WardrobeItem } from '../../types/wardrobe';
+import { StylePreference, WardrobeItem } from '../../types/wardrobe';
 
 let nextId = 1;
 
@@ -190,5 +190,116 @@ describe('selectBestOutfit', () => {
 
     expect(result!.some(i => i.id === lightBottom.id)).toBe(true);
     expect(result!.some(i => i.id === heavyBottom.id)).toBe(false);
+  });
+
+  it('prefers an item matching the requested style over a casual fallback with otherwise-identical colors', () => {
+    const bottom = makeItem({ category: 'bottom', tags: ['black', 'solid'] });
+    const shoes = makeItem({ category: 'shoes', tags: ['black', 'solid'] });
+    const casualTop = makeItem({ category: 'top', tags: ['black', 'solid', 'casual'] });
+    const matchingTop = makeItem({ category: 'top', tags: ['black', 'solid', 'smart_casual'] });
+
+    const result = selectBestOutfit({
+      pool: [bottom, shoes, casualTop, matchingTop],
+      includeAccessories: true,
+      stylePrefs: ['smart_casual'] as StylePreference[],
+      rejectedIdSets: [],
+    });
+
+    expect(result!.some(i => i.id === matchingTop.id)).toBe(true);
+    expect(result!.some(i => i.id === casualTop.id)).toBe(false);
+  });
+
+  it('never selects two accessories of the same manually-tagged type (e.g. two hats)', () => {
+    const top = makeItem({ category: 'top', tags: ['black', 'solid'] });
+    const bottom = makeItem({ category: 'bottom', tags: ['black', 'solid'] });
+    const shoes = makeItem({ category: 'shoes', tags: ['black', 'solid'] });
+    const hatA = makeItem({ category: 'accessory', tags: ['black', 'hat'] });
+    const hatB = makeItem({ category: 'accessory', tags: ['gray', 'hat'] });
+
+    const result = selectBestOutfit({
+      pool: [top, bottom, shoes, hatA, hatB],
+      includeAccessories: true,
+      rejectedIdSets: [],
+    });
+
+    const hatCount = result!.filter(i => i.id === hatA.id || i.id === hatB.id).length;
+    expect(hatCount).toBe(1);
+  });
+
+  it('allows two different-typed accessories together (a hat and a belt)', () => {
+    const top = makeItem({ category: 'top', tags: ['black', 'solid'] });
+    const bottom = makeItem({ category: 'bottom', tags: ['black', 'solid'] });
+    const shoes = makeItem({ category: 'shoes', tags: ['black', 'solid'] });
+    const hat = makeItem({ category: 'accessory', tags: ['black', 'hat'] });
+    const belt = makeItem({ category: 'accessory', tags: ['black', 'belt'] });
+
+    const result = selectBestOutfit({
+      pool: [top, bottom, shoes, hat, belt],
+      includeAccessories: true,
+      rejectedIdSets: [],
+    });
+
+    expect(result!.some(i => i.id === hat.id)).toBe(true);
+    expect(result!.some(i => i.id === belt.id)).toBe(true);
+  });
+
+  it('still allows untyped accessories to stack freely (no regression from adding accessory types)', () => {
+    const top = makeItem({ category: 'top', tags: ['black', 'solid'] });
+    const bottom = makeItem({ category: 'bottom', tags: ['black', 'solid'] });
+    const shoes = makeItem({ category: 'shoes', tags: ['black', 'solid'] });
+    const accA = makeItem({ category: 'accessory', tags: ['black'] });
+    const accB = makeItem({ category: 'accessory', tags: ['gray'] });
+
+    const result = selectBestOutfit({
+      pool: [top, bottom, shoes, accA, accB],
+      includeAccessories: true,
+      rejectedIdSets: [],
+    });
+
+    expect(result!.some(i => i.id === accA.id)).toBe(true);
+    expect(result!.some(i => i.id === accB.id)).toBe(true);
+  });
+
+  it('breaks a genuine tie randomly rather than always favoring whichever item was in the pool first', () => {
+    const top = makeItem({ category: 'top', tags: ['black', 'solid'] });
+    const bottomA = makeItem({ category: 'bottom', tags: ['black', 'solid'] });
+    const bottomB = makeItem({ category: 'bottom', tags: ['black', 'solid'] });
+    const shoes = makeItem({ category: 'shoes', tags: ['black', 'solid'] });
+    const pool = [top, bottomA, bottomB, shoes];
+
+    const randomSpy = jest.spyOn(Math, 'random');
+    try {
+      randomSpy.mockReturnValue(0);
+      const first = selectBestOutfit({ pool, includeAccessories: true, rejectedIdSets: [] });
+      expect(first!.some(i => i.id === bottomA.id)).toBe(true);
+
+      randomSpy.mockReturnValue(0.99);
+      const second = selectBestOutfit({ pool, includeAccessories: true, rejectedIdSets: [] });
+      expect(second!.some(i => i.id === bottomB.id)).toBe(true);
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
+  it('prefers the simpler (single-top) outfit on a score tie, before falling back to random', () => {
+    // Same setup as the outerwear-gated layering test, but explicitly verifies
+    // the tie-break order itself: a 2-top pairing must never win a pure score
+    // tie against a single top, regardless of what Math.random returns.
+    const topA = makeItem({ category: 'top', tags: ['red', 'solid'] });
+    const topB = makeItem({ category: 'top', tags: ['red', 'solid'] }); // no outerwear tag — ties, doesn't beat
+    const bottom = makeItem({ category: 'bottom', tags: ['black', 'solid'] });
+    const shoes = makeItem({ category: 'shoes', tags: ['black', 'solid'] });
+
+    const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.99); // would pick a "later" finalist if it could
+    try {
+      const result = selectBestOutfit({
+        pool: [topA, topB, bottom, shoes],
+        includeAccessories: true,
+        rejectedIdSets: [],
+      });
+      expect(result!.filter(i => i.category === 'top')).toHaveLength(1);
+    } finally {
+      randomSpy.mockRestore();
+    }
   });
 });

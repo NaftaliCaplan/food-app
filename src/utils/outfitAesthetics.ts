@@ -11,14 +11,28 @@ const ACCENT_COLORS = new Set(COLOR_TAGS.filter(c => !NEUTRAL_COLORS.has(c)));
 
 // Specific accent-color pairs that clash by common styling convention — not
 // pure color-wheel complementary theory, which doesn't map cleanly to
-// clothing (red+green is complementary but reads as a clash, not a match).
+// clothing (red+green is complementary but reads as a clash, not a match;
+// theory would call that pairing maximally harmonious, which is backwards).
+// This list is deliberately hand-curated taste, not derived from a formula —
+// expanded on 2026-08-25 (ADR 0017 follow-up) after live testing showed the
+// original 6 pairs left real, confirmed gaps (pink+green specifically).
+// Popular/classic combos (red+blue, orange+blue, pink+blue, pink+purple,
+// yellow+blue, blue+green) are deliberately NOT included even though some are
+// bold — boldness isn't clashing.
 const CLASHING_COLOR_PAIRS: [string, string][] = [
   ['red', 'green'],
   ['red', 'orange'],
   ['red', 'pink'],
+  ['red', 'purple'],
+  ['red', 'yellow'],
   ['orange', 'purple'],
   ['orange', 'pink'],
+  ['orange', 'yellow'],
+  ['orange', 'green'],
   ['yellow', 'purple'],
+  ['yellow', 'pink'],
+  ['pink', 'green'],
+  ['purple', 'green'],
 ];
 
 function hasClashingPair(colors: Set<string>): boolean {

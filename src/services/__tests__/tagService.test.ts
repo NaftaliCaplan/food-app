@@ -200,7 +200,12 @@ describe('tagClothingItem', () => {
     expect(result.tags.filter(t => t === 'navy')).toHaveLength(1);
   });
 
-  it('normalizes multi-word colors to hyphenated form', async () => {
+  it('extracts every canonical color word from a compound color phrase instead of hyphenating it whole', async () => {
+    // The model is instructed to use a single canonical word, but doesn't
+    // always comply. Hyphenating "olive green" into "olive-green" would
+    // produce a tag that never matches anything in COLOR_TAGS, making the
+    // item invisible to outfit-generation's color-clash scoring entirely —
+    // a real bug found via live testing (see ADR 0017 follow-up).
     mockFetch.mockResolvedValue(makeResponse({
       result: {
         response: {
@@ -214,7 +219,26 @@ describe('tagClothingItem', () => {
       },
     }));
     const result = await tagClothingItem('file://test.jpg', 'top');
-    expect(result.tags).toContain('olive-green');
+    expect(result.tags).toContain('olive');
+    expect(result.tags).toContain('green');
+    expect(result.tags).not.toContain('olive-green');
+  });
+
+  it('falls back to a hyphenated phrase only when a color contains no recognizable canonical word', async () => {
+    mockFetch.mockResolvedValue(makeResponse({
+      result: {
+        response: {
+          isClothing: true,
+          colors: ['neon chartreuse'],
+          category: 'top',
+          name: 'bright jacket',
+          style: 'casual',
+          tags: [],
+        },
+      },
+    }));
+    const result = await tagClothingItem('file://test.jpg', 'top');
+    expect(result.tags).toContain('neon-chartreuse');
   });
 
   it('parses colors from the markdown-fence fallback path too', async () => {

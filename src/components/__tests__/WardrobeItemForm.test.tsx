@@ -65,6 +65,15 @@ describe('WardrobeItemForm', () => {
     expect(props.onToggleTag).toHaveBeenCalledWith('outerwear');
   });
 
+  it('shows an accessory TYPE section only for the accessory category', () => {
+    renderForm({ category: 'accessory' });
+    expect(screen.getByText('TYPE')).toBeTruthy();
+    expect(screen.getByLabelText('hat')).toBeTruthy();
+
+    renderForm({ category: 'top' });
+    expect(screen.queryByLabelText('hat')).toBeNull();
+  });
+
   it('shows material/type secondary attributes for shoes instead of fit', () => {
     renderForm({ category: 'shoes' });
     expect(screen.getByText('MATERIAL/TYPE')).toBeTruthy();
