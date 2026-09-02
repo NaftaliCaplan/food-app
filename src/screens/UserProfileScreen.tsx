@@ -47,6 +47,7 @@ export function UserProfileScreen() {
   // Profile fields
   const [photoUri, setPhotoUri] = useState<string | undefined>();
   const [skinToneDesc, setSkinToneDesc] = useState<string | undefined>();
+  const [undertone, setUndertone] = useState<UserProfile['undertone']>();
   const [heightRange, setHeightRange] = useState<UserProfile['heightRange']>('average');
   const [build, setBuild] = useState<UserProfile['build']>('average');
 
@@ -65,6 +66,7 @@ export function UserProfileScreen() {
       if (p) {
         setPhotoUri(p.photoUri);
         setSkinToneDesc(p.skinToneDesc);
+        setUndertone(p.undertone);
         setHeightRange(p.heightRange);
         setBuild(p.build);
       }
@@ -84,6 +86,7 @@ export function UserProfileScreen() {
       const result = await extractSkinTone(photo.uri);
       setPhotoUri(photo.uri);
       setSkinToneDesc(result.skinToneDesc);
+      setUndertone(result.undertone);
       setShowCamera(false);
       setCameraStep('preview');
     } catch (e) {
@@ -95,7 +98,7 @@ export function UserProfileScreen() {
   async function handleSave() {
     setSaving(true);
     try {
-      const profile: UserProfile = { photoUri, skinToneDesc, heightRange, build };
+      const profile: UserProfile = { photoUri, skinToneDesc, undertone, heightRange, build };
       await saveUserProfile(profile);
       navigation.goBack();
     } catch (e) {
@@ -108,6 +111,7 @@ export function UserProfileScreen() {
     await clearUserProfile();
     setPhotoUri(undefined);
     setSkinToneDesc(undefined);
+    setUndertone(undefined);
     setHeightRange('average');
     setBuild('average');
   }

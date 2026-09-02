@@ -97,6 +97,38 @@ describe('OutfitBuilderScreen', () => {
     });
   });
 
+  it('hides occasion chips until "+ More" is tapped, and hides them again on "− Fewer"', async () => {
+    getUserProfile.mockResolvedValue(null);
+    render(<OutfitBuilderScreen />);
+    await act(async () => {});
+
+    expect(screen.queryByLabelText('Beachwear')).toBeNull();
+
+    fireEvent.press(screen.getByLabelText('Show more occasion options'));
+    expect(screen.getByLabelText('Sleepwear')).toBeTruthy();
+    expect(screen.getByLabelText('Beachwear')).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText('Hide occasion options'));
+    expect(screen.queryByLabelText('Beachwear')).toBeNull();
+  });
+
+  it('selecting an occasion chip passes it through as a style pref on generate', async () => {
+    getUserProfile.mockResolvedValue(null);
+    render(<OutfitBuilderScreen />);
+    await act(async () => {});
+
+    fireEvent.press(screen.getByLabelText('Show more occasion options'));
+    fireEvent.press(screen.getByLabelText('Beachwear'));
+    fireEvent.press(screen.getByLabelText('Generate outfit'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('OutfitResults', {
+      stylePrefs: ['beachwear'],
+      useProfile: false,
+      includeAccessories: true,
+      temperatureF: 70,
+    });
+  });
+
   it('shows the default temperature and passes an adjusted value through on generate', async () => {
     getUserProfile.mockResolvedValue(null);
     render(<OutfitBuilderScreen />);

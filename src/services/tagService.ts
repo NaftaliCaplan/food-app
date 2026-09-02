@@ -1,17 +1,35 @@
 import { File } from 'expo-file-system/next';
 
-import { COLOR_TAGS } from '../constants/tagVocabulary';
-import { ItemCategory, StylePreference } from '../types/wardrobe';
-import { normalizeStyle, replaceStyle, STYLE_KEYS } from '../utils/styleTags';
+import { ACCESSORY_TYPE_TAGS, COLOR_TAGS } from '../constants/tagVocabulary';
+import { ItemCategory, StylePreference, UserProfile } from '../types/wardrobe';
+import { isStyleWord, normalizeStyle, STYLE_KEYS } from '../utils/styleTags';
 
 const CANONICAL_COLORS = new Set(COLOR_TAGS);
 
 const CATEGORY_KEYS: ItemCategory[] = ['top', 'bottom', 'shoes', 'accessory'];
 
-function parseStyle(value: unknown): StylePreference | undefined {
-  return typeof value === 'string' && STYLE_KEYS.some(k => normalizeStyle(k) === normalizeStyle(value))
-    ? (value.toLowerCase().replace(/[-\s]+/g, '_') as StylePreference)
+const UNDERTONE_VALUES = new Set(['warm', 'cool', 'neutral']);
+
+function parseUndertone(value: unknown): UserProfile['undertone'] {
+  return typeof value === 'string' && UNDERTONE_VALUES.has(value.toLowerCase())
+    ? (value.toLowerCase() as UserProfile['undertone'])
     : undefined;
+}
+
+// An item can carry 1-2 styles now (ADR 0018 — a plain t-shirt can be both
+// casual and beachwear), so this accepts either an array or a lone string
+// (the regex-fallback path only ever produces a single string) and resolves
+// each to a canonical StylePreference, silently dropping anything that isn't
+// a recognized style word.
+function parseStyles(value: unknown): StylePreference[] {
+  const raw = Array.isArray(value) ? value : typeof value === 'string' ? [value] : [];
+  const found: StylePreference[] = [];
+  for (const v of raw) {
+    if (typeof v !== 'string') continue;
+    const match = STYLE_KEYS.find(k => normalizeStyle(k) === normalizeStyle(v));
+    if (match && !found.includes(match)) found.push(match);
+  }
+  return found;
 }
 
 function parseCategory(value: unknown): ItemCategory | undefined {
@@ -20,14 +38,14 @@ function parseCategory(value: unknown): ItemCategory | undefined {
     : undefined;
 }
 
-// The model is asked for a single "style" field precisely so we don't have to
-// trust it to keep the free-form tags list internally consistent — we've seen
-// it tag the same item both "casual" and "formal". Stripping any style words
-// out of the raw tags and re-adding only the one resolved style (via the same
-// replaceStyle used by the manual StylePicker) makes a contradictory result
-// structurally impossible, regardless of what the model put in the tags array.
-function mergeStyleTag(tags: string[], style: StylePreference | undefined): string[] {
-  return replaceStyle(tags, style);
+// The model is asked for a separate "styles" field precisely so we don't have
+// to trust it to keep the free-form tags list internally consistent — we've
+// seen it tag the same item both "casual" and "formal". Stripping any style
+// words out of the raw tags and re-adding only the resolved styles array
+// makes a contradictory result structurally impossible, regardless of what
+// the model put in the tags array.
+function mergeStyleTags(tags: string[], styles: StylePreference[]): string[] {
+  return [...tags.filter(t => !isStyleWord(t)), ...styles];
 }
 
 // The prompt now instructs a single canonical color word (buildTagPrompt's
@@ -75,6 +93,11 @@ export interface TagResult {
 
 export interface SkinToneResult {
   skinToneDesc: string;
+  // Structured form of the same undertone the prompt already asks the model
+  // to categorize in prose below — parsed out separately so outfit scoring
+  // (see outfitAesthetics.ts) has a real value to key off instead of having
+  // to parse free text.
+  undertone?: UserProfile['undertone'];
 }
 
 function buildTagPrompt(category: ItemCategory): string {
@@ -97,17 +120,19 @@ ${category === 'top' || category === 'bottom'
     ? '- Weight/fit: lightweight / heavyweight / fitted / loose'
     : category === 'shoes'
       ? '- Material/type: canvas / leather / suede / athletic / slip-on / lace-up'
-      : '- Material: leather / metal / fabric / knit / woven'}
+      : `- Material: leather / metal / fabric / knit / woven\n- Type: ${ACCESSORY_TYPE_TAGS.join(' / ')} (pick whichever fits best; skip this line entirely if genuinely none apply)`}
 
-STEP 5 — STYLE: Pick EXACTLY ONE style — they are mutually exclusive, never pick two. Judge by garment TYPE first, not vibe:
+STEP 5 — STYLE: Pick 1-2 styles that genuinely apply — most items only need one, only add a second if the item genuinely works in two contexts. Judge by garment TYPE first, not vibe:
 - First check: does it have a collar, a button placket, or structured tailoring? If yes, it is at minimum smart_casual — never plain casual, even if it's worn in a relaxed way.
-- casual: ONLY plain basics with no collar and no structure — t-shirts, jeans, hoodies, sweatshirts, loungewear, pajamas, sleepwear
+- casual: plain basics with no collar and no structure — t-shirts, jeans, hoodies, sweatshirts
 - smart_casual: has a collar, buttons, or tailoring but isn't formal-only — polo shirts, collared/button-up shirts, chinos, khakis, loafers, casual blazers
 - formal: suits, dress shirts with ties, dress shoes, gowns, suit blazers
 - sporty: activewear, gym clothes, athletic shoes, performance fabrics
-Make your single best guess based on what the garment actually is — do not default to casual just because you're not fully certain. Pajamas and sleepwear are always casual, never formal, regardless of pattern.
+- sleepwear: items meant specifically for sleeping — pajama sets, nightgowns, robes, sleep shirts
+- beachwear: items meant specifically for the beach or pool — swim trunks, bikinis/swimsuits, cover-ups
+Sleepwear and beachwear are their own categories, not a flavor of casual — a pajama set is sleepwear ONLY (never casual), a swimsuit is beachwear ONLY (never casual or sporty). Only add casual as a second style when the item is genuinely general-purpose beyond its primary context — e.g. a plain cotton t-shirt can be both casual and beachwear, but plaid pajama pants stay sleepwear only.
 
-STEP 6 — TAGS: Create a tag list combining: the color(s) from Step 1, the words from Step 4 (pattern, brightness, and whichever category-appropriate attribute you used), and any other accurate short descriptive words. Do NOT put any style word (casual, smart_casual, formal, sporty) in this list — the style you picked in Step 5 goes in its own "style" field below, not in "tags".
+STEP 6 — TAGS: Create a tag list combining: the color(s) from Step 1, the words from Step 4 (pattern, brightness, and whichever category-appropriate attribute you used), and any other accurate short descriptive words. Do NOT put any style word (casual, smart_casual, formal, sporty, sleepwear, beachwear) in this list — the style(s) you picked in Step 5 go in their own "styles" field below, not in "tags".
 Good tag examples: navy, olive, white, solid, striped, plaid, textured, canvas, leather, fitted, loose, lightweight, heavyweight
 
 STEP 7 — OUTPUT: Respond with ONLY a raw JSON object. No markdown. Start with { end with }:
@@ -116,7 +141,7 @@ STEP 7 — OUTPUT: Respond with ONLY a raw JSON object. No markdown. Start with 
   "colors": ["<primary color>", "<secondary color if any>"],
   "category": "<top|bottom|shoes|accessory>",
   "name": "<short simple name including the color, e.g. 'navy sweater'>",
-  "style": "<casual|smart_casual|formal|sporty>",
+  "styles": ["<style1>", "<style2 if applicable>"],
   "tags": ["<tag1>", "<tag2>", "<tag3>", "..."]
 }`;
 }
@@ -133,6 +158,7 @@ IMPORTANT: Do NOT use specific color names like "brown" or "beige". Instead desc
 
 OUTPUT: Respond with ONLY a raw JSON object. No markdown:
 {
+  "undertone": "<warm|cool|neutral>",
   "skinToneDesc": "<2-3 sentence description using only undertone, contrast, and build — no color names>"
 }`;
 }
@@ -189,7 +215,7 @@ export async function tagClothingItem(photoUri: string, category: ItemCategory):
     return {
       isClothing: obj.isClothing !== false,
       name: obj.name,
-      tags: mergeColorTags(mergeStyleTag(rawTags, parseStyle(obj.style)), rawColors),
+      tags: mergeColorTags(mergeStyleTags(rawTags, parseStyles(obj.styles)), rawColors),
       detectedCategory: parseCategory(obj.category),
     };
   }
@@ -203,7 +229,7 @@ export async function tagClothingItem(photoUri: string, category: ItemCategory):
   const text = typeof raw === 'string' ? raw : '';
   const isClothingMatch = text.match(/"isClothing"\s*:\s*(true|false)/);
   const nameMatch = text.match(/"name"\s*:\s*"([^"]+)"/);
-  const styleMatch = text.match(/"style"\s*:\s*"([^"]+)"/);
+  const stylesMatch = text.match(/"styles"\s*:\s*\[([^\]]+)\]/);
   const categoryMatch = text.match(/"category"\s*:\s*"([^"]+)"/);
   const tagsMatch = text.match(/"tags"\s*:\s*\[([^\]]+)\]/);
   const colorsMatch = text.match(/"colors"\s*:\s*\[([^\]]+)\]/);
@@ -213,12 +239,15 @@ export async function tagClothingItem(photoUri: string, category: ItemCategory):
   const colors = colorsMatch
     ? colorsMatch[1].match(/"([^"]+)"/g)?.map(c => c.replace(/"/g, '')) ?? []
     : [];
+  const styles = stylesMatch
+    ? stylesMatch[1].match(/"([^"]+)"/g)?.map(s => s.replace(/"/g, '')) ?? []
+    : [];
   return {
     // Default true (rather than false) on a parse miss — a garbled response
     // shouldn't block a legitimate save more often than it lets a bad one through.
     isClothing: isClothingMatch ? isClothingMatch[1] === 'true' : true,
     name: nameMatch ? nameMatch[1] : `${category} item`,
-    tags: mergeColorTags(mergeStyleTag(tags, parseStyle(styleMatch?.[1])), colors),
+    tags: mergeColorTags(mergeStyleTags(tags, parseStyles(styles)), colors),
     detectedCategory: parseCategory(categoryMatch?.[1]),
   };
 }
@@ -229,10 +258,14 @@ export async function extractSkinTone(photoUri: string): Promise<SkinToneResult>
 
   const obj = raw && typeof raw === 'object' ? raw as Record<string, unknown> : null;
   if (obj && typeof obj.skinToneDesc === 'string') {
-    return { skinToneDesc: obj.skinToneDesc };
+    return { skinToneDesc: obj.skinToneDesc, undertone: parseUndertone(obj.undertone) };
   }
 
   // Same markdown fallback as above — extract whatever text the model produced
   const text = typeof raw === 'string' ? raw : '';
-  return { skinToneDesc: text.slice(0, 200) || 'neutral undertone, medium contrast' };
+  const undertoneMatch = text.match(/"undertone"\s*:\s*"([^"]+)"/);
+  return {
+    skinToneDesc: text.slice(0, 200) || 'neutral undertone, medium contrast',
+    undertone: parseUndertone(undertoneMatch?.[1]),
+  };
 }

@@ -1,13 +1,14 @@
 import { scoreOutfitAesthetics } from '../outfitAesthetics';
 import { WardrobeItem } from '../../types/wardrobe';
 
-function makeItem(tags: string[]): WardrobeItem {
+function makeItem(tags: string[], overrides: Partial<WardrobeItem> = {}): WardrobeItem {
   return {
     id: Math.random().toString(),
     photoUri: 'file://x.jpg',
     category: 'top',
     tags,
     addedAt: 0,
+    ...overrides,
   };
 }
 
@@ -147,6 +148,17 @@ describe('scoreOutfitAesthetics', () => {
     expect(scoreOutfitAesthetics(items)).toBe(0);
   });
 
+  it('does not reward two outerwear-tagged tops together — real layering needs exactly one base and one outer', () => {
+    // Found via live testing: "at least one outerwear" let two outerwear
+    // pieces (e.g. two sweaters) stack together with no actual base layer
+    // underneath, which isn't a real layered look.
+    const items = [
+      makeItem(['black', 'solid', 'outerwear']),
+      makeItem(['navy', 'solid', 'outerwear']),
+    ];
+    expect(scoreOutfitAesthetics(items)).toBe(0);
+  });
+
   it('penalizes an item whose style does not match any requested style', () => {
     const items = [makeItem(['black', 'solid', 'casual'])];
     expect(scoreOutfitAesthetics(items, undefined, ['smart_casual'])).toBeGreaterThan(0);
@@ -188,5 +200,139 @@ describe('scoreOutfitAesthetics', () => {
       ['smart_casual'],
     );
     expect(genuineMatch).toBeLessThan(casualFallback);
+  });
+
+  it('rewards a light+dark brightness contrast', () => {
+    const items = [makeItem(['black', 'solid', 'dark']), makeItem(['white', 'solid', 'light'])];
+    expect(scoreOutfitAesthetics(items)).toBeLessThan(0);
+  });
+
+  it('does not reward brightness when only one of light/dark is present', () => {
+    const items = [makeItem(['black', 'solid', 'dark']), makeItem(['gray', 'solid', 'dark'])];
+    expect(scoreOutfitAesthetics(items)).toBe(0);
+  });
+
+  it('penalizes stacking multiple vivid pieces', () => {
+    const items = [makeItem(['black', 'solid', 'vivid']), makeItem(['gray', 'solid', 'vivid'])];
+    expect(scoreOutfitAesthetics(items)).toBeGreaterThan(0);
+  });
+
+  it('does not penalize a single vivid piece', () => {
+    const items = [makeItem(['black', 'solid', 'vivid']), makeItem(['gray', 'solid'])];
+    expect(scoreOutfitAesthetics(items)).toBe(0);
+  });
+
+  it('rewards a belt matching the shoes in color', () => {
+    const items = [
+      makeItem(['brown', 'leather', 'belt'], { category: 'accessory' }),
+      makeItem(['brown', 'solid'], { category: 'shoes' }),
+    ];
+    expect(scoreOutfitAesthetics(items)).toBeLessThan(0);
+  });
+
+  it('does not reward a belt that does not match the shoes', () => {
+    const items = [
+      makeItem(['brown', 'leather', 'belt'], { category: 'accessory' }),
+      makeItem(['black', 'solid'], { category: 'shoes' }),
+    ];
+    expect(scoreOutfitAesthetics(items)).toBe(0);
+  });
+
+  it('does not reward an untyped accessory matching the shoes in color (must be a belt specifically)', () => {
+    const items = [
+      makeItem(['brown', 'leather'], { category: 'accessory' }),
+      makeItem(['brown', 'solid'], { category: 'shoes' }),
+    ];
+    expect(scoreOutfitAesthetics(items)).toBe(0);
+  });
+
+  it('rewards a loose top with a fitted bottom (fit contrast)', () => {
+    const items = [
+      makeItem(['black', 'solid', 'loose'], { category: 'top' }),
+      makeItem(['black', 'solid', 'fitted'], { category: 'bottom' }),
+    ];
+    expect(scoreOutfitAesthetics(items)).toBeLessThan(0);
+  });
+
+  it('does not reward or penalize two loose pieces (only the contrast case is rewarded)', () => {
+    const items = [
+      makeItem(['black', 'solid', 'loose'], { category: 'top' }),
+      makeItem(['black', 'solid', 'loose'], { category: 'bottom' }),
+    ];
+    expect(scoreOutfitAesthetics(items)).toBe(0);
+  });
+
+  it('isolates the layering bonus to just the two tops, independent of an unrelated shoe/accessory clash', () => {
+    // Found via live testing: the layering bonus used to be gated on the
+    // WHOLE outfit's total penalty being 0, so an unrelated clash elsewhere
+    // (e.g. the shoes and an accessory) could silently prevent layering even
+    // though the two tops themselves paired perfectly well together.
+    const topA = makeItem(['black', 'solid'], { category: 'top' });
+    const topBWithOuterwear = makeItem(['navy', 'solid', 'outerwear'], { category: 'top' });
+    const topBWithoutOuterwear = makeItem(['navy', 'solid'], { category: 'top' });
+    const bottom = makeItem(['black', 'solid'], { category: 'bottom' });
+    const clashingShoes = makeItem(['red', 'solid'], { category: 'shoes' });
+    const clashingAccessory = makeItem(['green', 'solid'], { category: 'accessory' });
+
+    const withLayering = scoreOutfitAesthetics([topA, topBWithOuterwear, bottom, clashingShoes, clashingAccessory]);
+    const withoutLayering = scoreOutfitAesthetics([topA, topBWithoutOuterwear, bottom, clashingShoes, clashingAccessory]);
+
+    // Same red+green clash penalty applies in both cases — the only
+    // difference is whether the tops qualify for the layering bonus, so the
+    // outerwear version must score exactly the bonus amount lower.
+    expect(withoutLayering - withLayering).toBeCloseTo(0.5);
+  });
+
+  it('rewards a warm-flattering accent color when the profile undertone is warm', () => {
+    const items = [makeItem(['black', 'solid']), makeItem(['orange', 'solid'])];
+    expect(scoreOutfitAesthetics(items, undefined, undefined, 'warm')).toBeLessThan(0);
+  });
+
+  it('rewards a cool-flattering accent color when the profile undertone is cool', () => {
+    const items = [makeItem(['black', 'solid']), makeItem(['blue', 'solid'])];
+    expect(scoreOutfitAesthetics(items, undefined, undefined, 'cool')).toBeLessThan(0);
+  });
+
+  it('does not reward a cool-flattering color when the undertone is warm', () => {
+    const items = [makeItem(['black', 'solid']), makeItem(['blue', 'solid'])];
+    expect(scoreOutfitAesthetics(items, undefined, undefined, 'warm')).toBe(0);
+  });
+
+  it('never penalizes a non-flattering accent color for a given undertone — bonus only, never a penalty', () => {
+    const withUndertone = scoreOutfitAesthetics([makeItem(['black', 'solid']), makeItem(['blue', 'solid'])], undefined, undefined, 'warm');
+    const withoutUndertone = scoreOutfitAesthetics([makeItem(['black', 'solid']), makeItem(['blue', 'solid'])]);
+    expect(withUndertone).toBe(withoutUndertone);
+  });
+
+  it('applies no undertone adjustment when undertone is neutral', () => {
+    const items = [makeItem(['black', 'solid']), makeItem(['orange', 'solid'])];
+    expect(scoreOutfitAesthetics(items, undefined, undefined, 'neutral')).toBe(0);
+  });
+
+  it('applies no undertone adjustment when no undertone is given at all', () => {
+    const items = [makeItem(['black', 'solid']), makeItem(['orange', 'solid'])];
+    expect(scoreOutfitAesthetics(items)).toBe(0);
+  });
+
+  it('applies the undertone bonus only once even with multiple flattering colors present', () => {
+    // olive + burgundy are both warm-flattering and (unlike orange+yellow)
+    // aren't themselves a known-clashing pair, isolating this test to just
+    // the accent-color-count penalty and the undertone bonus.
+    const twoFlattering = scoreOutfitAesthetics(
+      [makeItem(['olive', 'solid']), makeItem(['burgundy', 'solid'])],
+      undefined,
+      undefined,
+      'warm',
+    );
+    const oneFlattering = scoreOutfitAesthetics(
+      [makeItem(['orange', 'solid']), makeItem(['black', 'solid'])],
+      undefined,
+      undefined,
+      'warm',
+    );
+    // Two flattering accent colors still incurs the normal "2 distinct accent
+    // colors" penalty (+1) on top of the single undertone bonus (-0.5) — the
+    // bonus itself doesn't stack, it isn't a second -0.5 on top of that.
+    expect(twoFlattering).toBeCloseTo(oneFlattering + 1);
   });
 });

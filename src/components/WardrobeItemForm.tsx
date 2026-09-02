@@ -4,8 +4,8 @@ import { ActivityIndicator, StyleSheet, TextInput, TouchableOpacity, View } from
 import { ACCESSORY_TYPE_TAGS, BRIGHTNESS_TAGS, COLOR_TAGS, PATTERN_TAGS, secondaryTagGroup } from '../constants/tagVocabulary';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
-import { ItemCategory, StylePreference } from '../types/wardrobe';
-import { extractStyle, isStyleWord, replaceStyle } from '../utils/styleTags';
+import { ItemCategory } from '../types/wardrobe';
+import { extractStyles, isStyleWord } from '../utils/styleTags';
 import { AppText } from './AppText';
 import { CategoryPicker } from './CategoryPicker';
 import { StylePicker } from './StylePicker';
@@ -17,7 +17,6 @@ interface Props {
   onNameChange: (name: string) => void;
   tags: string[];
   onToggleTag: (tag: string) => void;
-  onTagsChange: (tags: string[]) => void;
   onSave: () => void;
   saving: boolean;
   saveLabel: string;
@@ -65,23 +64,18 @@ export function WardrobeItemForm({
   onNameChange,
   tags,
   onToggleTag,
-  onTagsChange,
   onSave,
   saving,
   saveLabel,
 }: Props) {
   const [customInput, setCustomInput] = useState('');
   const secondary = secondaryTagGroup(category);
-  const style = extractStyle(tags);
+  const selectedStyles = extractStyles(tags);
 
   function addCustomTag() {
     const t = customInput.trim().toLowerCase().replace(/\s+/g, '-');
     if (t) onToggleTag(t);
     setCustomInput('');
-  }
-
-  function handleStyleChange(newStyle: StylePreference) {
-    onTagsChange(replaceStyle(tags, newStyle));
   }
 
   return (
@@ -90,7 +84,7 @@ export function WardrobeItemForm({
       <CategoryPicker category={category} onChange={onCategoryChange} />
 
       <AppText style={styles.sectionLabel}>STYLE</AppText>
-      <StylePicker style={style} onChange={handleStyleChange} />
+      <StylePicker selected={selectedStyles} onToggle={onToggleTag} />
 
       <AppText style={styles.sectionLabel}>NAME (optional)</AppText>
       <TextInput

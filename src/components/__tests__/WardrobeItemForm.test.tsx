@@ -9,7 +9,6 @@ function renderForm(overrides: Partial<Parameters<typeof WardrobeItemForm>[0]> =
     onNameChange: jest.fn(),
     tags: [] as string[],
     onToggleTag: jest.fn(),
-    onTagsChange: jest.fn(),
     onSave: jest.fn(),
     saving: false,
     saveLabel: '✓ Save',
@@ -117,10 +116,23 @@ describe('WardrobeItemForm', () => {
     expect(screen.getByLabelText('Casual').props.accessibilityState?.checked).toBe(false);
   });
 
-  it('changing style replaces the old style tag via onTagsChange, not onToggleTag', () => {
+  it('derives multiple current styles from tags and shows all of them checked (ADR 0018)', () => {
+    renderForm({ tags: ['navy', 'casual', 'beachwear'] });
+    expect(screen.getByLabelText('Casual').props.accessibilityState?.checked).toBe(true);
+    expect(screen.getByLabelText('Beachwear').props.accessibilityState?.checked).toBe(true);
+    expect(screen.getByLabelText('Formal').props.accessibilityState?.checked).toBe(false);
+  });
+
+  it('toggling a style in the StylePicker calls onToggleTag, adding it alongside any existing style', () => {
     const props = renderForm({ tags: ['navy', 'casual', 'solid'] });
     fireEvent.press(screen.getByLabelText('Formal'));
-    expect(props.onTagsChange).toHaveBeenCalledWith(['navy', 'solid', 'formal']);
+    expect(props.onToggleTag).toHaveBeenCalledWith('formal');
+  });
+
+  it('toggling an already-selected style in the StylePicker calls onToggleTag to remove it', () => {
+    const props = renderForm({ tags: ['navy', 'casual', 'solid'] });
+    fireEvent.press(screen.getByLabelText('Casual'));
+    expect(props.onToggleTag).toHaveBeenCalledWith('casual');
   });
 
   it('hides the style tag from the generic current-tags list', () => {

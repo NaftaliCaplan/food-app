@@ -130,7 +130,7 @@ describe('generateOutfit', () => {
     expect(result.items.some(i => i.tags.includes('heavyweight'))).toBe(false);
   });
 
-  it('accepts a profile without erroring, even though it is currently unused', () => {
+  it('accepts a profile without erroring when it carries no undertone (heightRange/build have no scoring effect yet)', () => {
     const wardrobe = [
       makeItem({ category: 'top', tags: ['casual'] }),
       makeItem({ category: 'bottom', tags: ['casual'] }),
@@ -142,5 +142,23 @@ describe('generateOutfit', () => {
         profile: { heightRange: 'tall', build: 'slim' },
       }),
     ).not.toThrow();
+  });
+
+  it('threads profile.undertone through to scoring, preferring the flattering-color top', () => {
+    const flatteringTop = makeItem({ category: 'top', tags: ['casual', 'orange', 'solid'] });
+    const neutralTop = makeItem({ category: 'top', tags: ['casual', 'blue', 'solid'] });
+    const wardrobe = [
+      flatteringTop,
+      neutralTop,
+      makeItem({ category: 'bottom', tags: ['casual', 'black', 'solid'] }),
+      makeItem({ category: 'shoes', tags: ['casual', 'black', 'solid'] }),
+    ];
+    const result = generateOutfit({
+      wardrobe,
+      stylePrefs: ['casual'],
+      profile: { heightRange: 'average', build: 'average', undertone: 'warm' },
+    });
+    expect(result.items.some(i => i.id === flatteringTop.id)).toBe(true);
+    expect(result.items.some(i => i.id === neutralTop.id)).toBe(false);
   });
 });

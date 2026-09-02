@@ -98,6 +98,24 @@ describe('UserProfileScreen', () => {
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 
+  it('loads an existing profile\'s undertone and re-saves it unchanged', async () => {
+    getUserProfile.mockResolvedValue({
+      photoUri: 'file://ref.jpg',
+      skinToneDesc: 'warm undertone, high contrast',
+      undertone: 'warm',
+      heightRange: 'average',
+      build: 'average',
+    });
+    render(<UserProfileScreen />);
+    await act(async () => {});
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('✓ Save Profile'));
+    });
+
+    expect(saveUserProfile).toHaveBeenCalledWith(expect.objectContaining({ undertone: 'warm' }));
+  });
+
   it('skip navigates back without saving', async () => {
     getUserProfile.mockResolvedValue(null);
     render(<UserProfileScreen />);

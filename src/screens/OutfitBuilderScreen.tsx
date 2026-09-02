@@ -33,6 +33,47 @@ const STYLE_OPTIONS: { key: StylePreference; label: string }[] = [
   { key: 'sporty',       label: 'Sporty' },
 ];
 
+// Occasion categories (ADR 0018) live behind a "+ More" toggle rather than in
+// the always-visible STYLE grid — sleepwear/beachwear are explicit requests,
+// not everyday styles most people reach for, and the list is expected to grow
+// (the user's own words: "we can always come back to add more occasion
+// fits"), so keeping them in a separate expandable section avoids cluttering
+// the main screen as more get added.
+const OCCASION_OPTIONS: { key: StylePreference; label: string }[] = [
+  { key: 'sleepwear', label: 'Sleepwear' },
+  { key: 'beachwear', label: 'Beachwear' },
+];
+
+interface ChipGridProps {
+  options: { key: StylePreference; label: string }[];
+  selected: StylePreference[];
+  onToggle: (key: StylePreference) => void;
+}
+
+function ChipGrid({ options, selected, onToggle }: ChipGridProps) {
+  return (
+    <View style={styles.chipGrid}>
+      {options.map(o => {
+        const active = selected.includes(o.key);
+        return (
+          <TouchableOpacity
+            key={o.key}
+            style={[styles.chip, active && styles.chipActive]}
+            onPress={() => onToggle(o.key)}
+            accessibilityLabel={o.label}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: active }}
+          >
+            <AppText style={[styles.chipLabel, active && styles.chipLabelActive]}>
+              {active ? '[x]' : '[ ]'} {o.label}
+            </AppText>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
 interface ToggleRowProps {
   label: string;
   sublabel: string;
@@ -63,6 +104,7 @@ export function OutfitBuilderScreen() {
   const navigation = useNavigation<Nav>();
 
   const [selected, setSelected] = useState<StylePreference[]>([]);
+  const [showOccasions, setShowOccasions] = useState(false);
   const [includeAccessories, setIncludeAccessories] = useState(true);
   const [useProfile, setUseProfile] = useState(false);
   const [hasProfile, setHasProfile] = useState(false);
@@ -109,25 +151,25 @@ export function OutfitBuilderScreen() {
 
         {/* Style preferences — multi-select */}
         <AppText style={styles.sectionLabel}>STYLE</AppText>
-        <View style={styles.chipGrid}>
-          {STYLE_OPTIONS.map(o => {
-            const active = selected.includes(o.key);
-            return (
-              <TouchableOpacity
-                key={o.key}
-                style={[styles.chip, active && styles.chipActive]}
-                onPress={() => toggleStyle(o.key)}
-                accessibilityLabel={o.label}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: active }}
-              >
-                <AppText style={[styles.chipLabel, active && styles.chipLabelActive]}>
-                  {active ? '[x]' : '[ ]'} {o.label}
-                </AppText>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <ChipGrid options={STYLE_OPTIONS} selected={selected} onToggle={toggleStyle} />
+
+        <TouchableOpacity
+          style={styles.moreToggle}
+          onPress={() => setShowOccasions(v => !v)}
+          accessibilityRole="button"
+          accessibilityLabel={showOccasions ? 'Hide occasion options' : 'Show more occasion options'}
+        >
+          <AppText style={styles.moreToggleText}>
+            {showOccasions ? '− Fewer' : '+ More'}
+          </AppText>
+        </TouchableOpacity>
+
+        {showOccasions && (
+          <>
+            <AppText style={styles.sectionLabel}>OCCASION</AppText>
+            <ChipGrid options={OCCASION_OPTIONS} selected={selected} onToggle={toggleStyle} />
+          </>
+        )}
 
         {/* Temperature — advisory context for the AI, not a hard filter */}
         <View style={styles.temperatureBlock}>
@@ -246,6 +288,14 @@ const styles = StyleSheet.create({
   chipLabelActive: {
     color: Colors.accent,
     fontWeight: '700',
+  },
+  moreToggle: {
+    alignSelf: 'flex-start',
+  },
+  moreToggleText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.accent,
   },
   toggleRow: {
     flexDirection: 'row',

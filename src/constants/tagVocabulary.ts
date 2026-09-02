@@ -12,11 +12,16 @@ export const PATTERN_TAGS = ['solid', 'striped', 'plaid', 'checked', 'floral', '
 
 export const BRIGHTNESS_TAGS = ['light', 'dark', 'vivid', 'muted'];
 
-// Manual-only, never AI-suggested (same reasoning as 'outerwear' below) —
-// identifies which "slot" an accessory occupies, so the outfit generator can
+// Identifies which "slot" an accessory occupies, so the outfit generator can
 // enforce at most one per slot (you can wear one hat, not two). Accessories
 // without any of these tags are treated as slot-less and stay uncapped
-// relative to each other, same as before this existed.
+// relative to each other, same as before this existed. Unlike 'outerwear'
+// below, this IS AI-suggested (see tagService.ts's STEP 4) — classifying
+// "is this a hat vs. a belt" is a concrete visual judgment the model is
+// reasonably reliable at, not a subjective taste call, and a wrong/missing
+// guess fails safely (the item just falls back to slot-less, today's
+// default for everything). Still fully overridable via the curated picker,
+// same as category/style already are.
 export const ACCESSORY_TYPE_TAGS = ['hat', 'belt', 'bag', 'watch', 'scarf', 'jewelry'];
 
 // Secondary attribute group depends on category, same split as the AI prompt:

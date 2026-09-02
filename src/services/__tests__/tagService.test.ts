@@ -1,4 +1,4 @@
-import { tagClothingItem } from '../tagService';
+import { extractSkinTone, tagClothingItem } from '../tagService';
 
 jest.mock('expo-file-system/next', () => ({
   File: jest.fn().mockImplementation(() => ({
@@ -28,7 +28,7 @@ const okTagResponse = {
       colors: ['navy'],
       category: 'top',
       name: 'navy tee',
-      style: 'casual',
+      styles: ['casual'],
       tags: [],
     },
   },
@@ -39,13 +39,13 @@ describe('tagClothingItem', () => {
     mockFetch.mockReset();
   });
 
-  it('merges the dedicated style field into tags', async () => {
+  it('merges the dedicated styles field into tags', async () => {
     mockFetch.mockResolvedValue(makeResponse({
       result: {
         response: {
           isClothing: true,
           name: 'plaid flannel pajama pants',
-          style: 'casual',
+          styles: ['casual'],
           tags: ['plaid', 'light', 'loose'],
         },
       },
@@ -55,16 +55,32 @@ describe('tagClothingItem', () => {
     expect(result.tags.filter(t => t === 'casual')).toHaveLength(1);
   });
 
+  it('merges multiple styles into tags when the model gives both', async () => {
+    // A plain t-shirt can genuinely be both casual and beachwear (ADR 0018).
+    mockFetch.mockResolvedValue(makeResponse({
+      result: {
+        response: {
+          isClothing: true,
+          name: 'white cotton tee',
+          styles: ['casual', 'beachwear'],
+          tags: ['white', 'solid'],
+        },
+      },
+    }));
+    const result = await tagClothingItem('file://test.jpg', 'top');
+    expect(result.tags).toEqual(expect.arrayContaining(['white', 'solid', 'casual', 'beachwear']));
+  });
+
   it('strips contradictory style words the model put in the free-form tags list', async () => {
     // Regression case: the model tagged an item with both "casual" and "formal"
-    // directly in the tags array. The dedicated "style" field should win, and
+    // directly in the tags array. The dedicated "styles" field should win, and
     // any stray style words in tags must be removed, not just deduplicated.
     mockFetch.mockResolvedValue(makeResponse({
       result: {
         response: {
           isClothing: true,
           name: 'plaid pajama pants',
-          style: 'casual',
+          styles: ['casual'],
           tags: ['plaid', 'casual', 'formal'],
         },
       },
@@ -80,7 +96,7 @@ describe('tagClothingItem', () => {
         response: {
           isClothing: true,
           name: 'chinos',
-          style: 'smart-casual',
+          styles: ['smart-casual'],
           tags: [],
         },
       },
@@ -108,7 +124,7 @@ describe('tagClothingItem', () => {
       result: {
         response: {
           name: 'white tee',
-          style: 'casual',
+          styles: ['casual'],
           tags: [],
         },
       },
@@ -118,7 +134,7 @@ describe('tagClothingItem', () => {
   });
 
   it('falls back to regex extraction when the model wraps JSON in markdown fences', async () => {
-    const fenced = '```json\n{"isClothing": true, "name": "denim jacket", "style": "casual", "tags": ["denim", "casual", "formal"]}\n```';
+    const fenced = '```json\n{"isClothing": true, "name": "denim jacket", "styles": ["casual"], "tags": ["denim", "casual", "formal"]}\n```';
     mockFetch.mockResolvedValue(makeResponse({ result: { response: fenced } }));
     const result = await tagClothingItem('file://test.jpg', 'top');
     expect(result.name).toBe('denim jacket');
@@ -134,7 +150,7 @@ describe('tagClothingItem', () => {
           isClothing: true,
           category: 'bottom',
           name: 'jeans',
-          style: 'casual',
+          styles: ['casual'],
           tags: [],
         },
       },
@@ -144,7 +160,7 @@ describe('tagClothingItem', () => {
   });
 
   it('parses detectedCategory from the markdown-fence fallback path too', async () => {
-    const fenced = '```json\n{"isClothing": true, "category": "shoes", "name": "sneakers", "style": "casual", "tags": []}\n```';
+    const fenced = '```json\n{"isClothing": true, "category": "shoes", "name": "sneakers", "styles": ["casual"], "tags": []}\n```';
     mockFetch.mockResolvedValue(makeResponse({ result: { response: fenced } }));
     const result = await tagClothingItem('file://test.jpg', 'top');
     expect(result.detectedCategory).toBe('shoes');
@@ -157,7 +173,7 @@ describe('tagClothingItem', () => {
           isClothing: true,
           category: 'not-a-real-category',
           name: 'sweater',
-          style: 'casual',
+          styles: ['casual'],
           tags: [],
         },
       },
@@ -174,7 +190,7 @@ describe('tagClothingItem', () => {
           colors: ['navy', 'white'],
           category: 'top',
           name: 'navy polo',
-          style: 'smart_casual',
+          styles: ['smart_casual'],
           tags: ['solid'],
         },
       },
@@ -191,7 +207,7 @@ describe('tagClothingItem', () => {
           colors: ['navy'],
           category: 'top',
           name: 'navy polo',
-          style: 'smart_casual',
+          styles: ['smart_casual'],
           tags: ['navy', 'solid'],
         },
       },
@@ -213,7 +229,7 @@ describe('tagClothingItem', () => {
           colors: ['olive green'],
           category: 'top',
           name: 'olive jacket',
-          style: 'casual',
+          styles: ['casual'],
           tags: [],
         },
       },
@@ -232,7 +248,7 @@ describe('tagClothingItem', () => {
           colors: ['neon chartreuse'],
           category: 'top',
           name: 'bright jacket',
-          style: 'casual',
+          styles: ['casual'],
           tags: [],
         },
       },
@@ -242,10 +258,17 @@ describe('tagClothingItem', () => {
   });
 
   it('parses colors from the markdown-fence fallback path too', async () => {
-    const fenced = '```json\n{"isClothing": true, "colors": ["burgundy"], "category": "top", "name": "burgundy sweater", "style": "casual", "tags": ["solid"]}\n```';
+    const fenced = '```json\n{"isClothing": true, "colors": ["burgundy"], "category": "top", "name": "burgundy sweater", "styles": ["casual"], "tags": ["solid"]}\n```';
     mockFetch.mockResolvedValue(makeResponse({ result: { response: fenced } }));
     const result = await tagClothingItem('file://test.jpg', 'top');
     expect(result.tags).toEqual(expect.arrayContaining(['solid', 'burgundy']));
+  });
+
+  it('parses multiple styles from the markdown-fence fallback path too', async () => {
+    const fenced = '```json\n{"isClothing": true, "name": "white tee", "styles": ["casual", "beachwear"], "tags": ["white"]}\n```';
+    mockFetch.mockResolvedValue(makeResponse({ result: { response: fenced } }));
+    const result = await tagClothingItem('file://test.jpg', 'top');
+    expect(result.tags).toEqual(expect.arrayContaining(['white', 'casual', 'beachwear']));
   });
 
   it('asks for fit/weight attributes for top and bottom categories', async () => {
@@ -271,5 +294,88 @@ describe('tagClothingItem', () => {
     const prompt = promptFrom(mockFetch.mock.calls[0]);
     expect(prompt).toContain('Material:');
     expect(prompt).not.toContain('Weight/fit');
+  });
+
+  it('asks for an accessory type guess (hat/belt/bag/etc.) only for accessories', async () => {
+    mockFetch.mockResolvedValue(makeResponse(okTagResponse));
+    await tagClothingItem('file://test.jpg', 'accessory');
+    expect(promptFrom(mockFetch.mock.calls[0])).toContain('hat / belt / bag / watch / scarf / jewelry');
+
+    await tagClothingItem('file://test.jpg', 'top');
+    expect(promptFrom(mockFetch.mock.calls[1])).not.toContain('hat / belt / bag / watch / scarf / jewelry');
+  });
+
+  it('passes an AI-suggested accessory type straight through as a plain tag', async () => {
+    mockFetch.mockResolvedValue(makeResponse({
+      result: {
+        response: {
+          isClothing: true,
+          colors: ['black'],
+          category: 'accessory',
+          name: 'black wool hat',
+          styles: ['casual'],
+          tags: ['solid', 'knit', 'hat'],
+        },
+      },
+    }));
+    const result = await tagClothingItem('file://test.jpg', 'accessory');
+    expect(result.tags).toContain('hat');
+  });
+
+  it('allows sleepwear and beachwear as their own styles in the prompt, not folded into casual', async () => {
+    mockFetch.mockResolvedValue(makeResponse(okTagResponse));
+    await tagClothingItem('file://test.jpg', 'top');
+    const prompt = promptFrom(mockFetch.mock.calls[0]);
+    expect(prompt).toContain('sleepwear');
+    expect(prompt).toContain('beachwear');
+    expect(prompt).not.toMatch(/pajamas and sleepwear are always casual/i);
+  });
+});
+
+describe('extractSkinTone', () => {
+  beforeEach(() => {
+    mockFetch.mockReset();
+  });
+
+  it('parses the structured undertone field alongside the free-text description', async () => {
+    mockFetch.mockResolvedValue(makeResponse({
+      result: {
+        response: {
+          undertone: 'warm',
+          skinToneDesc: 'Warm undertone, high contrast, average build.',
+        },
+      },
+    }));
+    const result = await extractSkinTone('file://profile.jpg');
+    expect(result.undertone).toBe('warm');
+    expect(result.skinToneDesc).toBe('Warm undertone, high contrast, average build.');
+  });
+
+  it('drops an unrecognized undertone value rather than passing it through', async () => {
+    mockFetch.mockResolvedValue(makeResponse({
+      result: {
+        response: {
+          undertone: 'olive',
+          skinToneDesc: 'Some description.',
+        },
+      },
+    }));
+    const result = await extractSkinTone('file://profile.jpg');
+    expect(result.undertone).toBeUndefined();
+  });
+
+  it('parses undertone from the markdown-fence fallback path too', async () => {
+    const fenced = '```json\n{"undertone": "cool", "skinToneDesc": "Cool undertone, medium contrast."}\n```';
+    mockFetch.mockResolvedValue(makeResponse({ result: { response: fenced } }));
+    const result = await extractSkinTone('file://profile.jpg');
+    expect(result.undertone).toBe('cool');
+  });
+
+  it('leaves undertone undefined when the field is missing entirely', async () => {
+    mockFetch.mockResolvedValue(makeResponse({
+      result: { response: { skinToneDesc: 'Neutral undertone.' } },
+    }));
+    const result = await extractSkinTone('file://profile.jpg');
+    expect(result.undertone).toBeUndefined();
   });
 });

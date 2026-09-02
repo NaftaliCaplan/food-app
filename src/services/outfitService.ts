@@ -44,10 +44,11 @@ export interface GenerateOutfitOptions {
   // reused verbatim, though see useOutfitGenerator.ts for how long a
   // rejection is actually remembered.
   rejectedIdSets?: string[][];
-  // Accepted for forward-compatibility but currently unused. Outfit
-  // selection is fully deterministic now and has no code-level equivalent
-  // yet for body-type/proportion personalization — deliberately deferred,
-  // see ADR 0016.
+  // Only profile.undertone is actually used by scoring so far (personalization
+  // round 1 — see outfitAesthetics.ts's UNDERTONE_COLOR_BONUS). heightRange/
+  // build have no code-level equivalent yet — body-type/proportion
+  // personalization is deliberately deferred to its own future round rather
+  // than hand-written proportion rules, see ADR 0016.
   profile?: UserProfile | null;
   // When false, accessory-category items are excluded from the candidate pool.
   includeAccessories?: boolean;
@@ -63,7 +64,7 @@ export interface GenerateOutfitOptions {
 // call anywhere in this path anymore — see ADR 0016 for why, and for what
 // this replaced.
 export function generateOutfit(options: GenerateOutfitOptions): OutfitSuggestion {
-  const { wardrobe, stylePrefs, rejectedIdSets = [], includeAccessories = true, temperatureF } = options;
+  const { wardrobe, stylePrefs, rejectedIdSets = [], profile, includeAccessories = true, temperatureF } = options;
 
   // Items in the laundry are unavailable to wear, full stop.
   const available = wardrobe.filter(item => !item.inLaundry);
@@ -80,6 +81,7 @@ export function generateOutfit(options: GenerateOutfitOptions): OutfitSuggestion
     includeAccessories,
     temperatureF,
     stylePrefs,
+    undertone: profile?.undertone,
     rejectedIdSets,
   });
 

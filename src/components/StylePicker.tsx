@@ -7,27 +7,28 @@ import { Spacing } from '../theme/spacing';
 import { AppText } from './AppText';
 
 interface Props {
-  // undefined means no style tag is currently set on the item.
-  style: StylePreference | undefined;
-  onChange: (style: StylePreference) => void;
+  // An item can carry more than one style tag at once (ADR 0018) — a plain
+  // t-shirt can be both casual and beachwear — so this is multi-select.
+  selected: StylePreference[];
+  onToggle: (style: StylePreference) => void;
 }
 
-export function StylePicker({ style, onChange }: Props) {
+export function StylePicker({ selected, onToggle }: Props) {
   return (
     <View style={styles.row}>
       {STYLE_KEYS.map(key => {
-        const active = style === key;
+        const active = selected.includes(key);
         return (
           <TouchableOpacity
             key={key}
             style={[styles.chip, active && styles.chipActive]}
-            onPress={() => onChange(key)}
+            onPress={() => onToggle(key)}
             accessibilityLabel={STYLE_LABELS[key]}
-            accessibilityRole="radio"
+            accessibilityRole="checkbox"
             accessibilityState={{ checked: active }}
           >
             <AppText style={[styles.chipLabel, active && styles.chipLabelActive]}>
-              {active ? '(x)' : '( )'} {STYLE_LABELS[key]}
+              {active ? '[x]' : '[ ]'} {STYLE_LABELS[key]}
             </AppText>
           </TouchableOpacity>
         );
