@@ -27,6 +27,11 @@ export interface UserProfile {
   // saved before this field existed still load fine; personalization scoring
   // just no-ops for them (see outfitAesthetics.ts).
   undertone?: 'warm' | 'cool' | 'neutral';
+  // Same structured-extraction pattern as undertone (see tagService.ts's
+  // buildSkinTonePrompt) — the AI already categorizes feature contrast in
+  // prose, this is just the queryable form for scoring (see
+  // outfitAesthetics.ts's low-contrast "tonal" bonus, ADR 0020).
+  contrast?: 'high' | 'medium' | 'low';
   heightRange: 'petite' | 'average' | 'tall';
   build: 'slim' | 'average' | 'broad';
 }

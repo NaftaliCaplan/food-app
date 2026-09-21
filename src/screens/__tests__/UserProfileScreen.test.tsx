@@ -116,6 +116,25 @@ describe('UserProfileScreen', () => {
     expect(saveUserProfile).toHaveBeenCalledWith(expect.objectContaining({ undertone: 'warm' }));
   });
 
+  it('loads an existing profile\'s contrast and re-saves it unchanged', async () => {
+    getUserProfile.mockResolvedValue({
+      photoUri: 'file://ref.jpg',
+      skinToneDesc: 'cool undertone, low contrast',
+      undertone: 'cool',
+      contrast: 'low',
+      heightRange: 'average',
+      build: 'average',
+    });
+    render(<UserProfileScreen />);
+    await act(async () => {});
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('✓ Save Profile'));
+    });
+
+    expect(saveUserProfile).toHaveBeenCalledWith(expect.objectContaining({ contrast: 'low' }));
+  });
+
   it('skip navigates back without saving', async () => {
     getUserProfile.mockResolvedValue(null);
     render(<UserProfileScreen />);

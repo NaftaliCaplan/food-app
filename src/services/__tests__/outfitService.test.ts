@@ -130,7 +130,7 @@ describe('generateOutfit', () => {
     expect(result.items.some(i => i.tags.includes('heavyweight'))).toBe(false);
   });
 
-  it('accepts a profile without erroring when it carries no undertone (heightRange/build have no scoring effect yet)', () => {
+  it('accepts a profile without erroring when no items carry fit tags for the height/build bonuses to key off', () => {
     const wardrobe = [
       makeItem({ category: 'top', tags: ['casual'] }),
       makeItem({ category: 'bottom', tags: ['casual'] }),
@@ -160,5 +160,59 @@ describe('generateOutfit', () => {
     });
     expect(result.items.some(i => i.id === flatteringTop.id)).toBe(true);
     expect(result.items.some(i => i.id === neutralTop.id)).toBe(false);
+  });
+
+  it('threads profile.contrast through to scoring, preferring a tonal top for a low-contrast profile', () => {
+    const tonalTop = makeItem({ category: 'top', tags: ['casual', 'gray', 'solid', 'light'] });
+    const nonTonalTop = makeItem({ category: 'top', tags: ['casual', 'gray', 'solid'] });
+    const wardrobe = [
+      tonalTop,
+      nonTonalTop,
+      makeItem({ category: 'bottom', tags: ['casual', 'gray', 'solid', 'light'] }),
+      makeItem({ category: 'shoes', tags: ['casual', 'black', 'solid'] }),
+    ];
+    const result = generateOutfit({
+      wardrobe,
+      stylePrefs: ['casual'],
+      profile: { heightRange: 'average', build: 'average', contrast: 'low' },
+    });
+    expect(result.items.some(i => i.id === tonalTop.id)).toBe(true);
+    expect(result.items.some(i => i.id === nonTonalTop.id)).toBe(false);
+  });
+
+  it('threads profile.heightRange through to scoring, preferring a fitted top for a petite profile', () => {
+    const fittedTop = makeItem({ category: 'top', tags: ['casual', 'black', 'solid', 'fitted'] });
+    const looseTop = makeItem({ category: 'top', tags: ['casual', 'black', 'solid', 'loose'] });
+    const wardrobe = [
+      fittedTop,
+      looseTop,
+      makeItem({ category: 'bottom', tags: ['casual', 'black', 'solid', 'fitted'] }),
+      makeItem({ category: 'shoes', tags: ['casual', 'black', 'solid'] }),
+    ];
+    const result = generateOutfit({
+      wardrobe,
+      stylePrefs: ['casual'],
+      profile: { heightRange: 'petite', build: 'average' },
+    });
+    expect(result.items.some(i => i.id === fittedTop.id)).toBe(true);
+    expect(result.items.some(i => i.id === looseTop.id)).toBe(false);
+  });
+
+  it('threads profile.build through to scoring, preferring a loose top for a slim profile', () => {
+    const looseTop = makeItem({ category: 'top', tags: ['casual', 'black', 'solid', 'loose'] });
+    const fittedTop = makeItem({ category: 'top', tags: ['casual', 'black', 'solid', 'fitted'] });
+    const wardrobe = [
+      looseTop,
+      fittedTop,
+      makeItem({ category: 'bottom', tags: ['casual', 'black', 'solid', 'loose'] }),
+      makeItem({ category: 'shoes', tags: ['casual', 'black', 'solid'] }),
+    ];
+    const result = generateOutfit({
+      wardrobe,
+      stylePrefs: ['casual'],
+      profile: { heightRange: 'average', build: 'slim' },
+    });
+    expect(result.items.some(i => i.id === looseTop.id)).toBe(true);
+    expect(result.items.some(i => i.id === fittedTop.id)).toBe(false);
   });
 });

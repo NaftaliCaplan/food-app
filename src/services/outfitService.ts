@@ -44,11 +44,9 @@ export interface GenerateOutfitOptions {
   // reused verbatim, though see useOutfitGenerator.ts for how long a
   // rejection is actually remembered.
   rejectedIdSets?: string[][];
-  // Only profile.undertone is actually used by scoring so far (personalization
-  // round 1 — see outfitAesthetics.ts's UNDERTONE_COLOR_BONUS). heightRange/
-  // build have no code-level equivalent yet — body-type/proportion
-  // personalization is deliberately deferred to its own future round rather
-  // than hand-written proportion rules, see ADR 0016.
+  // Every profile field is now used by scoring (personalization rounds 1-3 —
+  // see outfitAesthetics.ts's UNDERTONE_COLOR_BONUS/CONTRAST_TONAL_BONUS/
+  // HEIGHT_FIT_BONUS/BUILD_FIT_BONUS).
   profile?: UserProfile | null;
   // When false, accessory-category items are excluded from the candidate pool.
   includeAccessories?: boolean;
@@ -82,6 +80,9 @@ export function generateOutfit(options: GenerateOutfitOptions): OutfitSuggestion
     temperatureF,
     stylePrefs,
     undertone: profile?.undertone,
+    contrast: profile?.contrast,
+    heightRange: profile?.heightRange,
+    build: profile?.build,
     rejectedIdSets,
   });
 

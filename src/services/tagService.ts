@@ -16,6 +16,14 @@ function parseUndertone(value: unknown): UserProfile['undertone'] {
     : undefined;
 }
 
+const CONTRAST_VALUES = new Set(['high', 'medium', 'low']);
+
+function parseContrast(value: unknown): UserProfile['contrast'] {
+  return typeof value === 'string' && CONTRAST_VALUES.has(value.toLowerCase())
+    ? (value.toLowerCase() as UserProfile['contrast'])
+    : undefined;
+}
+
 // An item can carry 1-2 styles now (ADR 0018 — a plain t-shirt can be both
 // casual and beachwear), so this accepts either an array or a lone string
 // (the regex-fallback path only ever produces a single string) and resolves
@@ -93,11 +101,12 @@ export interface TagResult {
 
 export interface SkinToneResult {
   skinToneDesc: string;
-  // Structured form of the same undertone the prompt already asks the model
-  // to categorize in prose below — parsed out separately so outfit scoring
-  // (see outfitAesthetics.ts) has a real value to key off instead of having
-  // to parse free text.
+  // Structured form of the same undertone/contrast the prompt already asks
+  // the model to categorize in prose below — parsed out separately so outfit
+  // scoring (see outfitAesthetics.ts) has real values to key off instead of
+  // having to parse free text.
   undertone?: UserProfile['undertone'];
+  contrast?: UserProfile['contrast'];
 }
 
 function buildTagPrompt(category: ItemCategory): string {
@@ -159,6 +168,7 @@ IMPORTANT: Do NOT use specific color names like "brown" or "beige". Instead desc
 OUTPUT: Respond with ONLY a raw JSON object. No markdown:
 {
   "undertone": "<warm|cool|neutral>",
+  "contrast": "<high|medium|low>",
   "skinToneDesc": "<2-3 sentence description using only undertone, contrast, and build — no color names>"
 }`;
 }
@@ -258,14 +268,20 @@ export async function extractSkinTone(photoUri: string): Promise<SkinToneResult>
 
   const obj = raw && typeof raw === 'object' ? raw as Record<string, unknown> : null;
   if (obj && typeof obj.skinToneDesc === 'string') {
-    return { skinToneDesc: obj.skinToneDesc, undertone: parseUndertone(obj.undertone) };
+    return {
+      skinToneDesc: obj.skinToneDesc,
+      undertone: parseUndertone(obj.undertone),
+      contrast: parseContrast(obj.contrast),
+    };
   }
 
   // Same markdown fallback as above — extract whatever text the model produced
   const text = typeof raw === 'string' ? raw : '';
   const undertoneMatch = text.match(/"undertone"\s*:\s*"([^"]+)"/);
+  const contrastMatch = text.match(/"contrast"\s*:\s*"([^"]+)"/);
   return {
     skinToneDesc: text.slice(0, 200) || 'neutral undertone, medium contrast',
     undertone: parseUndertone(undertoneMatch?.[1]),
+    contrast: parseContrast(contrastMatch?.[1]),
   };
 }

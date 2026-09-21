@@ -378,4 +378,41 @@ describe('extractSkinTone', () => {
     const result = await extractSkinTone('file://profile.jpg');
     expect(result.undertone).toBeUndefined();
   });
+
+  it('parses the structured contrast field alongside undertone', async () => {
+    mockFetch.mockResolvedValue(makeResponse({
+      result: {
+        response: {
+          undertone: 'cool',
+          contrast: 'low',
+          skinToneDesc: 'Cool undertone, low contrast, slim build.',
+        },
+      },
+    }));
+    const result = await extractSkinTone('file://profile.jpg');
+    expect(result.contrast).toBe('low');
+  });
+
+  it('drops an unrecognized contrast value rather than passing it through', async () => {
+    mockFetch.mockResolvedValue(makeResponse({
+      result: { response: { contrast: 'super high', skinToneDesc: 'Some description.' } },
+    }));
+    const result = await extractSkinTone('file://profile.jpg');
+    expect(result.contrast).toBeUndefined();
+  });
+
+  it('parses contrast from the markdown-fence fallback path too', async () => {
+    const fenced = '```json\n{"undertone": "warm", "contrast": "high", "skinToneDesc": "Warm undertone, high contrast."}\n```';
+    mockFetch.mockResolvedValue(makeResponse({ result: { response: fenced } }));
+    const result = await extractSkinTone('file://profile.jpg');
+    expect(result.contrast).toBe('high');
+  });
+
+  it('leaves contrast undefined when the field is missing entirely', async () => {
+    mockFetch.mockResolvedValue(makeResponse({
+      result: { response: { skinToneDesc: 'Neutral undertone.' } },
+    }));
+    const result = await extractSkinTone('file://profile.jpg');
+    expect(result.contrast).toBeUndefined();
+  });
 });

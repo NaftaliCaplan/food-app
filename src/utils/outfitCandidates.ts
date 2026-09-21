@@ -59,9 +59,12 @@ function addAccessoriesGreedily(
   temperatureF: number | undefined,
   stylePrefs: StylePreference[] | undefined,
   undertone: UserProfile['undertone'] | undefined,
+  contrast: UserProfile['contrast'] | undefined,
+  heightRange: UserProfile['heightRange'] | undefined,
+  build: UserProfile['build'] | undefined,
 ): WardrobeItem[] {
   const current = [...base];
-  let currentScore = scoreOutfitAesthetics(current, temperatureF, stylePrefs, undertone);
+  let currentScore = scoreOutfitAesthetics(current, temperatureF, stylePrefs, undertone, contrast, heightRange, build);
   const remaining = new Set(accessories);
   const usedTypes = new Set<string>();
 
@@ -73,7 +76,7 @@ function addAccessoriesGreedily(
       const type = accessoryType(accessory);
       if (type && usedTypes.has(type)) continue; // slot already filled — e.g. a second hat
 
-      const trialScore = scoreOutfitAesthetics([...current, accessory], temperatureF, stylePrefs, undertone);
+      const trialScore = scoreOutfitAesthetics([...current, accessory], temperatureF, stylePrefs, undertone, contrast, heightRange, build);
       if (trialScore < bestScore) {
         bestScore = trialScore;
         best = accessory;
@@ -108,6 +111,9 @@ export interface SelectOutfitOptions {
   // (see outfitService.ts) — purely a scoring input, same as stylePrefs;
   // never affects which items are even in the pool.
   undertone?: UserProfile['undertone'];
+  contrast?: UserProfile['contrast'];
+  heightRange?: UserProfile['heightRange'];
+  build?: UserProfile['build'];
   rejectedIdSets: string[][];
 }
 
@@ -125,7 +131,7 @@ export interface SelectOutfitOptions {
 // Returns null only if the pool has nothing to build even a single
 // top/bottom/shoes combination from at all.
 export function selectBestOutfit(options: SelectOutfitOptions): WardrobeItem[] | null {
-  const { pool, includeAccessories, temperatureF, stylePrefs, undertone, rejectedIdSets } = options;
+  const { pool, includeAccessories, temperatureF, stylePrefs, undertone, contrast, heightRange, build, rejectedIdSets } = options;
 
   const byCategory = new Map<ItemCategory, WardrobeItem[]>();
   for (const item of pool) {
@@ -147,12 +153,14 @@ export function selectBestOutfit(options: SelectOutfitOptions): WardrobeItem[] |
   if (baseCandidates.length === 0) return null;
 
   const fullCandidates = baseCandidates.map(base =>
-    accessories.length > 0 ? addAccessoriesGreedily(base, accessories, temperatureF, stylePrefs, undertone) : base,
+    accessories.length > 0
+      ? addAccessoriesGreedily(base, accessories, temperatureF, stylePrefs, undertone, contrast, heightRange, build)
+      : base,
   );
 
   const scored = fullCandidates.map(items => ({
     items,
-    score: scoreOutfitAesthetics(items, temperatureF, stylePrefs, undertone),
+    score: scoreOutfitAesthetics(items, temperatureF, stylePrefs, undertone, contrast, heightRange, build),
     key: idsKey(items),
   }));
 

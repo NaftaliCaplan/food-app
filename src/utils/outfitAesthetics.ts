@@ -86,7 +86,7 @@ const VIVID_OVERLOAD_PENALTY = 1;
 const BELT_SHOE_MATCH_BONUS = 0.5;
 const FIT_BALANCE_BONUS = 0.5;
 
-// Personalization round 1 (ADR pending — undertone-based color matching):
+// Personalization round 1 (ADR 0019 — undertone-based color matching):
 // hand-curated warm/cool "flattering" accent-color splits, same idea as
 // CLASHING_COLOR_PAIRS above but for personal color matching instead of
 // general color-pairing convention. Only covers ACCENT_COLORS — neutrals are
@@ -99,6 +99,30 @@ const FIT_BALANCE_BONUS = 0.5;
 const WARM_FLATTERING_COLORS = new Set(['olive', 'orange', 'yellow', 'red', 'burgundy']);
 const COOL_FLATTERING_COLORS = new Set(['blue', 'purple', 'pink', 'green']);
 const UNDERTONE_COLOR_BONUS = 0.5;
+
+// Personalization round 2 (ADR 0020 — contrast-based brightness): a
+// low-contrast profile is rewarded for a deliberately blended ("tonal") look
+// as an *additional* way to earn a brightness-related bonus, alongside
+// (never instead of) the universal light+dark contrast bonus above. High and
+// medium contrast (and no profile at all) get no change — the existing
+// bonus above already rewards exactly what a high-contrast person wants.
+const CONTRAST_TONAL_BONUS = 0.5;
+
+// Personalization round 3 (ADR pending — height/build fit matching): reuses
+// the same fitted/loose tags as FIT_BALANCE_BONUS below, but rewards an
+// absolute fit choice rather than a top/bottom contrast. Petite height and
+// broad build both get a bonus for a fitted top+bottom pairing — a clean
+// vertical line for petite, streamlined tailoring for broad — two
+// independent reasons that happen to point at the same tag combination, so
+// a profile matching both simply earns both bonuses rather than one being
+// suppressed. Slim build gets the mirror-image bonus for a loose top+bottom
+// pairing (room to add visual volume/dimension). Average height/build (or no
+// profile) get no rule, same as tall height — no single fit choice is
+// broadly agreed to suit them more than another. All three are bonus-only,
+// same as every other personalization nudge: never a penalty for the
+// "other" fit, which would imply a fit choice is wrong for someone's build.
+const HEIGHT_FIT_BONUS = 0.5;
+const BUILD_FIT_BONUS = 0.5;
 
 // The whole-outfit rules only — color, pattern, weight-vs-temperature, and
 // style match. Deliberately excludes every bonus below: this is reused as an
@@ -173,26 +197,46 @@ export function scoreOutfitAesthetics(
   temperatureF?: number,
   stylePrefs?: StylePreference[],
   undertone?: UserProfile['undertone'],
+  contrast?: UserProfile['contrast'],
+  heightRange?: UserProfile['heightRange'],
+  build?: UserProfile['build'],
 ): number {
   let penalty = baseScore(items, temperatureF, stylePrefs);
 
-  let hasLight = false;
-  let hasDark = false;
+  let lightCount = 0;
+  let darkCount = 0;
+  let mutedCount = 0;
   let vividCount = 0;
   for (const item of items) {
     for (const rawTag of item.tags) {
       const tag = rawTag.toLowerCase();
-      if (tag === 'light') hasLight = true;
-      if (tag === 'dark') hasDark = true;
+      if (tag === 'light') lightCount += 1;
+      if (tag === 'dark') darkCount += 1;
+      if (tag === 'muted') mutedCount += 1;
       if (tag === 'vivid') vividCount += 1;
     }
   }
+  const hasLight = lightCount > 0;
+  const hasDark = darkCount > 0;
 
   // Reward a light+dark brightness contrast — an outfit where everything
   // sits at the same brightness level can read as flat. Rewarding the
   // presence of both rather than penalizing its absence means a wardrobe
   // without much brightness-tagged data isn't punished for missing data.
   if (hasLight && hasDark) penalty -= BRIGHTNESS_BALANCE_BONUS;
+
+  // A low-contrast profile gets an additional way to earn a bonus here: a
+  // deliberately blended ("tonal") look, i.e. at least 2 items sharing the
+  // same brightness value, rather than the bold light+dark contrast rewarded
+  // above. Requiring 2+ (not just "not light+dark") avoids rewarding an
+  // outfit that simply has sparse/missing brightness tags rather than a
+  // genuinely deliberate blended choice. Only applies when light+dark aren't
+  // both already present — that combination earns the bonus above instead,
+  // never both at once for the same reason.
+  if (contrast === 'low' && !(hasLight && hasDark)) {
+    const isTonal = lightCount >= 2 || darkCount >= 2 || mutedCount >= 2;
+    if (isTonal) penalty -= CONTRAST_TONAL_BONUS;
+  }
 
   // Too many high-intensity pieces compete for attention the same way too
   // many accent colors do — one vivid piece as a deliberate pop is fine,
@@ -221,6 +265,18 @@ export function scoreOutfitAesthetics(
     const topFit = top.tags.map(t => t.toLowerCase()).find(t => t === 'fitted' || t === 'loose');
     const bottomFit = bottom.tags.map(t => t.toLowerCase()).find(t => t === 'fitted' || t === 'loose');
     if (topFit && bottomFit && topFit !== bottomFit) penalty -= FIT_BALANCE_BONUS;
+
+    // Personalization round 3: an absolute fit choice (not a contrast) that
+    // flatters a self-reported height/build. Independent of the contrast
+    // bonus above — a top+bottom pair can't be both "matching" and
+    // "contrasting" at once, so these never double-apply for the same
+    // reason, though a profile matching multiple signals (e.g. petite AND
+    // broad) can still earn more than one bonus.
+    const bothFitted = topFit === 'fitted' && bottomFit === 'fitted';
+    const bothLoose = topFit === 'loose' && bottomFit === 'loose';
+    if (heightRange === 'petite' && bothFitted) penalty -= HEIGHT_FIT_BONUS;
+    if (build === 'broad' && bothFitted) penalty -= BUILD_FIT_BONUS;
+    if (build === 'slim' && bothLoose) penalty -= BUILD_FIT_BONUS;
   }
 
   // Reward layering only when the two tops are clean *in isolation* (color,
