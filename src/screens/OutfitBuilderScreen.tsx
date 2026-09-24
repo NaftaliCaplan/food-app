@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { ToggleRow } from '../components/ToggleRow';
 import { RootStackParamList } from '../navigation/types';
 import { getUserProfile } from '../storage/profileStorage';
 import { Colors } from '../theme/colors';
@@ -71,32 +72,6 @@ function ChipGrid({ options, selected, onToggle }: ChipGridProps) {
         );
       })}
     </View>
-  );
-}
-
-interface ToggleRowProps {
-  label: string;
-  sublabel: string;
-  value: boolean;
-  onToggle: () => void;
-}
-
-function ToggleRow({ label, sublabel, value, onToggle }: ToggleRowProps) {
-  return (
-    <TouchableOpacity
-      style={styles.toggleRow}
-      onPress={onToggle}
-      accessibilityRole="checkbox"
-      accessibilityLabel={label}
-      accessibilityState={{ checked: value }}
-    >
-      <View style={styles.toggleText}>
-        <AppText style={styles.toggleTitle}>
-          {value ? '[x]' : '[ ]'} {label}
-        </AppText>
-        <AppText style={styles.toggleSub}>{sublabel}</AppText>
-      </View>
-    </TouchableOpacity>
   );
 }
 
@@ -296,31 +271,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: Colors.accent,
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 0,
-    padding: Spacing.md,
-    marginTop: Spacing.sm,
-  },
-  toggleText: {
-    flex: 1,
-    gap: 2,
-  },
-  toggleTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  toggleSub: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    lineHeight: 16,
   },
   bottomBar: {
     padding: Spacing.lg,

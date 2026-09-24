@@ -66,8 +66,10 @@ function mergeStyleTags(tags: string[], styles: StylePreference[]): string[] {
 // color word that actually appears in the phrase (as a whole word) and use
 // those. Falls back to the old hyphenated-phrase behavior only if the phrase
 // contains no recognizable canonical word at all, so we still store
-// *something* rather than silently dropping the color.
-function normalizeColor(raw: string): string[] {
+// *something* rather than silently dropping the color. Exported so
+// selfieCheckService.ts can reuse the exact same extraction instead of
+// duplicating this fix a second time for its own multi-garment detection.
+export function normalizeColor(raw: string): string[] {
   const words = raw.toLowerCase().trim().split(/\s+/);
   const matched = words.filter(w => CANONICAL_COLORS.has(w));
   if (matched.length > 0) return matched;
