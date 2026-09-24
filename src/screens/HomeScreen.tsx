@@ -32,6 +32,11 @@ export function HomeScreen() {
           subtitle="Build outfits from your wardrobe"
           onPress={() => navigation.navigate('Wardrobe')}
         />
+        <FeatureButton
+          title="How's my outfit?"
+          subtitle="Check what you're wearing right now"
+          onPress={() => navigation.navigate('SelfieCheck')}
+        />
       </View>
 
       <AppText style={styles.taglineBottom}>Point. Capture. Know.</AppText>

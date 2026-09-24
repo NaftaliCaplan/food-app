@@ -9,7 +9,7 @@ interface Props {
   error?: string | null;
 }
 
-export function ClothesStatusOverlay({ status, error }: Props) {
+export function SelfieCheckStatusOverlay({ status, error }: Props) {
   if (status === 'loading') {
     return (
       <View style={styles.container}>

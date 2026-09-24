@@ -1,27 +1,50 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useEffect, useState } from 'react';
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
 import { CheckAnotherButton } from '../components/CheckAnotherButton';
-import { ClothesResultCard } from '../components/ClothesResultCard';
-import { ClothesStatusOverlay } from '../components/ClothesStatusOverlay';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { useClothesAnalysis } from '../hooks/useClothesAnalysis';
+import { SelfieCheckResultCard } from '../components/SelfieCheckResultCard';
+import { SelfieCheckStatusOverlay } from '../components/SelfieCheckStatusOverlay';
+import { useSelfieCheckAnalysis } from '../hooks/useSelfieCheckAnalysis';
 import { RootStackParamList } from '../navigation/types';
+import { getUserProfile } from '../storage/profileStorage';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
+import { UserProfile } from '../types/wardrobe';
 
-type Nav = NativeStackNavigationProp<RootStackParamList, 'ClothesResults'>;
-type Route = RouteProp<RootStackParamList, 'ClothesResults'>;
+type Nav = NativeStackNavigationProp<RootStackParamList, 'SelfieCheckResults'>;
+type Route = RouteProp<RootStackParamList, 'SelfieCheckResults'>;
 
-export function ClothesResultsScreen() {
+export function SelfieCheckResultsScreen() {
   const navigation = useNavigation<Nav>();
   const { params } = useRoute<Route>();
-  const { photoUri } = params;
+  const { photoUri, useProfile } = params;
 
-  const { status, result, error } = useClothesAnalysis(photoUri);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileReady, setProfileReady] = useState(false);
+
+  // Same split as OutfitResultsScreen: this screen resolves the profile from
+  // storage (only when the capture screen's toggle asked for it), the hook
+  // itself stays a thin async-call-plus-status wrapper.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const p = useProfile ? await getUserProfile() : null;
+      if (cancelled) return;
+      setProfile(p);
+      setProfileReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [useProfile]);
+
+  const { status, result, error } = useSelfieCheckAnalysis(photoUri, profile, profileReady);
+  const isLoading = !profileReady || status === 'loading';
 
   return (
     <View style={styles.container}>
@@ -43,14 +66,14 @@ export function ClothesResultsScreen() {
         </View>
 
         <View style={styles.content}>
-          {status === 'loading' || status === 'error' ? (
-            <ClothesStatusOverlay status={status} error={error} />
+          {isLoading || status === 'error' ? (
+            <SelfieCheckStatusOverlay status={isLoading ? 'loading' : 'error'} error={error} />
           ) : (
-            result && <ClothesResultCard result={result} />
+            result && <SelfieCheckResultCard result={result} />
           )}
 
-          {status === 'success' && (
-            <CheckAnotherButton onPress={() => navigation.navigate('ClothesChecker')} />
+          {!isLoading && status === 'success' && (
+            <CheckAnotherButton onPress={() => navigation.navigate('SelfieCheck')} />
           )}
         </View>
       </ScrollView>

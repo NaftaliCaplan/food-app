@@ -7,9 +7,10 @@ export type RootStackParamList = {
     photoUri: string;
     foodLabel: string;
   };
-  ClothesChecker: undefined;
-  ClothesResults: {
+  SelfieCheck: undefined;
+  SelfieCheckResults: {
     photoUri: string;
+    useProfile: boolean;
   };
   Wardrobe: undefined;
   SavedOutfits: undefined;

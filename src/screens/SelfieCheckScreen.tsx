@@ -1,24 +1,41 @@
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
 import { CaptureButton } from '../components/CaptureButton';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { ToggleRow } from '../components/ToggleRow';
 import { RootStackParamList } from '../navigation/types';
+import { getUserProfile } from '../storage/profileStorage';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
 
-type Nav = NativeStackNavigationProp<RootStackParamList, 'ClothesChecker'>;
+type Nav = NativeStackNavigationProp<RootStackParamList, 'SelfieCheck'>;
 
-export function ClothesCheckerScreen() {
+export function SelfieCheckScreen() {
   const navigation = useNavigation<Nav>();
   const [permission, requestPermission] = useCameraPermissions();
   const [capturing, setCapturing] = useState(false);
+  const [useProfile, setUseProfile] = useState(false);
+  const [hasProfile, setHasProfile] = useState(false);
   const cameraRef = useRef<CameraView>(null);
+
+  // Same convention as OutfitBuilderScreen: only offer the toggle when a
+  // profile actually exists, reset to off each visit — personalization is
+  // opt-in per check, not a sticky setting.
+  useFocusEffect(
+    useCallback(() => {
+      getUserProfile().then(p => {
+        const exists = p !== null;
+        setHasProfile(exists);
+        if (!exists) setUseProfile(false);
+      });
+    }, []),
+  );
 
   if (!permission) {
     return <View style={styles.container} />;
@@ -30,7 +47,7 @@ export function ClothesCheckerScreen() {
         <View style={styles.permissionBox}>
           <AppText style={styles.permissionTitle}>Camera access needed</AppText>
           <AppText style={styles.permissionSub}>
-            CBA needs your camera to analyze your outfit.
+            CBA needs your camera to check your outfit.
           </AppText>
           <TouchableOpacity style={styles.permissionBtn} onPress={requestPermission}>
             <AppText style={styles.permissionBtnText}>Grant Permission</AppText>
@@ -46,7 +63,7 @@ export function ClothesCheckerScreen() {
     try {
       const photo = await cameraRef.current.takePictureAsync();
       if (photo) {
-        navigation.navigate('ClothesResults', { photoUri: photo.uri });
+        navigation.navigate('SelfieCheckResults', { photoUri: photo.uri, useProfile });
       }
     } catch (e) {
       console.error('Capture failed', e);
@@ -58,13 +75,21 @@ export function ClothesCheckerScreen() {
   return (
     <View style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.topBar}>
-        <ScreenHeader title="Does it match?" onBack={() => navigation.goBack()} />
+        <ScreenHeader title="How's my outfit?" onBack={() => navigation.goBack()} />
       </SafeAreaView>
 
-      <CameraView ref={cameraRef} style={styles.camera} facing="back" />
+      <CameraView ref={cameraRef} style={styles.camera} facing="front" />
 
       <View style={styles.bottomBar}>
-        <AppText style={styles.hint}>Point at your outfit — tap to capture</AppText>
+        {hasProfile && (
+          <ToggleRow
+            label="Personalize for me"
+            sublabel="Use your style profile to tailor the result"
+            value={useProfile}
+            onToggle={() => setUseProfile(v => !v)}
+          />
+        )}
+        <AppText style={styles.hint}>Frame your outfit — tap to capture</AppText>
         {capturing ? (
           <ActivityIndicator color={Colors.accent} size="large" />
         ) : (
@@ -90,6 +115,7 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.lg,
   },
   bottomBar: {
+    paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.lg,
     alignItems: 'center',
     gap: Spacing.sm,

@@ -15,10 +15,11 @@ describe('HomeScreen', () => {
     expect(screen.getByText('color-blind assist')).toBeTruthy();
   });
 
-  it('renders both feature buttons', () => {
+  it('renders all three feature buttons', () => {
     render(<HomeScreen />);
     expect(screen.getByText('Is it ready?')).toBeTruthy();
     expect(screen.getByText('Does it match?')).toBeTruthy();
+    expect(screen.getByText("How's my outfit?")).toBeTruthy();
   });
 
   it('navigates to FoodChecker when food button is pressed', () => {
@@ -31,5 +32,11 @@ describe('HomeScreen', () => {
     render(<HomeScreen />);
     fireEvent.press(screen.getByText('Does it match?'));
     expect(mockNavigate).toHaveBeenCalledWith('Wardrobe');
+  });
+
+  it('navigates to SelfieCheck when the selfie-check button is pressed', () => {
+    render(<HomeScreen />);
+    fireEvent.press(screen.getByText("How's my outfit?"));
+    expect(mockNavigate).toHaveBeenCalledWith('SelfieCheck');
   });
 });

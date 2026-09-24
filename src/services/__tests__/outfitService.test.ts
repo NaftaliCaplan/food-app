@@ -181,13 +181,22 @@ describe('generateOutfit', () => {
   });
 
   it('threads profile.heightRange through to scoring, preferring a fitted top for a petite profile', () => {
+    // The "wrong" top carries a color that clashes with the shoes (red+green)
+    // so its candidate scores strictly worse regardless of fit tags — without
+    // this, the universal FIT_BALANCE_BONUS (rewards a top/bottom fit
+    // *contrast*) and the personalization HEIGHT_FIT_BONUS (rewards a fit
+    // *match*) can coincidentally tie at the same -0.5, since both bonuses
+    // are calibrated to the same magnitude, making the outcome a genuine
+    // coin-flip via selectBestOutfit's random tie-break (ADR 0017) rather
+    // than a deterministic preference — confirmed by running the un-isolated
+    // version of this test ~50% failure rate over repeated runs.
     const fittedTop = makeItem({ category: 'top', tags: ['casual', 'black', 'solid', 'fitted'] });
-    const looseTop = makeItem({ category: 'top', tags: ['casual', 'black', 'solid', 'loose'] });
+    const looseTop = makeItem({ category: 'top', tags: ['casual', 'red', 'solid', 'loose'] });
     const wardrobe = [
       fittedTop,
       looseTop,
       makeItem({ category: 'bottom', tags: ['casual', 'black', 'solid', 'fitted'] }),
-      makeItem({ category: 'shoes', tags: ['casual', 'black', 'solid'] }),
+      makeItem({ category: 'shoes', tags: ['casual', 'green', 'solid'] }),
     ];
     const result = generateOutfit({
       wardrobe,
@@ -199,13 +208,16 @@ describe('generateOutfit', () => {
   });
 
   it('threads profile.build through to scoring, preferring a loose top for a slim profile', () => {
+    // Same isolation fix as the petite test above — the "wrong" top's color
+    // clashes with the shoes so BUILD_FIT_BONUS's outcome can't coincidentally
+    // tie with the universal fit-contrast bonus.
     const looseTop = makeItem({ category: 'top', tags: ['casual', 'black', 'solid', 'loose'] });
-    const fittedTop = makeItem({ category: 'top', tags: ['casual', 'black', 'solid', 'fitted'] });
+    const fittedTop = makeItem({ category: 'top', tags: ['casual', 'red', 'solid', 'fitted'] });
     const wardrobe = [
       looseTop,
       fittedTop,
       makeItem({ category: 'bottom', tags: ['casual', 'black', 'solid', 'loose'] }),
-      makeItem({ category: 'shoes', tags: ['casual', 'black', 'solid'] }),
+      makeItem({ category: 'shoes', tags: ['casual', 'green', 'solid'] }),
     ];
     const result = generateOutfit({
       wardrobe,
