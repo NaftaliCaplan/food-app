@@ -1,13 +1,6 @@
-import { File } from 'expo-file-system/next';
-
 import { AnalysisResult } from '../types/analysis';
 import { parseLLMResponse, labelForState } from '../utils/parseLLMResponse';
-
-const ACCOUNT_ID = process.env.EXPO_PUBLIC_CF_ACCOUNT_ID;
-const API_TOKEN = process.env.EXPO_PUBLIC_CF_API_TOKEN;
-const MODEL = '@cf/meta/llama-3.2-11b-vision-instruct';
-
-const BASE_URL = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/${MODEL}`;
+import { callCloudflareVision, photoToBase64 } from './cloudflareVision';
 
 // Model always over-reports confidence — apply a realistic correction
 function adjustConfidence(modelConfidence: number, imageSizeBytes: number): number {
@@ -70,54 +63,25 @@ export async function analyzeFood(
   photoUri: string,
   foodLabel: string,
 ): Promise<AnalysisResult> {
-  const bytes = await new File(photoUri).bytes();
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  const base64 = btoa(binary);
+  const { base64, size } = await photoToBase64(photoUri);
+  const raw = await callCloudflareVision(base64, buildPrompt(foodLabel), 512);
 
-  const response = await fetch(BASE_URL, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${API_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
-            { type: 'text', text: buildPrompt(foodLabel) },
-          ],
-        },
-      ],
-      max_tokens: 512,
-    }),
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Cloudflare AI error ${response.status}: ${errText}`);
-  }
-
-  const json = await response.json();
-  const raw = json.result?.response;
+  const obj = raw && typeof raw === 'object' ? raw as Record<string, unknown> : null;
   // Model returns response as a pre-parsed object — use directly
-  if (raw && typeof raw === 'object' && raw.state) {
-    const observedFood: string = raw.observedFood ?? '';
+  if (obj && obj.state) {
+    const observedFood = typeof obj.observedFood === 'string' ? obj.observedFood : '';
     const labelMatch = observedFood
       ? foodLabelMatchesObserved(foodLabel, observedFood)
       : true;
-    const rawConfidence: number = raw.confidencePercent ?? 50;
-    const confidencePercent = adjustConfidence(rawConfidence, bytes.length);
+    const rawConfidence = typeof obj.confidencePercent === 'number' ? obj.confidencePercent : 50;
+    const confidencePercent = adjustConfidence(rawConfidence, size);
+    const state = obj.state as AnalysisResult['state'];
     return {
-      state: raw.state ?? 'unknown',
-      stateLabel: raw.stateLabel ?? labelForState(raw.state),
+      state,
+      stateLabel: typeof obj.stateLabel === 'string' ? obj.stateLabel : labelForState(state),
       confidencePercent,
-      visualCues: Array.isArray(raw.visualCues) ? raw.visualCues : [],
-      recommendation: raw.recommendation ?? '',
+      visualCues: Array.isArray(obj.visualCues) ? obj.visualCues : [],
+      recommendation: typeof obj.recommendation === 'string' ? obj.recommendation : '',
       observedFood: observedFood || undefined,
       labelMatch,
     };

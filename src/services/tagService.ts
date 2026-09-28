@@ -1,8 +1,7 @@
-import { File } from 'expo-file-system/next';
-
 import { ACCESSORY_TYPE_TAGS, COLOR_TAGS } from '../constants/tagVocabulary';
 import { ItemCategory, StylePreference, UserProfile } from '../types/wardrobe';
 import { isStyleWord, normalizeStyle, STYLE_KEYS } from '../utils/styleTags';
+import { callCloudflareVision, photoToBase64 } from './cloudflareVision';
 
 const CANONICAL_COLORS = new Set(COLOR_TAGS);
 
@@ -85,11 +84,6 @@ function mergeColorTags(tags: string[], colors: string[]): string[] {
   const newColors = normalizedColors.filter(c => !existing.has(c));
   return [...tags, ...newColors];
 }
-
-const ACCOUNT_ID = process.env.EXPO_PUBLIC_CF_ACCOUNT_ID;
-const API_TOKEN = process.env.EXPO_PUBLIC_CF_API_TOKEN;
-const MODEL = '@cf/meta/llama-3.2-11b-vision-instruct';
-const BASE_URL = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/${MODEL}`;
 
 export interface TagResult {
   isClothing: boolean;
@@ -175,48 +169,9 @@ OUTPUT: Respond with ONLY a raw JSON object. No markdown:
 }`;
 }
 
-async function toBase64(photoUri: string): Promise<{ base64: string; size: number }> {
-  const bytes = await new File(photoUri).bytes();
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return { base64: btoa(binary), size: bytes.length };
-}
-
-async function callCloudflare(base64: string, promptText: string, maxTokens = 400): Promise<unknown> {
-  const response = await fetch(BASE_URL, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${API_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
-            { type: 'text', text: promptText },
-          ],
-        },
-      ],
-      max_tokens: maxTokens,
-    }),
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Cloudflare AI error ${response.status}: ${errText}`);
-  }
-
-  const json = await response.json();
-  return json.result?.response;
-}
-
 export async function tagClothingItem(photoUri: string, category: ItemCategory): Promise<TagResult> {
-  const { base64 } = await toBase64(photoUri);
-  const raw = await callCloudflare(base64, buildTagPrompt(category));
+  const { base64 } = await photoToBase64(photoUri);
+  const raw = await callCloudflareVision(base64, buildTagPrompt(category));
 
   const obj = raw && typeof raw === 'object' ? raw as Record<string, unknown> : null;
   if (obj && typeof obj.name === 'string' && Array.isArray(obj.tags)) {
@@ -265,8 +220,8 @@ export async function tagClothingItem(photoUri: string, category: ItemCategory):
 }
 
 export async function extractSkinTone(photoUri: string): Promise<SkinToneResult> {
-  const { base64 } = await toBase64(photoUri);
-  const raw = await callCloudflare(base64, buildSkinTonePrompt(), 200);
+  const { base64 } = await photoToBase64(photoUri);
+  const raw = await callCloudflareVision(base64, buildSkinTonePrompt(), 200);
 
   const obj = raw && typeof raw === 'object' ? raw as Record<string, unknown> : null;
   if (obj && typeof obj.skinToneDesc === 'string') {

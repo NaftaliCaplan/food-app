@@ -1,15 +1,9 @@
-import { File } from 'expo-file-system/next';
-
 import { ACCESSORY_TYPE_TAGS, BRIGHTNESS_TAGS, PATTERN_TAGS } from '../constants/tagVocabulary';
 import { normalizeColor } from './tagService';
+import { callCloudflareVision, photoToBase64 } from './cloudflareVision';
 import { scoreOutfitAesthetics } from '../utils/outfitAesthetics';
 import { DetectedGarment, SelfieCheckResult, SelfieMatchTier } from '../types/selfieCheck';
 import { UserProfile, WardrobeItem } from '../types/wardrobe';
-
-const ACCOUNT_ID = process.env.EXPO_PUBLIC_CF_ACCOUNT_ID;
-const API_TOKEN = process.env.EXPO_PUBLIC_CF_API_TOKEN;
-const MODEL = '@cf/meta/llama-3.2-11b-vision-instruct';
-const BASE_URL = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/${MODEL}`;
 
 const TOP_BOTTOM_ATTRIBUTES = new Set(['fitted', 'loose', 'lightweight', 'heavyweight']);
 const SHOE_ATTRIBUTES = new Set(['canvas', 'leather', 'suede', 'athletic', 'slip-on', 'lace-up']);
@@ -50,45 +44,6 @@ STEP 3 — OUTPUT: Respond with ONLY a raw JSON object. No markdown, no explanat
   "shoes": { "present": <true|false>, "colors": ["..."], "pattern": "...", "brightness": "...", "attributes": ["..."] },
   "accessories": [ { "type": "...", "colors": ["..."], "attributes": ["..."] } ]
 }`;
-}
-
-async function toBase64(photoUri: string): Promise<string> {
-  const bytes = await new File(photoUri).bytes();
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
-async function callCloudflare(base64: string, promptText: string): Promise<unknown> {
-  const response = await fetch(BASE_URL, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${API_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
-            { type: 'text', text: promptText },
-          ],
-        },
-      ],
-      max_tokens: 500,
-    }),
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Cloudflare AI error ${response.status}: ${errText}`);
-  }
-
-  const json = await response.json();
-  return json.result?.response;
 }
 
 // Multi-slot nested JSON is too fragile to patch key-by-key with per-field
@@ -219,8 +174,8 @@ export async function checkSelfieOutfit(
   photoUri: string,
   profile?: UserProfile | null,
 ): Promise<SelfieCheckResult> {
-  const base64 = await toBase64(photoUri);
-  const raw = await callCloudflare(base64, buildSelfieDetectionPrompt());
+  const { base64 } = await photoToBase64(photoUri);
+  const raw = await callCloudflareVision(base64, buildSelfieDetectionPrompt(), 500);
 
   const garments = parseDetectedGarments(raw);
   if (garments.length === 0) {
