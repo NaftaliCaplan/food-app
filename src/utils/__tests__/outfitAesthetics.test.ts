@@ -99,28 +99,28 @@ describe('scoreOutfitAesthetics', () => {
 
   it('penalizes a heavyweight item above the hot threshold', () => {
     const items = [makeItem(['black', 'heavyweight'])];
-    expect(scoreOutfitAesthetics(items, 90)).toBeGreaterThan(0);
+    expect(scoreOutfitAesthetics(items, { temperatureF: 90 })).toBeGreaterThan(0);
   });
 
   it('does not penalize a heavyweight item at a mild temperature', () => {
     const items = [makeItem(['black', 'heavyweight'])];
-    expect(scoreOutfitAesthetics(items, 65)).toBe(0);
+    expect(scoreOutfitAesthetics(items, { temperatureF: 65 })).toBe(0);
   });
 
   it('penalizes a lightweight item below the cold threshold', () => {
     const items = [makeItem(['black', 'lightweight'])];
-    expect(scoreOutfitAesthetics(items, 30)).toBeGreaterThan(0);
+    expect(scoreOutfitAesthetics(items, { temperatureF: 30 })).toBeGreaterThan(0);
   });
 
   it('does not penalize a lightweight item in the heat', () => {
     const items = [makeItem(['black', 'lightweight'])];
-    expect(scoreOutfitAesthetics(items, 90)).toBe(0);
+    expect(scoreOutfitAesthetics(items, { temperatureF: 90 })).toBe(0);
   });
 
   it('never returns a penalty for a mistagged weight item so severe it would matter more than a real clash', () => {
     // The weight penalty should stay soft — comparable in magnitude to the
     // existing color/pattern penalties, not dominate them.
-    const weightOnly = scoreOutfitAesthetics([makeItem(['black', 'heavyweight'])], 90);
+    const weightOnly = scoreOutfitAesthetics([makeItem(['black', 'heavyweight'])], { temperatureF: 90 });
     const clash = scoreOutfitAesthetics([makeItem(['red', 'solid']), makeItem(['green', 'solid'])]);
     expect(weightOnly).toBeLessThan(clash);
   });
@@ -161,29 +161,28 @@ describe('scoreOutfitAesthetics', () => {
 
   it('penalizes an item whose style does not match any requested style', () => {
     const items = [makeItem(['black', 'solid', 'casual'])];
-    expect(scoreOutfitAesthetics(items, undefined, ['smart_casual'])).toBeGreaterThan(0);
+    expect(scoreOutfitAesthetics(items, { stylePrefs: ['smart_casual'] })).toBeGreaterThan(0);
   });
 
   it('does not penalize an item whose style matches the requested style', () => {
     const items = [makeItem(['black', 'solid', 'smart_casual'])];
-    expect(scoreOutfitAesthetics(items, undefined, ['smart_casual'])).toBe(0);
+    expect(scoreOutfitAesthetics(items, { stylePrefs: ['smart_casual'] })).toBe(0);
   });
 
   it('does not penalize style at all when no style was requested', () => {
     const items = [makeItem(['black', 'solid', 'casual'])];
-    expect(scoreOutfitAesthetics(items, undefined, [])).toBe(0);
+    expect(scoreOutfitAesthetics(items, { stylePrefs: [] })).toBe(0);
   });
 
   it('does not penalize a casual item when casual is itself the requested style', () => {
     const items = [makeItem(['black', 'solid', 'casual'])];
-    expect(scoreOutfitAesthetics(items, undefined, ['casual'])).toBe(0);
+    expect(scoreOutfitAesthetics(items, { stylePrefs: ['casual'] })).toBe(0);
   });
 
   it('weighs a style mismatch at the same +2 tier as the known-clashing-pair penalty', () => {
     const styleMismatch = scoreOutfitAesthetics(
       [makeItem(['black', 'solid', 'casual'])],
-      undefined,
-      ['smart_casual'],
+      { stylePrefs: ['smart_casual'] },
     );
     expect(styleMismatch).toBe(2);
   });
@@ -191,13 +190,11 @@ describe('scoreOutfitAesthetics', () => {
   it('penalizes a casual fallback item enough that a genuine style match wins between them', () => {
     const casualFallback = scoreOutfitAesthetics(
       [makeItem(['black', 'solid', 'casual'])],
-      undefined,
-      ['smart_casual'],
+      { stylePrefs: ['smart_casual'] },
     );
     const genuineMatch = scoreOutfitAesthetics(
       [makeItem(['black', 'solid', 'smart_casual'])],
-      undefined,
-      ['smart_casual'],
+      { stylePrefs: ['smart_casual'] },
     );
     expect(genuineMatch).toBeLessThan(casualFallback);
   });
@@ -285,28 +282,28 @@ describe('scoreOutfitAesthetics', () => {
 
   it('rewards a warm-flattering accent color when the profile undertone is warm', () => {
     const items = [makeItem(['black', 'solid']), makeItem(['orange', 'solid'])];
-    expect(scoreOutfitAesthetics(items, undefined, undefined, 'warm')).toBeLessThan(0);
+    expect(scoreOutfitAesthetics(items, { undertone: 'warm' })).toBeLessThan(0);
   });
 
   it('rewards a cool-flattering accent color when the profile undertone is cool', () => {
     const items = [makeItem(['black', 'solid']), makeItem(['blue', 'solid'])];
-    expect(scoreOutfitAesthetics(items, undefined, undefined, 'cool')).toBeLessThan(0);
+    expect(scoreOutfitAesthetics(items, { undertone: 'cool' })).toBeLessThan(0);
   });
 
   it('does not reward a cool-flattering color when the undertone is warm', () => {
     const items = [makeItem(['black', 'solid']), makeItem(['blue', 'solid'])];
-    expect(scoreOutfitAesthetics(items, undefined, undefined, 'warm')).toBe(0);
+    expect(scoreOutfitAesthetics(items, { undertone: 'warm' })).toBe(0);
   });
 
   it('never penalizes a non-flattering accent color for a given undertone — bonus only, never a penalty', () => {
-    const withUndertone = scoreOutfitAesthetics([makeItem(['black', 'solid']), makeItem(['blue', 'solid'])], undefined, undefined, 'warm');
+    const withUndertone = scoreOutfitAesthetics([makeItem(['black', 'solid']), makeItem(['blue', 'solid'])], { undertone: 'warm' });
     const withoutUndertone = scoreOutfitAesthetics([makeItem(['black', 'solid']), makeItem(['blue', 'solid'])]);
     expect(withUndertone).toBe(withoutUndertone);
   });
 
   it('applies no undertone adjustment when undertone is neutral', () => {
     const items = [makeItem(['black', 'solid']), makeItem(['orange', 'solid'])];
-    expect(scoreOutfitAesthetics(items, undefined, undefined, 'neutral')).toBe(0);
+    expect(scoreOutfitAesthetics(items, { undertone: 'neutral' })).toBe(0);
   });
 
   it('applies no undertone adjustment when no undertone is given at all', () => {
@@ -320,15 +317,11 @@ describe('scoreOutfitAesthetics', () => {
     // the accent-color-count penalty and the undertone bonus.
     const twoFlattering = scoreOutfitAesthetics(
       [makeItem(['olive', 'solid']), makeItem(['burgundy', 'solid'])],
-      undefined,
-      undefined,
-      'warm',
+      { undertone: 'warm' },
     );
     const oneFlattering = scoreOutfitAesthetics(
       [makeItem(['orange', 'solid']), makeItem(['black', 'solid'])],
-      undefined,
-      undefined,
-      'warm',
+      { undertone: 'warm' },
     );
     // Two flattering accent colors still incurs the normal "2 distinct accent
     // colors" penalty (+1) on top of the single undertone bonus (-0.5) — the
@@ -338,23 +331,23 @@ describe('scoreOutfitAesthetics', () => {
 
   it('rewards a low-contrast profile for a tonal (all-light) outfit', () => {
     const items = [makeItem(['black', 'solid', 'light']), makeItem(['gray', 'solid', 'light'])];
-    expect(scoreOutfitAesthetics(items, undefined, undefined, undefined, 'low')).toBeLessThan(0);
+    expect(scoreOutfitAesthetics(items, { contrast: 'low' })).toBeLessThan(0);
   });
 
   it('rewards a low-contrast profile for a tonal (all-dark) outfit', () => {
     const items = [makeItem(['black', 'solid', 'dark']), makeItem(['gray', 'solid', 'dark'])];
-    expect(scoreOutfitAesthetics(items, undefined, undefined, undefined, 'low')).toBeLessThan(0);
+    expect(scoreOutfitAesthetics(items, { contrast: 'low' })).toBeLessThan(0);
   });
 
   it('rewards a low-contrast profile for a tonal (all-muted) outfit', () => {
     const items = [makeItem(['black', 'solid', 'muted']), makeItem(['gray', 'solid', 'muted'])];
-    expect(scoreOutfitAesthetics(items, undefined, undefined, undefined, 'low')).toBeLessThan(0);
+    expect(scoreOutfitAesthetics(items, { contrast: 'low' })).toBeLessThan(0);
   });
 
   it('does not apply the tonal bonus for a high or medium contrast profile', () => {
     const items = [makeItem(['black', 'solid', 'light']), makeItem(['gray', 'solid', 'light'])];
-    expect(scoreOutfitAesthetics(items, undefined, undefined, undefined, 'high')).toBe(0);
-    expect(scoreOutfitAesthetics(items, undefined, undefined, undefined, 'medium')).toBe(0);
+    expect(scoreOutfitAesthetics(items, { contrast: 'high' })).toBe(0);
+    expect(scoreOutfitAesthetics(items, { contrast: 'medium' })).toBe(0);
   });
 
   it('does not apply the tonal bonus when no contrast is given at all', () => {
@@ -364,14 +357,14 @@ describe('scoreOutfitAesthetics', () => {
 
   it('requires at least 2 items sharing a brightness tag — a single tagged item is not enough', () => {
     const items = [makeItem(['black', 'solid', 'light']), makeItem(['gray', 'solid'])];
-    expect(scoreOutfitAesthetics(items, undefined, undefined, undefined, 'low')).toBe(0);
+    expect(scoreOutfitAesthetics(items, { contrast: 'low' })).toBe(0);
   });
 
   it('does not stack the tonal bonus on top of the light+dark contrast bonus', () => {
     // Both light+dark present — this is the universal contrast bonus's
     // territory, not the tonal bonus's, even for a low-contrast profile.
     const items = [makeItem(['black', 'solid', 'dark']), makeItem(['white', 'solid', 'light'])];
-    const lowContrast = scoreOutfitAesthetics(items, undefined, undefined, undefined, 'low');
+    const lowContrast = scoreOutfitAesthetics(items, { contrast: 'low' });
     const noProfile = scoreOutfitAesthetics(items);
     expect(lowContrast).toBe(noProfile);
   });
@@ -381,7 +374,7 @@ describe('scoreOutfitAesthetics', () => {
     // profile isn't penalized for a bold outfit, it just has an extra path
     // to a bonus that a high/medium-contrast profile doesn't get.
     const items = [makeItem(['black', 'solid', 'dark']), makeItem(['white', 'solid', 'light'])];
-    expect(scoreOutfitAesthetics(items, undefined, undefined, undefined, 'low')).toBeLessThan(0);
+    expect(scoreOutfitAesthetics(items, { contrast: 'low' })).toBeLessThan(0);
   });
 
   it('rewards a petite profile for a fitted top+bottom pairing', () => {
@@ -389,7 +382,7 @@ describe('scoreOutfitAesthetics', () => {
       makeItem(['black', 'solid', 'fitted'], { category: 'top' }),
       makeItem(['black', 'solid', 'fitted'], { category: 'bottom' }),
     ];
-    expect(scoreOutfitAesthetics(items, undefined, undefined, undefined, undefined, 'petite')).toBeLessThan(0);
+    expect(scoreOutfitAesthetics(items, { heightRange: 'petite' })).toBeLessThan(0);
   });
 
   it('does not reward a petite profile for a loose top+bottom pairing', () => {
@@ -397,7 +390,7 @@ describe('scoreOutfitAesthetics', () => {
       makeItem(['black', 'solid', 'loose'], { category: 'top' }),
       makeItem(['black', 'solid', 'loose'], { category: 'bottom' }),
     ];
-    expect(scoreOutfitAesthetics(items, undefined, undefined, undefined, undefined, 'petite')).toBe(0);
+    expect(scoreOutfitAesthetics(items, { heightRange: 'petite' })).toBe(0);
   });
 
   it('applies no height adjustment for average or tall, or when no profile is given', () => {
@@ -405,8 +398,8 @@ describe('scoreOutfitAesthetics', () => {
       makeItem(['black', 'solid', 'fitted'], { category: 'top' }),
       makeItem(['black', 'solid', 'fitted'], { category: 'bottom' }),
     ];
-    expect(scoreOutfitAesthetics(items, undefined, undefined, undefined, undefined, 'average')).toBe(0);
-    expect(scoreOutfitAesthetics(items, undefined, undefined, undefined, undefined, 'tall')).toBe(0);
+    expect(scoreOutfitAesthetics(items, { heightRange: 'average' })).toBe(0);
+    expect(scoreOutfitAesthetics(items, { heightRange: 'tall' })).toBe(0);
     expect(scoreOutfitAesthetics(items)).toBe(0);
   });
 
@@ -415,7 +408,7 @@ describe('scoreOutfitAesthetics', () => {
       makeItem(['black', 'solid', 'fitted'], { category: 'top' }),
       makeItem(['black', 'solid', 'fitted'], { category: 'bottom' }),
     ];
-    expect(scoreOutfitAesthetics(items, undefined, undefined, undefined, undefined, undefined, 'broad')).toBeLessThan(0);
+    expect(scoreOutfitAesthetics(items, { build: 'broad' })).toBeLessThan(0);
   });
 
   it('rewards a slim build for a loose top+bottom pairing', () => {
@@ -423,7 +416,7 @@ describe('scoreOutfitAesthetics', () => {
       makeItem(['black', 'solid', 'loose'], { category: 'top' }),
       makeItem(['black', 'solid', 'loose'], { category: 'bottom' }),
     ];
-    expect(scoreOutfitAesthetics(items, undefined, undefined, undefined, undefined, undefined, 'slim')).toBeLessThan(0);
+    expect(scoreOutfitAesthetics(items, { build: 'slim' })).toBeLessThan(0);
   });
 
   it('does not reward a slim build for a fitted pairing, or a broad build for a loose pairing', () => {
@@ -435,8 +428,8 @@ describe('scoreOutfitAesthetics', () => {
       makeItem(['black', 'solid', 'loose'], { category: 'top' }),
       makeItem(['black', 'solid', 'loose'], { category: 'bottom' }),
     ];
-    expect(scoreOutfitAesthetics(fitted, undefined, undefined, undefined, undefined, undefined, 'slim')).toBe(0);
-    expect(scoreOutfitAesthetics(loose, undefined, undefined, undefined, undefined, undefined, 'broad')).toBe(0);
+    expect(scoreOutfitAesthetics(fitted, { build: 'slim' })).toBe(0);
+    expect(scoreOutfitAesthetics(loose, { build: 'broad' })).toBe(0);
   });
 
   it('applies no build adjustment for average, or when no profile is given', () => {
@@ -444,7 +437,7 @@ describe('scoreOutfitAesthetics', () => {
       makeItem(['black', 'solid', 'fitted'], { category: 'top' }),
       makeItem(['black', 'solid', 'fitted'], { category: 'bottom' }),
     ];
-    expect(scoreOutfitAesthetics(items, undefined, undefined, undefined, undefined, undefined, 'average')).toBe(0);
+    expect(scoreOutfitAesthetics(items, { build: 'average' })).toBe(0);
     expect(scoreOutfitAesthetics(items)).toBe(0);
   });
 
@@ -453,8 +446,8 @@ describe('scoreOutfitAesthetics', () => {
       makeItem(['black', 'solid', 'fitted'], { category: 'top' }),
       makeItem(['black', 'solid', 'fitted'], { category: 'bottom' }),
     ];
-    const both = scoreOutfitAesthetics(items, undefined, undefined, undefined, undefined, 'petite', 'broad');
-    const heightOnly = scoreOutfitAesthetics(items, undefined, undefined, undefined, undefined, 'petite', 'average');
+    const both = scoreOutfitAesthetics(items, { heightRange: 'petite', build: 'broad' });
+    const heightOnly = scoreOutfitAesthetics(items, { heightRange: 'petite', build: 'average' });
     expect(both).toBeLessThan(heightOnly);
   });
 });

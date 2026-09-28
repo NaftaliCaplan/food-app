@@ -2,6 +2,20 @@ import { COLOR_TAGS } from '../constants/tagVocabulary';
 import { StylePreference, UserProfile, WardrobeItem } from '../types/wardrobe';
 import { extractStyles } from './styleTags';
 
+// Bundles every scoring input beyond the outfit itself. Introduced to replace
+// a 7-parameter positional signature on scoreOutfitAesthetics (and a matching
+// 8-parameter one on outfitCandidates.ts's addAccessoriesGreedily) that had
+// real transposition risk — several same-typed optional fields in a row with
+// no labels at the call site. Shared by both files, and by selfieCheckService.ts.
+export interface ScoringContext {
+  temperatureF?: number;
+  stylePrefs?: StylePreference[];
+  undertone?: UserProfile['undertone'];
+  contrast?: UserProfile['contrast'];
+  heightRange?: UserProfile['heightRange'];
+  build?: UserProfile['build'];
+}
+
 // Colors that read as neutral in outfit pairing — they pair safely with
 // anything, including each other, so they never count toward the
 // "too many accent colors" penalty below.
@@ -192,15 +206,8 @@ function baseScore(
 // ranking between candidates, never compared to an absolute threshold. This
 // ranks already-valid candidate outfits against each other (see ADR 0016) —
 // it never excludes an item, only helps choose between finished options.
-export function scoreOutfitAesthetics(
-  items: WardrobeItem[],
-  temperatureF?: number,
-  stylePrefs?: StylePreference[],
-  undertone?: UserProfile['undertone'],
-  contrast?: UserProfile['contrast'],
-  heightRange?: UserProfile['heightRange'],
-  build?: UserProfile['build'],
-): number {
+export function scoreOutfitAesthetics(items: WardrobeItem[], context: ScoringContext = {}): number {
+  const { temperatureF, stylePrefs, undertone, contrast, heightRange, build } = context;
   let penalty = baseScore(items, temperatureF, stylePrefs);
 
   let lightCount = 0;

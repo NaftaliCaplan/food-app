@@ -183,15 +183,12 @@ export async function checkSelfieOutfit(
   }
 
   const items = garments.map((g, i) => toPlaceholderWardrobeItem(g, photoUri, i));
-  const score = scoreOutfitAesthetics(
-    items,
-    undefined,
-    undefined,
-    profile?.undertone,
-    profile?.contrast,
-    profile?.heightRange,
-    profile?.build,
-  );
+  const score = scoreOutfitAesthetics(items, {
+    undertone: profile?.undertone,
+    contrast: profile?.contrast,
+    heightRange: profile?.heightRange,
+    build: profile?.build,
+  });
   const tier = tierForScore(score);
 
   return { tier, garments, tip: TIER_TIPS[tier] };

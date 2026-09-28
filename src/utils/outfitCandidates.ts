@@ -1,6 +1,6 @@
-import { scoreOutfitAesthetics } from './outfitAesthetics';
+import { ScoringContext, scoreOutfitAesthetics } from './outfitAesthetics';
 import { ACCESSORY_TYPE_TAGS } from '../constants/tagVocabulary';
-import { ItemCategory, StylePreference, UserProfile, WardrobeItem } from '../types/wardrobe';
+import { ItemCategory, WardrobeItem } from '../types/wardrobe';
 
 const ACCESSORY_TYPES = new Set(ACCESSORY_TYPE_TAGS);
 
@@ -56,15 +56,10 @@ function cartesianCombine(a: WardrobeItem[][], b: WardrobeItem[][]): WardrobeIte
 function addAccessoriesGreedily(
   base: WardrobeItem[],
   accessories: WardrobeItem[],
-  temperatureF: number | undefined,
-  stylePrefs: StylePreference[] | undefined,
-  undertone: UserProfile['undertone'] | undefined,
-  contrast: UserProfile['contrast'] | undefined,
-  heightRange: UserProfile['heightRange'] | undefined,
-  build: UserProfile['build'] | undefined,
+  context: ScoringContext,
 ): WardrobeItem[] {
   const current = [...base];
-  let currentScore = scoreOutfitAesthetics(current, temperatureF, stylePrefs, undertone, contrast, heightRange, build);
+  let currentScore = scoreOutfitAesthetics(current, context);
   const remaining = new Set(accessories);
   const usedTypes = new Set<string>();
 
@@ -76,7 +71,7 @@ function addAccessoriesGreedily(
       const type = accessoryType(accessory);
       if (type && usedTypes.has(type)) continue; // slot already filled — e.g. a second hat
 
-      const trialScore = scoreOutfitAesthetics([...current, accessory], temperatureF, stylePrefs, undertone, contrast, heightRange, build);
+      const trialScore = scoreOutfitAesthetics([...current, accessory], context);
       if (trialScore < bestScore) {
         bestScore = trialScore;
         best = accessory;
@@ -98,22 +93,13 @@ function idsKey(items: WardrobeItem[]): string {
   return items.map(i => i.id).sort().join(',');
 }
 
-export interface SelectOutfitOptions {
-  // Already style-filtered and laundry-excluded — this function is agnostic
-  // to why an item is or isn't in the pool. stylePrefs is passed through
-  // separately purely for scoring (see scoreOutfitAesthetics's style-match
-  // penalty) — it doesn't affect which items are even in the pool.
+// Extends ScoringContext rather than restating its 6 fields — this function
+// only ever uses them for scoring (see scoreOutfitAesthetics's style-match
+// penalty et al.), never to decide which items are even in the pool. `pool`
+// is already style-filtered and laundry-excluded by the caller.
+export interface SelectOutfitOptions extends ScoringContext {
   pool: WardrobeItem[];
   includeAccessories: boolean;
-  temperatureF?: number;
-  stylePrefs?: StylePreference[];
-  // Only ever set when the caller resolved a profile for this generation
-  // (see outfitService.ts) — purely a scoring input, same as stylePrefs;
-  // never affects which items are even in the pool.
-  undertone?: UserProfile['undertone'];
-  contrast?: UserProfile['contrast'];
-  heightRange?: UserProfile['heightRange'];
-  build?: UserProfile['build'];
   rejectedIdSets: string[][];
 }
 
@@ -131,7 +117,7 @@ export interface SelectOutfitOptions {
 // Returns null only if the pool has nothing to build even a single
 // top/bottom/shoes combination from at all.
 export function selectBestOutfit(options: SelectOutfitOptions): WardrobeItem[] | null {
-  const { pool, includeAccessories, temperatureF, stylePrefs, undertone, contrast, heightRange, build, rejectedIdSets } = options;
+  const { pool, includeAccessories, rejectedIdSets, ...context } = options;
 
   const byCategory = new Map<ItemCategory, WardrobeItem[]>();
   for (const item of pool) {
@@ -153,14 +139,12 @@ export function selectBestOutfit(options: SelectOutfitOptions): WardrobeItem[] |
   if (baseCandidates.length === 0) return null;
 
   const fullCandidates = baseCandidates.map(base =>
-    accessories.length > 0
-      ? addAccessoriesGreedily(base, accessories, temperatureF, stylePrefs, undertone, contrast, heightRange, build)
-      : base,
+    accessories.length > 0 ? addAccessoriesGreedily(base, accessories, context) : base,
   );
 
   const scored = fullCandidates.map(items => ({
     items,
-    score: scoreOutfitAesthetics(items, temperatureF, stylePrefs, undertone, contrast, heightRange, build),
+    score: scoreOutfitAesthetics(items, context),
     key: idsKey(items),
   }));
 
