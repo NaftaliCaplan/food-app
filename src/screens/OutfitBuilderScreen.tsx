@@ -125,7 +125,7 @@ export function OutfitBuilderScreen() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scroll}>
         <AppText style={styles.intro}>
-          Pick the styles you're going for. Leave them all off for an anything-goes
+          Pick the styles you&apos;re going for. Leave them all off for an anything-goes
           suggestion.
         </AppText>
 

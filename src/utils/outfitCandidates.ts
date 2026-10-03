@@ -131,6 +131,15 @@ export function selectBestOutfit(options: SelectOutfitOptions): WardrobeItem[] |
   const topVariants = slotVariants(byCategory.get('top') ?? [], true);
   const accessories = includeAccessories ? byCategory.get('accessory') ?? [] : [];
 
+  // Growth is O(bottoms * shoes * tops^2) here (tops^2 from slotVariants'
+  // layered-pair option), then each candidate gets scored once directly and
+  // again per accessory-round inside addAccessoriesGreedily below — so total
+  // scoreOutfitAesthetics calls can grow quite a bit faster than wardrobe
+  // size in the worst case. Not an active problem at realistic wardrobe
+  // sizes (tens of items per category), but if generation ever gets
+  // noticeably slow, this cartesian enumeration — not the scoring function
+  // itself — is almost certainly why; the fix would be capping candidate
+  // count or sampling rather than exhaustive enumeration.
   const baseCandidates = cartesianCombine(
     cartesianCombine(bottomVariants, shoeVariants),
     topVariants,

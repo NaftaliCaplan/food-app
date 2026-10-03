@@ -114,7 +114,7 @@ export function AddItemScreen() {
         <View style={styles.loadingBox}>
           <AppText style={styles.notClothingIcon}>[NOT CLOTHING]</AppText>
           <AppText style={styles.notClothingText}>
-            That doesn't look like a clothing item. Try again with the item clearly in frame.
+            That doesn&apos;t look like a clothing item. Try again with the item clearly in frame.
           </AppText>
           <TouchableOpacity style={styles.permissionBtn} onPress={() => setStep('camera')}>
             <AppText style={styles.permissionBtnText}>Retake Photo</AppText>
