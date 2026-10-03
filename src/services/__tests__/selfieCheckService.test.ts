@@ -1,4 +1,5 @@
 import { checkSelfieOutfit, tierForScore } from '../selfieCheckService';
+import { makeResponse } from '../../testUtils/mockResponse';
 
 jest.mock('expo-file-system/next', () => ({
   File: jest.fn().mockImplementation(() => ({
@@ -8,13 +9,6 @@ jest.mock('expo-file-system/next', () => ({
 
 global.fetch = jest.fn();
 const mockFetch = global.fetch as jest.Mock;
-
-const makeResponse = (body: unknown, ok = true, status = 200) => ({
-  ok,
-  status,
-  json: jest.fn().mockResolvedValue(body),
-  text: jest.fn().mockResolvedValue(String(body)),
-});
 
 const NOTHING_DETECTED = {
   top: { present: false, colors: [], pattern: '', brightness: '', attributes: [] },
@@ -54,7 +48,7 @@ describe('checkSelfieOutfit', () => {
     expect(options.headers['Content-Type']).toBe('application/json');
   });
 
-  it('parses a clean, fully-populated response into garments with a neutral-ish tier', async () => {
+  it('parses a clean, fully-populated response into garments with a good_match tier (fit contrast bonus, all-neutral colors)', async () => {
     mockFetch.mockResolvedValue(makeResponse({
       result: {
         response: {
@@ -73,7 +67,11 @@ describe('checkSelfieOutfit', () => {
         { category: 'shoes', tags: expect.arrayContaining(['black', 'solid', 'dark', 'leather']) },
       ]),
     );
-    expect(result.tip).toBeTruthy();
+    // fitted top + loose bottom earns the fit-contrast bonus (-0.5), landing
+    // in good_match rather than neutral — see outfitAesthetics.ts's
+    // FIT_BALANCE_BONUS and tierForScore's thresholds.
+    expect(result.tier).toBe('good_match');
+    expect(result.tip).toBe('Solid outfit — these pieces pair nicely.');
   });
 
   it('excludes a slot marked present: false from the detected garments', async () => {

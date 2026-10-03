@@ -8,29 +8,16 @@ interface Props {
   title: string;
   subtitle: string;
   onPress?: () => void;
-  disabled?: boolean;
 }
 
-export function FeatureButton({ title, subtitle, onPress, disabled }: Props) {
+export function FeatureButton({ title, subtitle, onPress }: Props) {
   return (
-    <TouchableOpacity
-      style={[styles.card, disabled && styles.cardDisabled]}
-      onPress={onPress}
-      disabled={disabled}
-      activeOpacity={0.7}
-    >
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.text}>
-        <AppText style={[styles.title, disabled && styles.titleDisabled]}>
-          {title}
-        </AppText>
-        <AppText style={[styles.subtitle, disabled && styles.subtitleDisabled]}>
-          {subtitle}
-        </AppText>
-        {disabled && (
-          <AppText style={styles.comingSoon}>Coming soon</AppText>
-        )}
+        <AppText style={styles.title}>{title}</AppText>
+        <AppText style={styles.subtitle}>{subtitle}</AppText>
       </View>
-      <AppText style={[styles.arrow, disabled && styles.arrowDisabled]}>→</AppText>
+      <AppText style={styles.arrow}>→</AppText>
     </TouchableOpacity>
   );
 }
@@ -46,9 +33,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.md,
   },
-  cardDisabled: {
-    opacity: 0.5,
-  },
   text: {
     flex: 1,
     gap: Spacing.xs,
@@ -58,27 +42,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.textPrimary,
   },
-  titleDisabled: {
-    color: Colors.textDisabled,
-  },
   subtitle: {
     fontSize: 13,
     color: Colors.textSecondary,
   },
-  subtitleDisabled: {
-    color: Colors.textDisabled,
-  },
-  comingSoon: {
-    fontSize: 12,
-    color: Colors.textDisabled,
-    fontStyle: 'italic',
-    marginTop: Spacing.xs,
-  },
   arrow: {
     fontSize: 18,
     color: Colors.accent,
-  },
-  arrowDisabled: {
-    color: Colors.textDisabled,
   },
 });

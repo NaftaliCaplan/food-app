@@ -28,11 +28,12 @@ describe('SelfieCheckScreen', () => {
     getUserProfile.mockReset();
   });
 
-  it('shows empty view when permission is null', () => {
+  it('shows neither the permission request nor the camera UI while permission is still loading', () => {
     useCameraPermissions.mockReturnValue([null, jest.fn()]);
     getUserProfile.mockResolvedValue(null);
-    const { toJSON } = render(<SelfieCheckScreen />);
-    expect(toJSON()).toBeTruthy();
+    render(<SelfieCheckScreen />);
+    expect(screen.queryByText('Camera access needed')).toBeNull();
+    expect(screen.queryByText("How's my outfit?")).toBeNull();
   });
 
   it('shows permission request when not granted', () => {
@@ -47,6 +48,7 @@ describe('SelfieCheckScreen', () => {
     useCameraPermissions.mockReturnValue([{ granted: true }, jest.fn()]);
     getUserProfile.mockResolvedValue(null);
     render(<SelfieCheckScreen />);
+    await act(async () => {});
     expect(screen.getByText("How's my outfit?")).toBeTruthy();
     expect(screen.getByText('Frame your outfit — tap to capture')).toBeTruthy();
   });
@@ -76,10 +78,11 @@ describe('SelfieCheckScreen', () => {
     expect(screen.getByLabelText('Personalize for me').props.accessibilityState?.checked).toBe(true);
   });
 
-  it('back button calls goBack', () => {
+  it('back button calls goBack', async () => {
     useCameraPermissions.mockReturnValue([{ granted: true }, jest.fn()]);
     getUserProfile.mockResolvedValue(null);
     render(<SelfieCheckScreen />);
+    await act(async () => {});
     fireEvent.press(screen.getByText('← Back'));
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });

@@ -30,10 +30,11 @@ describe('AddItemScreen', () => {
     mockGoBack.mockClear();
   });
 
-  it('shows empty view when permission is null', () => {
+  it('shows neither the permission request nor the camera UI while permission is still loading', () => {
     useCameraPermissions.mockReturnValue([null, jest.fn()]);
-    const { toJSON } = render(<AddItemScreen />);
-    expect(toJSON()).toBeTruthy();
+    render(<AddItemScreen />);
+    expect(screen.queryByText('Camera access needed')).toBeNull();
+    expect(screen.queryByText('Add Item')).toBeNull();
   });
 
   it('shows permission request when not granted', () => {

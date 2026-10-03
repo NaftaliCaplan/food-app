@@ -53,6 +53,33 @@ describe('parseLLMResponse', () => {
       const result = parseLLMResponse(raw);
       expect(result.visualCues).toEqual([]);
     });
+
+    it('passes observedFood through when present', () => {
+      const raw = JSON.stringify({
+        state: 'ripe',
+        confidencePercent: 80,
+        visualCues: [],
+        recommendation: '',
+        observedFood: 'a yellow banana',
+      });
+      const result = parseLLMResponse(raw);
+      expect(result.observedFood).toBe('a yellow banana');
+    });
+
+    it('omits observedFood entirely when not present in the response', () => {
+      const raw = JSON.stringify({ state: 'ripe', confidencePercent: 80, visualCues: [], recommendation: '' });
+      const result = parseLLMResponse(raw);
+      expect(result.observedFood).toBeUndefined();
+    });
+
+    it('falls through to keyword parsing when the braces contain invalid JSON', () => {
+      // Looks JSON-shaped (passes the {...} regex) but isn't valid JSON, so
+      // JSON.parse throws and the catch{} must fall through to the keyword
+      // fallback below rather than propagating the error.
+      const raw = 'The food looks ripe and ready. {not: valid, json}';
+      const result = parseLLMResponse(raw);
+      expect(result.state).toBe('ripe');
+    });
   });
 
   describe('keyword fallback parsing', () => {
@@ -86,6 +113,16 @@ describe('parseLLMResponse', () => {
       expect(result.state).toBe('raw');
     });
 
+    it('detects almost_ready from plain text', () => {
+      const result = parseLLMResponse('This avocado is almost ready, just a day or two more.');
+      expect(result.state).toBe('almost_ready');
+    });
+
+    it('detects use_soon from plain text', () => {
+      const result = parseLLMResponse('This bread should use soon before it goes stale.');
+      expect(result.state).toBe('use_soon');
+    });
+
     it('returns unknown for unrecognized text', () => {
       const result = parseLLMResponse('I cannot determine the state of this food.');
       expect(result.state).toBe('unknown');
@@ -94,6 +131,49 @@ describe('parseLLMResponse', () => {
     it('sets confidence to 50 on fallback', () => {
       const result = parseLLMResponse('This banana looks ripe.');
       expect(result.confidencePercent).toBe(50);
+    });
+
+    it('extracts a confidence percentage from prose when present', () => {
+      const result = parseLLMResponse('This banana looks ripe. Confidence Percent: 85%');
+      expect(result.confidencePercent).toBe(85);
+    });
+
+    it('extracts bullet-point visual cues, capped at 3', () => {
+      const raw = [
+        'This banana looks ripe.',
+        '* Yellow skin with brown spots',
+        '* Soft to the touch',
+        '* Sweet smell',
+        '* Fourth cue that should be dropped',
+      ].join('\n');
+      const result = parseLLMResponse(raw);
+      expect(result.visualCues).toEqual([
+        'Yellow skin with brown spots',
+        'Soft to the touch',
+        'Sweet smell',
+      ]);
+    });
+
+    it('returns no visual cues when there are no bullet points', () => {
+      const result = parseLLMResponse('This banana looks ripe with no bullets at all.');
+      expect(result.visualCues).toEqual([]);
+    });
+
+    it('extracts a recommendation after the word "Recommendation"', () => {
+      const result = parseLLMResponse('This banana looks ripe. Recommendation: Eat it today for best flavor.');
+      expect(result.recommendation).toBe('Eat it today for best flavor.');
+    });
+
+    it('truncates an extracted recommendation to 200 characters', () => {
+      const longRec = 'x'.repeat(250);
+      const result = parseLLMResponse(`This banana looks ripe. Recommendation: ${longRec}`);
+      expect(result.recommendation.length).toBe(200);
+    });
+
+    it('falls back to the first 150 characters of raw text when there is no "Recommendation" label', () => {
+      const raw = 'y'.repeat(200);
+      const result = parseLLMResponse(raw);
+      expect(result.recommendation).toBe(raw.slice(0, 150));
     });
   });
 

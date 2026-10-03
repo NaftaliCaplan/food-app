@@ -1,28 +1,12 @@
 import { selectBestOutfit } from '../outfitCandidates';
+import { makeWardrobeItem as makeItem } from '../../testUtils/makeWardrobeItem';
 import { StylePreference, WardrobeItem } from '../../types/wardrobe';
-
-let nextId = 1;
-
-function makeItem(overrides: Partial<WardrobeItem> = {}): WardrobeItem {
-  return {
-    id: String(nextId++),
-    photoUri: 'file://x.jpg',
-    category: 'top',
-    tags: [],
-    addedAt: 0,
-    ...overrides,
-  };
-}
 
 function idsOf(items: WardrobeItem[]): string[] {
   return items.map(i => i.id).sort();
 }
 
 describe('selectBestOutfit', () => {
-  beforeEach(() => {
-    nextId = 1;
-  });
-
   it('returns null when the pool has nothing to build a top/bottom/shoes combo from', () => {
     const accessoryOnly = makeItem({ category: 'accessory' });
     expect(

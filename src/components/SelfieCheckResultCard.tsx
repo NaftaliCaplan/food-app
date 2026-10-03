@@ -7,8 +7,8 @@ import { AppText } from './AppText';
 import { CueBulletList } from './CueBulletList';
 
 // Icons are the colorblind-accessible signal — always paired with TIER_COLOR
-// but never dependent on it, same convention as the legacy clothes-checker
-// this replaces (ClothesResultCard).
+// but never dependent on it, same convention used everywhere else in the app
+// that shows a verdict.
 const TIER_ICON: Record<SelfieMatchTier, string> = {
   strong_match: '[MATCH]',
   good_match:   '[GOOD]',
@@ -26,11 +26,11 @@ const TIER_LABEL: Record<SelfieMatchTier, string> = {
 };
 
 const TIER_COLOR: Record<SelfieMatchTier, string> = {
-  strong_match: Colors.clothesStrongMatch,
-  good_match:   Colors.clothesGoodMatch,
-  neutral:      Colors.clothesNeutral,
-  mild_clash:   Colors.clothesMildClash,
-  strong_clash: Colors.clothesStrongClash,
+  strong_match: Colors.matchTierStrong,
+  good_match:   Colors.matchTierGood,
+  neutral:      Colors.matchTierNeutral,
+  mild_clash:   Colors.matchTierMildClash,
+  strong_clash: Colors.matchTierStrongClash,
 };
 
 interface Props {

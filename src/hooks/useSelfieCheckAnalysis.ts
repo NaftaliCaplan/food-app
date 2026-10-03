@@ -10,7 +10,7 @@ type Status = 'loading' | 'success' | 'error';
 // OutfitResultsScreen/useOutfitGenerator — this hook stays thin (just the
 // async call + status), storage access lives one layer up.
 //
-// `ready` defaults to true (matching useClothesAnalysis's always-fire-on-mount
+// `ready` defaults to true (matching useAnalysis's always-fire-on-mount
 // shape) but the results screen passes false until it's actually resolved
 // the profile from storage — without this, the effect would fire once
 // immediately with `profile: null` and then again once the real profile

@@ -63,16 +63,19 @@ export function UserProfileScreen() {
 
   // Load existing profile on mount so the user can update rather than re-enter
   useEffect(() => {
+    let cancelled = false;
     getUserProfile().then(p => {
-      if (p) {
-        setPhotoUri(p.photoUri);
-        setSkinToneDesc(p.skinToneDesc);
-        setUndertone(p.undertone);
-        setContrast(p.contrast);
-        setHeightRange(p.heightRange);
-        setBuild(p.build);
-      }
+      if (cancelled || !p) return;
+      setPhotoUri(p.photoUri);
+      setSkinToneDesc(p.skinToneDesc);
+      setUndertone(p.undertone);
+      setContrast(p.contrast);
+      setHeightRange(p.heightRange);
+      setBuild(p.build);
     });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function handleCapture() {

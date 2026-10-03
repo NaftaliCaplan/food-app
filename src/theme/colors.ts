@@ -21,12 +21,12 @@ export const Colors = {
   stateMedium:     '#A3E635',
   stateWellDone:   '#4ADE80',
   stateError:      '#F87171',
-  stateComingSoon: '#444444',
 
-  // Clothes matcher verdict colors — always paired with icons, never used alone
-  clothesStrongMatch: '#4ADE80',
-  clothesGoodMatch:   '#86EFAC',
-  clothesNeutral:     '#94A3B8',
-  clothesMildClash:   '#FACC15',
-  clothesStrongClash: '#F87171',
+  // Match-tier verdict colors (currently only SelfieCheckResultCard) — always
+  // paired with icons, never used alone.
+  matchTierStrong:     '#4ADE80',
+  matchTierGood:       '#86EFAC',
+  matchTierNeutral:    '#94A3B8',
+  matchTierMildClash:  '#FACC15',
+  matchTierStrongClash:'#F87171',
 } as const;

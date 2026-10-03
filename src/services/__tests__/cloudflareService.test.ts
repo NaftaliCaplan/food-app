@@ -1,4 +1,5 @@
 import { analyzeFood } from '../cloudflareService';
+import { makeResponse } from '../../testUtils/mockResponse';
 
 jest.mock('expo-file-system/next', () => ({
   File: jest.fn().mockImplementation(() => ({
@@ -10,13 +11,6 @@ const { File } = require('expo-file-system/next');
 
 global.fetch = jest.fn();
 const mockFetch = global.fetch as jest.Mock;
-
-const makeResponse = (body: unknown, ok = true, status = 200) => ({
-  ok,
-  status,
-  json: jest.fn().mockResolvedValue(body),
-  text: jest.fn().mockResolvedValue(String(body)),
-});
 
 function mockImageSize(bytes: number) {
   File.mockImplementation(() => ({

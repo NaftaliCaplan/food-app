@@ -21,10 +21,11 @@ describe('FoodCheckerScreen', () => {
     mockGoBack.mockClear();
   });
 
-  it('shows loading state when permission is null', () => {
+  it('shows neither the permission request nor the camera UI while permission is still loading', () => {
     useCameraPermissions.mockReturnValue([null, jest.fn()]);
-    const { toJSON } = render(<FoodCheckerScreen />);
-    expect(toJSON()).toBeTruthy();
+    render(<FoodCheckerScreen />);
+    expect(screen.queryByText('Camera access needed')).toBeNull();
+    expect(screen.queryByText('Is it ready?')).toBeNull();
   });
 
   it('shows permission request when not granted', () => {

@@ -89,11 +89,16 @@ export function OutfitBuilderScreen() {
   // useProfile to false each visit — personalization is opt-in per generation.
   useFocusEffect(
     useCallback(() => {
+      let cancelled = false;
       getUserProfile().then(p => {
+        if (cancelled) return;
         const exists = p !== null;
         setHasProfile(exists);
         if (!exists) setUseProfile(false);
       });
+      return () => {
+        cancelled = true;
+      };
     }, []),
   );
 

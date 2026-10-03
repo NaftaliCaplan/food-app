@@ -17,10 +17,9 @@ export interface OutfitGeneratorState {
 export interface UseOutfitGeneratorResult extends OutfitGeneratorState {
   // Start the first generation. Call once when the screen mounts.
   generate: () => void;
-  // Called when the user taps "Try again". Accepts optional text feedback
-  // (used to give the AI a hint on the next call — currently stored for
-  // future use; the main rejection signal is the excluded combo).
-  reject: (feedback?: string) => void;
+  // Called when the user taps "Try again" — records the current suggestion
+  // as rejected (see rejectedIdSetsRef below) and regenerates.
+  reject: () => void;
 }
 
 export function useOutfitGenerator(
@@ -79,22 +78,19 @@ export function useOutfitGenerator(
     run();
   }, [run]);
 
-  const reject = useCallback(
-    (_feedback?: string) => {
-      // Record the current suggestion's item IDs as a rejected combination.
-      // generateOutfit excludes any exact match to these when picking the
-      // next-best candidate (falling back to ignoring them if that would
-      // leave nothing at all — see selectBestOutfit).
-      if (suggestion) {
-        rejectedIdSetsRef.current = [
-          ...rejectedIdSetsRef.current,
-          suggestion.items.map(i => i.id),
-        ].slice(-MAX_REMEMBERED_REJECTIONS);
-      }
-      run();
-    },
-    [suggestion, run],
-  );
+  const reject = useCallback(() => {
+    // Record the current suggestion's item IDs as a rejected combination.
+    // generateOutfit excludes any exact match to these when picking the
+    // next-best candidate (falling back to ignoring them if that would
+    // leave nothing at all — see selectBestOutfit).
+    if (suggestion) {
+      rejectedIdSetsRef.current = [
+        ...rejectedIdSetsRef.current,
+        suggestion.items.map(i => i.id),
+      ].slice(-MAX_REMEMBERED_REJECTIONS);
+    }
+    run();
+  }, [suggestion, run]);
 
   return { status, suggestion, error, attemptCount, generate, reject };
 }

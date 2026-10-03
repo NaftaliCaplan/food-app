@@ -42,8 +42,16 @@ export function WardrobeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      getWardrobe().then(setItems);
-      getUserProfile().then(p => setHasProfile(p !== null));
+      let cancelled = false;
+      getWardrobe().then(w => {
+        if (!cancelled) setItems(w);
+      });
+      getUserProfile().then(p => {
+        if (!cancelled) setHasProfile(p !== null);
+      });
+      return () => {
+        cancelled = true;
+      };
     }, []),
   );
 

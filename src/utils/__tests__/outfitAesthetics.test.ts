@@ -1,15 +1,13 @@
 import { scoreOutfitAesthetics } from '../outfitAesthetics';
+import { makeWardrobeItem } from '../../testUtils/makeWardrobeItem';
 import { WardrobeItem } from '../../types/wardrobe';
 
+// This file's own convention is tags-first (every call site in this file
+// predates the shared factory and reads better with tags up front), so this
+// stays a thin wrapper around the shared makeWardrobeItem rather than
+// rewriting every call site to the overrides-only shape.
 function makeItem(tags: string[], overrides: Partial<WardrobeItem> = {}): WardrobeItem {
-  return {
-    id: Math.random().toString(),
-    photoUri: 'file://x.jpg',
-    category: 'top',
-    tags,
-    addedAt: 0,
-    ...overrides,
-  };
+  return makeWardrobeItem({ tags, ...overrides });
 }
 
 describe('scoreOutfitAesthetics', () => {

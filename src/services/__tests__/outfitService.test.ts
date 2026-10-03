@@ -1,23 +1,7 @@
 import { generateOutfit } from '../outfitService';
-import { WardrobeItem } from '../../types/wardrobe';
-
-let nextId = 1;
-
-function makeItem(overrides: Partial<WardrobeItem> = {}): WardrobeItem {
-  return {
-    id: String(nextId++),
-    photoUri: 'file://1.jpg',
-    category: 'top',
-    tags: [],
-    addedAt: 0,
-    ...overrides,
-  };
-}
+import { makeWardrobeItem as makeItem } from '../../testUtils/makeWardrobeItem';
 
 describe('generateOutfit', () => {
-  beforeEach(() => {
-    nextId = 1;
-  });
 
   it('throws when fewer than 2 items match the requested style', () => {
     const wardrobe = [makeItem({ category: 'top', tags: ['formal'] })];

@@ -1,23 +1,7 @@
 import { buildRecommendation } from '../outfitRecommendation';
-import { WardrobeItem } from '../../types/wardrobe';
-
-let nextId = 1;
-
-function makeItem(overrides: Partial<WardrobeItem> = {}): WardrobeItem {
-  return {
-    id: String(nextId++),
-    photoUri: 'file://x.jpg',
-    category: 'top',
-    tags: [],
-    addedAt: 0,
-    ...overrides,
-  };
-}
+import { makeWardrobeItem as makeItem } from '../../testUtils/makeWardrobeItem';
 
 describe('buildRecommendation', () => {
-  beforeEach(() => {
-    nextId = 1;
-  });
 
   it('names both tops in a layering tip, with the outerwear-tagged one as the outer layer', () => {
     const inner = makeItem({ category: 'top', name: 'navy tee', tags: ['navy', 'solid'] });
@@ -65,5 +49,13 @@ describe('buildRecommendation', () => {
     const bottom = makeItem({ category: 'bottom', name: 'jeans' });
     const text = buildRecommendation([top, bottom]);
     expect(text).toBe('These pieces already work well together — wear them as-is.');
+  });
+
+  it('falls back to the item\'s category when it has no name', () => {
+    const top = makeItem({ category: 'top', name: 'tee' });
+    const bottom = makeItem({ category: 'bottom', name: 'jeans' });
+    const unnamedAccessory = makeItem({ category: 'accessory' });
+    const text = buildRecommendation([top, bottom, unnamedAccessory]);
+    expect(text).toBe("Finish the look with the 'accessory'.");
   });
 });

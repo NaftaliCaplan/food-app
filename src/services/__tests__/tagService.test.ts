@@ -1,4 +1,5 @@
 import { extractSkinTone, tagClothingItem } from '../tagService';
+import { makeResponse } from '../../testUtils/mockResponse';
 
 jest.mock('expo-file-system/next', () => ({
   File: jest.fn().mockImplementation(() => ({
@@ -8,13 +9,6 @@ jest.mock('expo-file-system/next', () => ({
 
 global.fetch = jest.fn();
 const mockFetch = global.fetch as jest.Mock;
-
-const makeResponse = (body: unknown, ok = true, status = 200) => ({
-  ok,
-  status,
-  json: jest.fn().mockResolvedValue(body),
-  text: jest.fn().mockResolvedValue(String(body)),
-});
 
 function promptFrom(mockFetchCall: unknown[]): string {
   const [, options] = mockFetchCall as [string, { body: string }];
