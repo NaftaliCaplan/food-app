@@ -105,6 +105,19 @@ export interface SkinToneResult {
   contrast?: UserProfile['contrast'];
 }
 
+// The one line of STEP 4 that varies by category — pulled out of the prompt
+// template below so the three cases read as a plain if/else instead of a
+// ternary nested inside a ternary inside a template literal.
+function attributeStepLine(category: ItemCategory): string {
+  if (category === 'top' || category === 'bottom') {
+    return '- Weight/fit: lightweight / heavyweight / fitted / loose';
+  }
+  if (category === 'shoes') {
+    return '- Material/type: canvas / leather / suede / athletic / slip-on / lace-up';
+  }
+  return `- Material: leather / metal / fabric / knit / woven\n- Type: ${ACCESSORY_TYPE_TAGS.join(' / ')} (pick whichever fits best; skip this line entirely if genuinely none apply)`;
+}
+
 function buildTagPrompt(category: ItemCategory): string {
   return `You are a clothing identification expert helping a user catalog their wardrobe so an AI stylist can build outfits from it.
 
@@ -121,11 +134,7 @@ Too complex, avoid: "light-toned solid ribbed crew-neck pullover", "slim-fit mid
 STEP 4 — DESCRIBE the pattern and texture (secondary to color, but still useful for matching):
 - Pattern: solid / striped / plaid / checked / floral / textured / graphic
 - Brightness: light / dark / vivid / muted
-${category === 'top' || category === 'bottom'
-    ? '- Weight/fit: lightweight / heavyweight / fitted / loose'
-    : category === 'shoes'
-      ? '- Material/type: canvas / leather / suede / athletic / slip-on / lace-up'
-      : `- Material: leather / metal / fabric / knit / woven\n- Type: ${ACCESSORY_TYPE_TAGS.join(' / ')} (pick whichever fits best; skip this line entirely if genuinely none apply)`}
+${attributeStepLine(category)}
 
 STEP 5 — STYLE: Pick 1-2 styles that genuinely apply — most items only need one, only add a second if the item genuinely works in two contexts. Judge by garment TYPE first, not vibe:
 - First check: does it have a collar, a button placket, or structured tailoring? If yes, it is at minimum smart_casual — never plain casual, even if it's worn in a relaxed way.
@@ -169,31 +178,16 @@ OUTPUT: Respond with ONLY a raw JSON object. No markdown:
 }`;
 }
 
-export async function tagClothingItem(photoUri: string, category: ItemCategory): Promise<TagResult> {
-  const { base64 } = await photoToBase64(photoUri);
-  const raw = await callCloudflareVision(base64, buildTagPrompt(category));
-
-  const obj = raw && typeof raw === 'object' ? raw as Record<string, unknown> : null;
-  if (obj && typeof obj.name === 'string' && Array.isArray(obj.tags)) {
-    const rawTags = (obj.tags as unknown[]).filter(t => typeof t === 'string') as string[];
-    const rawColors = Array.isArray(obj.colors)
-      ? (obj.colors as unknown[]).filter(c => typeof c === 'string') as string[]
-      : [];
-    return {
-      isClothing: obj.isClothing !== false,
-      name: obj.name,
-      tags: mergeColorTags(mergeStyleTags(rawTags, parseStyles(obj.styles)), rawColors),
-      detectedCategory: parseCategory(obj.category),
-    };
-  }
-
-  // Llama 3.2 (the model Cloudflare runs) frequently ignores the "raw JSON only"
-  // instruction and wraps its output in ```json ... ``` markdown fences. When that
-  // happens, Cloudflare returns the whole thing as a plain string rather than a
-  // pre-parsed object, so the typeof check above fails. We saw this repeatedly in
-  // testing. Rather than crashing, we extract name and tags with regex from the raw
-  // string — it's not elegant but it handles the model's most common failure mode.
-  const text = typeof raw === 'string' ? raw : '';
+// Llama 3.2 (the model Cloudflare runs) frequently ignores the "raw JSON only"
+// instruction and wraps its output in ```json ... ``` markdown fences. When that
+// happens, Cloudflare returns the whole thing as a plain string rather than a
+// pre-parsed object, so tagClothingItem's typeof check falls through to here.
+// We saw this repeatedly in testing. Rather than crashing, extract name/tags/
+// etc. with regex from the raw string — it's not elegant but it handles the
+// model's most common failure mode. Split out of tagClothingItem so that
+// function stays just "call the API, then pick a parse path" — matches the
+// decomposition selfieCheckService.ts already uses for its own fallback.
+function parseTagFallback(text: string, category: ItemCategory): TagResult {
   const isClothingMatch = text.match(/"isClothing"\s*:\s*(true|false)/);
   const nameMatch = text.match(/"name"\s*:\s*"([^"]+)"/);
   const stylesMatch = text.match(/"styles"\s*:\s*\[([^\]]+)\]/);
@@ -217,6 +211,27 @@ export async function tagClothingItem(photoUri: string, category: ItemCategory):
     tags: mergeColorTags(mergeStyleTags(tags, parseStyles(styles)), colors),
     detectedCategory: parseCategory(categoryMatch?.[1]),
   };
+}
+
+export async function tagClothingItem(photoUri: string, category: ItemCategory): Promise<TagResult> {
+  const { base64 } = await photoToBase64(photoUri);
+  const raw = await callCloudflareVision(base64, buildTagPrompt(category));
+
+  const obj = raw && typeof raw === 'object' ? raw as Record<string, unknown> : null;
+  if (obj && typeof obj.name === 'string' && Array.isArray(obj.tags)) {
+    const rawTags = (obj.tags as unknown[]).filter(t => typeof t === 'string') as string[];
+    const rawColors = Array.isArray(obj.colors)
+      ? (obj.colors as unknown[]).filter(c => typeof c === 'string') as string[]
+      : [];
+    return {
+      isClothing: obj.isClothing !== false,
+      name: obj.name,
+      tags: mergeColorTags(mergeStyleTags(rawTags, parseStyles(obj.styles)), rawColors),
+      detectedCategory: parseCategory(obj.category),
+    };
+  }
+
+  return parseTagFallback(typeof raw === 'string' ? raw : '', category);
 }
 
 export async function extractSkinTone(photoUri: string): Promise<SkinToneResult> {

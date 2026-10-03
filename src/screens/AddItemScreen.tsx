@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
+import { CameraPermissionGate } from '../components/CameraPermissionGate';
 import { CaptureButton } from '../components/CaptureButton';
 import { CategoryPicker } from '../components/CategoryPicker';
 import { ScreenHeader } from '../components/ScreenHeader';
@@ -38,24 +39,6 @@ export function AddItemScreen() {
   const [tags, setTags] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const cameraRef = useRef<CameraView>(null);
-
-  if (!permission) return <View style={styles.container} />;
-
-  if (!permission.granted) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.permissionBox}>
-          <AppText style={styles.permissionTitle}>Camera access needed</AppText>
-          <AppText style={styles.permissionSub}>
-            CBA needs your camera to photograph clothing items.
-          </AppText>
-          <TouchableOpacity style={styles.permissionBtn} onPress={requestPermission}>
-            <AppText style={styles.permissionBtnText}>Grant Permission</AppText>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   async function handleCapture() {
     if (!cameraRef.current || capturing) return;
@@ -168,26 +151,32 @@ export function AddItemScreen() {
 
   // Step: camera
   return (
-    <View style={styles.container}>
-      <SafeAreaView edges={['top']} style={styles.topBar}>
-        <ScreenHeader title="Add Item" onBack={() => navigation.goBack()} />
-      </SafeAreaView>
+    <CameraPermissionGate
+      permission={permission}
+      requestPermission={requestPermission}
+      message="CBA needs your camera to photograph clothing items."
+    >
+      <View style={styles.container}>
+        <SafeAreaView edges={['top']} style={styles.topBar}>
+          <ScreenHeader title="Add Item" onBack={() => navigation.goBack()} />
+        </SafeAreaView>
 
-      <View style={styles.categoryRow}>
-        <CategoryPicker category={category} onChange={setCategory} />
+        <View style={styles.categoryRow}>
+          <CategoryPicker category={category} onChange={setCategory} />
+        </View>
+
+        <CameraView ref={cameraRef} style={styles.camera} facing="back" />
+
+        <View style={styles.bottomBar}>
+          <AppText style={styles.hint}>Point at the item — tap to capture</AppText>
+          {capturing ? (
+            <ActivityIndicator color={Colors.accent} size="large" />
+          ) : (
+            <CaptureButton onPress={handleCapture} disabled={capturing} />
+          )}
+        </View>
       </View>
-
-      <CameraView ref={cameraRef} style={styles.camera} facing="back" />
-
-      <View style={styles.bottomBar}>
-        <AppText style={styles.hint}>Point at the item — tap to capture</AppText>
-        {capturing ? (
-          <ActivityIndicator color={Colors.accent} size="large" />
-        ) : (
-          <CaptureButton onPress={handleCapture} disabled={capturing} />
-        )}
-      </View>
-    </View>
+    </CameraPermissionGate>
   );
 }
 
@@ -218,22 +207,9 @@ const styles = StyleSheet.create({
     color: Colors.textDisabled,
     fontSize: 13,
   },
-  permissionBox: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.md,
-    paddingHorizontal: Spacing.xl,
-  },
-  permissionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  permissionSub: {
-    color: Colors.textSecondary,
-    textAlign: 'center',
-  },
+  // permissionBtn/permissionBtnText are also reused by the "notClothing"
+  // step's retake button below, so these stay even though the camera
+  // permission gate itself moved to CameraPermissionGate.tsx.
   permissionBtn: {
     backgroundColor: Colors.accent,
     paddingHorizontal: Spacing.lg,

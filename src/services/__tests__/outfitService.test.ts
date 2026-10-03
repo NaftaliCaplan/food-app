@@ -1,4 +1,5 @@
 import { generateOutfit } from '../outfitService';
+import * as outfitCandidates from '../../utils/outfitCandidates';
 import { makeWardrobeItem as makeItem } from '../../testUtils/makeWardrobeItem';
 
 describe('generateOutfit', () => {
@@ -128,87 +129,54 @@ describe('generateOutfit', () => {
     ).not.toThrow();
   });
 
-  it('threads profile.undertone through to scoring, preferring the flattering-color top', () => {
-    const flatteringTop = makeItem({ category: 'top', tags: ['casual', 'orange', 'solid'] });
-    const neutralTop = makeItem({ category: 'top', tags: ['casual', 'blue', 'solid'] });
-    const wardrobe = [
-      flatteringTop,
-      neutralTop,
-      makeItem({ category: 'bottom', tags: ['casual', 'black', 'solid'] }),
-      makeItem({ category: 'shoes', tags: ['casual', 'black', 'solid'] }),
-    ];
-    const result = generateOutfit({
-      wardrobe,
-      stylePrefs: ['casual'],
-      profile: { heightRange: 'average', build: 'average', undertone: 'warm' },
+  // Scoring itself (does undertone/contrast/height/build actually change which
+  // item wins) is already exhaustively covered in outfitAesthetics.test.ts —
+  // these two just confirm the *plumbing*: that generateOutfit actually
+  // forwards every profile field into selectBestOutfit's ScoringContext,
+  // without needing to re-derive a winning fixture for each field (which
+  // previously required careful color-clash engineering to avoid a
+  // coincidental tie between two different bonuses — see ADR 0017/0021).
+  describe('profile personalization threading', () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
     });
-    expect(result.items.some(i => i.id === flatteringTop.id)).toBe(true);
-    expect(result.items.some(i => i.id === neutralTop.id)).toBe(false);
-  });
 
-  it('threads profile.contrast through to scoring, preferring a tonal top for a low-contrast profile', () => {
-    const tonalTop = makeItem({ category: 'top', tags: ['casual', 'gray', 'solid', 'light'] });
-    const nonTonalTop = makeItem({ category: 'top', tags: ['casual', 'gray', 'solid'] });
-    const wardrobe = [
-      tonalTop,
-      nonTonalTop,
-      makeItem({ category: 'bottom', tags: ['casual', 'gray', 'solid', 'light'] }),
-      makeItem({ category: 'shoes', tags: ['casual', 'black', 'solid'] }),
-    ];
-    const result = generateOutfit({
-      wardrobe,
-      stylePrefs: ['casual'],
-      profile: { heightRange: 'average', build: 'average', contrast: 'low' },
+    it('forwards every profile field to selectBestOutfit', () => {
+      const wardrobe = [
+        makeItem({ category: 'top', tags: ['casual'] }),
+        makeItem({ category: 'bottom', tags: ['casual'] }),
+      ];
+      const spy = jest.spyOn(outfitCandidates, 'selectBestOutfit');
+      generateOutfit({
+        wardrobe,
+        stylePrefs: ['casual'],
+        profile: { heightRange: 'petite', build: 'slim', undertone: 'warm', contrast: 'low' },
+      });
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          undertone: 'warm',
+          contrast: 'low',
+          heightRange: 'petite',
+          build: 'slim',
+        }),
+      );
     });
-    expect(result.items.some(i => i.id === tonalTop.id)).toBe(true);
-    expect(result.items.some(i => i.id === nonTonalTop.id)).toBe(false);
-  });
 
-  it('threads profile.heightRange through to scoring, preferring a fitted top for a petite profile', () => {
-    // The "wrong" top carries a color that clashes with the shoes (red+green)
-    // so its candidate scores strictly worse regardless of fit tags — without
-    // this, the universal FIT_BALANCE_BONUS (rewards a top/bottom fit
-    // *contrast*) and the personalization HEIGHT_FIT_BONUS (rewards a fit
-    // *match*) can coincidentally tie at the same -0.5, since both bonuses
-    // are calibrated to the same magnitude, making the outcome a genuine
-    // coin-flip via selectBestOutfit's random tie-break (ADR 0017) rather
-    // than a deterministic preference — confirmed by running the un-isolated
-    // version of this test ~50% failure rate over repeated runs.
-    const fittedTop = makeItem({ category: 'top', tags: ['casual', 'black', 'solid', 'fitted'] });
-    const looseTop = makeItem({ category: 'top', tags: ['casual', 'red', 'solid', 'loose'] });
-    const wardrobe = [
-      fittedTop,
-      looseTop,
-      makeItem({ category: 'bottom', tags: ['casual', 'black', 'solid', 'fitted'] }),
-      makeItem({ category: 'shoes', tags: ['casual', 'green', 'solid'] }),
-    ];
-    const result = generateOutfit({
-      wardrobe,
-      stylePrefs: ['casual'],
-      profile: { heightRange: 'petite', build: 'average' },
+    it('forwards undefined profile fields when no profile is given', () => {
+      const wardrobe = [
+        makeItem({ category: 'top', tags: ['casual'] }),
+        makeItem({ category: 'bottom', tags: ['casual'] }),
+      ];
+      const spy = jest.spyOn(outfitCandidates, 'selectBestOutfit');
+      generateOutfit({ wardrobe, stylePrefs: ['casual'] });
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          undertone: undefined,
+          contrast: undefined,
+          heightRange: undefined,
+          build: undefined,
+        }),
+      );
     });
-    expect(result.items.some(i => i.id === fittedTop.id)).toBe(true);
-    expect(result.items.some(i => i.id === looseTop.id)).toBe(false);
-  });
-
-  it('threads profile.build through to scoring, preferring a loose top for a slim profile', () => {
-    // Same isolation fix as the petite test above — the "wrong" top's color
-    // clashes with the shoes so BUILD_FIT_BONUS's outcome can't coincidentally
-    // tie with the universal fit-contrast bonus.
-    const looseTop = makeItem({ category: 'top', tags: ['casual', 'black', 'solid', 'loose'] });
-    const fittedTop = makeItem({ category: 'top', tags: ['casual', 'red', 'solid', 'fitted'] });
-    const wardrobe = [
-      looseTop,
-      fittedTop,
-      makeItem({ category: 'bottom', tags: ['casual', 'black', 'solid', 'loose'] }),
-      makeItem({ category: 'shoes', tags: ['casual', 'green', 'solid'] }),
-    ];
-    const result = generateOutfit({
-      wardrobe,
-      stylePrefs: ['casual'],
-      profile: { heightRange: 'average', build: 'slim' },
-    });
-    expect(result.items.some(i => i.id === looseTop.id)).toBe(true);
-    expect(result.items.some(i => i.id === fittedTop.id)).toBe(false);
   });
 });

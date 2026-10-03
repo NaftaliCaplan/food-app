@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
+import { CameraPermissionGate } from '../components/CameraPermissionGate';
 import { CaptureButton } from '../components/CaptureButton';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { RootStackParamList } from '../navigation/types';
@@ -125,21 +126,10 @@ export function UserProfileScreen() {
 
   // Camera view — shown when user taps "Take / Retake Photo"
   if (showCamera) {
-    if (!permission) return <View style={styles.container} />;
-
-    if (!permission.granted) {
-      return (
-        <SafeAreaView style={styles.container}>
-          <View style={styles.centreBox}>
-            <AppText style={styles.permTitle}>Camera access needed</AppText>
-            <TouchableOpacity style={styles.primaryBtn} onPress={requestPermission}>
-              <AppText style={styles.primaryBtnText}>Grant Permission</AppText>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      );
-    }
-
+    // cameraStep can only reach 'extracting' after a successful capture,
+    // which itself requires permission to already be granted — so checking
+    // this before the permission gate is safe, never reachable with
+    // permission ungranted.
     if (cameraStep === 'extracting') {
       return (
         <SafeAreaView style={styles.container}>
@@ -152,26 +142,32 @@ export function UserProfileScreen() {
     }
 
     return (
-      <View style={styles.container}>
-        <SafeAreaView edges={['top']} style={styles.topBar}>
-          <ScreenHeader
-            title="Reference Photo"
-            onBack={() => { setShowCamera(false); setCameraStep('preview'); }}
-            backLabel="← Cancel"
-          />
-        </SafeAreaView>
+      <CameraPermissionGate
+        permission={permission}
+        requestPermission={requestPermission}
+        message="CBA needs your camera to take a reference photo."
+      >
+        <View style={styles.container}>
+          <SafeAreaView edges={['top']} style={styles.topBar}>
+            <ScreenHeader
+              title="Reference Photo"
+              onBack={() => { setShowCamera(false); setCameraStep('preview'); }}
+              backLabel="← Cancel"
+            />
+          </SafeAreaView>
 
-        <CameraView ref={cameraRef} style={styles.camera} facing="front" />
+          <CameraView ref={cameraRef} style={styles.camera} facing="front" />
 
-        <View style={styles.bottomBar}>
-          <AppText style={styles.hint}>Face the camera — tap to capture</AppText>
-          {cameraStep === 'capturing' ? (
-            <ActivityIndicator color={Colors.accent} size="large" />
-          ) : (
-            <CaptureButton onPress={handleCapture} disabled={cameraStep !== 'preview'} />
-          )}
+          <View style={styles.bottomBar}>
+            <AppText style={styles.hint}>Face the camera — tap to capture</AppText>
+            {cameraStep === 'capturing' ? (
+              <ActivityIndicator color={Colors.accent} size="large" />
+            ) : (
+              <CaptureButton onPress={handleCapture} disabled={cameraStep !== 'preview'} />
+            )}
+          </View>
         </View>
-      </View>
+      </CameraPermissionGate>
     );
   }
 
@@ -419,11 +415,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: Spacing.md,
     paddingHorizontal: Spacing.xl,
-  },
-  permTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
   },
   subText: {
     color: Colors.textSecondary,

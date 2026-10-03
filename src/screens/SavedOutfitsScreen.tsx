@@ -6,28 +6,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { CATEGORY_ICON, CATEGORY_LABEL } from '../constants/categoryDisplay';
 import { RootStackParamList } from '../navigation/types';
 import { getSavedOutfits, removeOutfit } from '../storage/outfitStorage';
 import { getWardrobe } from '../storage/wardrobeStorage';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
-import { ItemCategory, SavedOutfit, WardrobeItem } from '../types/wardrobe';
+import { SavedOutfit, WardrobeItem } from '../types/wardrobe';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'SavedOutfits'>;
-
-const CATEGORY_ICON: Record<ItemCategory, string> = {
-  top:       '[TOP]',
-  bottom:    '[BOT]',
-  shoes:     '[SHOE]',
-  accessory: '[ACC]',
-};
-
-const CATEGORY_LABEL: Record<ItemCategory, string> = {
-  top:       'Top',
-  bottom:    'Bottom',
-  shoes:     'Shoes',
-  accessory: 'Accessory',
-};
 
 function formatSavedDate(savedAt: number): string {
   return new Date(savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });

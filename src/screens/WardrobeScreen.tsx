@@ -12,28 +12,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { CATEGORY_ICON, CATEGORY_LABEL } from '../constants/categoryDisplay';
 import { RootStackParamList } from '../navigation/types';
 import { getWardrobe, removeItem, updateItem } from '../storage/wardrobeStorage';
 import { getUserProfile } from '../storage/profileStorage';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
-import { WardrobeItem, ItemCategory } from '../types/wardrobe';
+import { WardrobeItem } from '../types/wardrobe';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Wardrobe'>;
-
-const CATEGORY_ICON: Record<ItemCategory, string> = {
-  top:       '[TOP]',
-  bottom:    '[BOT]',
-  shoes:     '[SHOE]',
-  accessory: '[ACC]',
-};
-
-const CATEGORY_LABEL: Record<ItemCategory, string> = {
-  top:       'Top',
-  bottom:    'Bottom',
-  shoes:     'Shoes',
-  accessory: 'Accessory',
-};
 
 export function WardrobeScreen() {
   const navigation = useNavigation<Nav>();

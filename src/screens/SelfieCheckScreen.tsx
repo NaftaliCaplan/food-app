@@ -2,10 +2,11 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
+import { CameraPermissionGate } from '../components/CameraPermissionGate';
 import { CaptureButton } from '../components/CaptureButton';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ToggleRow } from '../components/ToggleRow';
@@ -42,26 +43,6 @@ export function SelfieCheckScreen() {
     }, []),
   );
 
-  if (!permission) {
-    return <View style={styles.container} />;
-  }
-
-  if (!permission.granted) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.permissionBox}>
-          <AppText style={styles.permissionTitle}>Camera access needed</AppText>
-          <AppText style={styles.permissionSub}>
-            CBA needs your camera to check your outfit.
-          </AppText>
-          <TouchableOpacity style={styles.permissionBtn} onPress={requestPermission}>
-            <AppText style={styles.permissionBtnText}>Grant Permission</AppText>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   async function handleCapture() {
     if (!cameraRef.current || capturing) return;
     setCapturing(true);
@@ -78,30 +59,36 @@ export function SelfieCheckScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView edges={['top']} style={styles.topBar}>
-        <ScreenHeader title="How's my outfit?" onBack={() => navigation.goBack()} />
-      </SafeAreaView>
+    <CameraPermissionGate
+      permission={permission}
+      requestPermission={requestPermission}
+      message="CBA needs your camera to check your outfit."
+    >
+      <View style={styles.container}>
+        <SafeAreaView edges={['top']} style={styles.topBar}>
+          <ScreenHeader title="How's my outfit?" onBack={() => navigation.goBack()} />
+        </SafeAreaView>
 
-      <CameraView ref={cameraRef} style={styles.camera} facing="front" />
+        <CameraView ref={cameraRef} style={styles.camera} facing="front" />
 
-      <View style={styles.bottomBar}>
-        {hasProfile && (
-          <ToggleRow
-            label="Personalize for me"
-            sublabel="Use your style profile to tailor the result"
-            value={useProfile}
-            onToggle={() => setUseProfile(v => !v)}
-          />
-        )}
-        <AppText style={styles.hint}>Frame your outfit — tap to capture</AppText>
-        {capturing ? (
-          <ActivityIndicator color={Colors.accent} size="large" />
-        ) : (
-          <CaptureButton onPress={handleCapture} disabled={capturing} />
-        )}
+        <View style={styles.bottomBar}>
+          {hasProfile && (
+            <ToggleRow
+              label="Personalize for me"
+              sublabel="Use your style profile to tailor the result"
+              value={useProfile}
+              onToggle={() => setUseProfile(v => !v)}
+            />
+          )}
+          <AppText style={styles.hint}>Frame your outfit — tap to capture</AppText>
+          {capturing ? (
+            <ActivityIndicator color={Colors.accent} size="large" />
+          ) : (
+            <CaptureButton onPress={handleCapture} disabled={capturing} />
+          )}
+        </View>
       </View>
-    </View>
+    </CameraPermissionGate>
   );
 }
 
@@ -128,32 +115,5 @@ const styles = StyleSheet.create({
   hint: {
     color: Colors.textDisabled,
     fontSize: 13,
-  },
-  permissionBox: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.md,
-    paddingHorizontal: Spacing.xl,
-  },
-  permissionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  permissionSub: {
-    color: Colors.textSecondary,
-    textAlign: 'center',
-  },
-  permissionBtn: {
-    backgroundColor: Colors.accent,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: 0,
-    marginTop: Spacing.sm,
-  },
-  permissionBtnText: {
-    color: '#000',
-    fontWeight: '600',
   },
 });

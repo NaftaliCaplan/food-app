@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { CATEGORY_ICON } from '../constants/categoryDisplay';
 import { useOutfitGenerator } from '../hooks/useOutfitGenerator';
 import { RootStackParamList } from '../navigation/types';
 import { getUserProfile } from '../storage/profileStorage';
@@ -20,17 +21,10 @@ import { saveOutfit } from '../storage/outfitStorage';
 import { getWardrobe } from '../storage/wardrobeStorage';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
-import { ItemCategory, StylePreference, UserProfile, WardrobeItem } from '../types/wardrobe';
+import { StylePreference, UserProfile, WardrobeItem } from '../types/wardrobe';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'OutfitResults'>;
 type Rt = RouteProp<RootStackParamList, 'OutfitResults'>;
-
-const CATEGORY_ICON: Record<ItemCategory, string> = {
-  top:       '[TOP]',
-  bottom:    '[BOT]',
-  shoes:     '[SHOE]',
-  accessory: '[ACC]',
-};
 
 // Turns the selected style keys into a display label for the saved outfit,
 // e.g. ['smart_casual'] -> "Smart Casual", [] -> "Any Style".
