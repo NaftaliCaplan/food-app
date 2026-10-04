@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Directory, File, Paths } from 'expo-file-system/next';
+import { Directory, File, Paths } from 'expo-file-system';
 
 import { WardrobeItem } from '../types/wardrobe';
 
@@ -9,7 +9,7 @@ const wardrobeDir = new Directory(Paths.document, 'wardrobe');
 export async function copyPhotoToApp(tempUri: string, id: string): Promise<string> {
   wardrobeDir.create({ intermediates: true, idempotent: true });
   const dest = new File(wardrobeDir, `${id}.jpg`);
-  new File(tempUri).copy(dest);
+  await new File(tempUri).copy(dest);
   return dest.uri;
 }
 

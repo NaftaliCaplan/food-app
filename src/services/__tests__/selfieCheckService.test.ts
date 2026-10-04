@@ -1,9 +1,9 @@
 import { checkSelfieOutfit, tierForScore } from '../selfieCheckService';
 import { makeResponse } from '../../testUtils/mockResponse';
 
-jest.mock('expo-file-system/next', () => ({
+jest.mock('expo-file-system', () => ({
   File: jest.fn().mockImplementation(() => ({
-    bytes: jest.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),
+    arrayBuffer: jest.fn().mockResolvedValue(new Uint8Array([1, 2, 3]).buffer),
   })),
 }));
 
@@ -170,7 +170,7 @@ describe('checkSelfieOutfit', () => {
 
   it('throws on a non-OK HTTP response', async () => {
     mockFetch.mockResolvedValue(makeResponse('Unauthorized', false, 401));
-    await expect(checkSelfieOutfit('file://test.jpg')).rejects.toThrow('Cloudflare AI error 401');
+    await expect(checkSelfieOutfit('file://test.jpg')).rejects.toThrow('AI proxy error 401');
   });
 
   it('applies undertone personalization when a profile is passed, favoring a flattering color', async () => {

@@ -1,20 +1,20 @@
 import { analyzeFood } from '../cloudflareService';
 import { makeResponse } from '../../testUtils/mockResponse';
 
-jest.mock('expo-file-system/next', () => ({
+jest.mock('expo-file-system', () => ({
   File: jest.fn().mockImplementation(() => ({
-    bytes: jest.fn().mockResolvedValue(new Uint8Array(200_000)),
+    arrayBuffer: jest.fn().mockResolvedValue(new Uint8Array(200_000).buffer),
   })),
 }));
 
-const { File } = require('expo-file-system/next');
+const { File } = require('expo-file-system');
 
 global.fetch = jest.fn();
 const mockFetch = global.fetch as jest.Mock;
 
 function mockImageSize(bytes: number) {
   File.mockImplementation(() => ({
-    bytes: jest.fn().mockResolvedValue(new Uint8Array(bytes)),
+    arrayBuffer: jest.fn().mockResolvedValue(new Uint8Array(bytes).buffer),
   }));
 }
 
@@ -88,7 +88,7 @@ describe('analyzeFood', () => {
 
   it('throws on a non-OK HTTP response', async () => {
     mockFetch.mockResolvedValue(makeResponse('Unauthorized', false, 401));
-    await expect(analyzeFood('file://test.jpg', 'banana')).rejects.toThrow('Cloudflare AI error 401');
+    await expect(analyzeFood('file://test.jpg', 'banana')).rejects.toThrow('AI proxy error 401');
   });
 
   describe('label/observed-food mismatch detection', () => {

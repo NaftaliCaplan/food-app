@@ -1,0 +1,18 @@
+name = "cba-ai-proxy"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# Grants env.AI — lets the Worker call Workers AI directly with no separate
+# account ID / API token anywhere (the binding is implicitly authenticated
+# as this Worker's own Cloudflare account). This is what makes the proxy
+# possible without shipping any Cloudflare credential, server- or
+# client-side.
+[ai]
+binding = "AI"
+
+# Used for the per-IP request-count rate limit (see src/index.ts). Create
+# with `wrangler kv namespace create RATE_LIMIT` and paste the returned id
+# below, or into wrangler.toml's generated override — see server/README.md.
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "768de8021b4047cba2f743bc962e4dd3"

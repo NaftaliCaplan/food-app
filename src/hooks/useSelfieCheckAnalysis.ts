@@ -24,7 +24,9 @@ export function useSelfieCheckAnalysis(photoUri: string, profile: UserProfile | 
 
   useEffect(() => {
     if (!ready) return;
-    setStatus('loading');
+    // status already defaults to 'loading' — the only re-fire within one
+    // mounted instance is ready flipping false→true, which happens before
+    // any success/error is ever reached, so there's nothing to reset from.
     checkSelfieOutfit(photoUri, profile)
       .then((data) => {
         setResult(data);

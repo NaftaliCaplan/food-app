@@ -5,7 +5,9 @@ const expoConfig = require("eslint-config-expo/flat");
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ["dist/*"],
+    // server/ is a separate Cloudflare Worker deployable (Worker globals,
+    // not React Native) with its own lint/type setup — see server/README.md.
+    ignores: ["dist/*", "server/**"],
   },
   {
     // Tests across this repo deliberately `jest.mock(...)` a module then

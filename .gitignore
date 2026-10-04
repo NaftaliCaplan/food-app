@@ -42,3 +42,8 @@ yarn-error.*
 
 # Claude Code
 .claude/
+
+# Cloudflare Worker (server/) local state
+server/.wrangler/
+server/.dev.vars
+server/node_modules/

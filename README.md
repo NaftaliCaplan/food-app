@@ -10,13 +10,13 @@ See `docs/ARCHITECTURE.md` for how the pieces fit together, and `docs/decisions/
 npm install
 ```
 
-This app calls Cloudflare Workers AI (a vision model) for photo tagging/analysis. Copy `.env.example` to `.env` and fill in your own Cloudflare account ID and API token:
+This app calls an AI vision model for photo tagging/analysis, via a small proxy Worker rather than directly — see `server/README.md` to set that up first (one-time Cloudflare account steps). Once it's deployed, copy `.env.example` to `.env` and fill in the Worker's URL and shared secret:
 
 ```sh
 cp .env.example .env
 ```
 
-**Security note:** these are `EXPO_PUBLIC_`-prefixed, which means they get inlined into the client JS bundle at build time — anyone with the shipped app can extract them. Fine for local development; this needs a server-side proxy before a real launch (tracked, not yet built).
+**Security note:** `EXPO_PUBLIC_APP_SHARED_SECRET` is still `EXPO_PUBLIC_`-prefixed, so it still ships inside the client JS bundle — a determined person can extract it. What the proxy actually buys you: that secret only grants "can call this one rate-limited endpoint," not a real Cloudflare account credential, which now lives only inside the Worker itself. See `server/README.md` for the full reasoning and the rate-limit details.
 
 ## Running
 

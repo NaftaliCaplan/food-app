@@ -1,9 +1,9 @@
 import { extractSkinTone, tagClothingItem } from '../tagService';
 import { makeResponse } from '../../testUtils/mockResponse';
 
-jest.mock('expo-file-system/next', () => ({
+jest.mock('expo-file-system', () => ({
   File: jest.fn().mockImplementation(() => ({
-    bytes: jest.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),
+    arrayBuffer: jest.fn().mockResolvedValue(new Uint8Array([1, 2, 3]).buffer),
   })),
 }));
 
