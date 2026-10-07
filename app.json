@@ -26,6 +26,18 @@
     "plugins": [
       "expo-font",
       "expo-status-bar"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "6e6e652f-528f-4338-8b3d-bad197d80bcd"
+      }
+    },
+    "owner": "tcap123",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6e6e652f-528f-4338-8b3d-bad197d80bcd"
+    }
   }
 }

@@ -8,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { Colors } from './src/theme/colors';
 
@@ -23,9 +24,11 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
+      <ErrorBoundary>
+        <NavigationContainer>
+          <RootNavigator />
+        </NavigationContainer>
+      </ErrorBoundary>
       <StatusBar style="light" />
     </SafeAreaProvider>
   );
