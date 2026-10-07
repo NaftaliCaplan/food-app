@@ -86,4 +86,43 @@ describe('SelfieCheckScreen', () => {
     fireEvent.press(screen.getByText('← Back'));
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
+
+  it('defaults to the front camera and flips to back on press', async () => {
+    useCameraPermissions.mockReturnValue([{ granted: true }, jest.fn()]);
+    getUserProfile.mockResolvedValue(null);
+    render(<SelfieCheckScreen />);
+    await act(async () => {});
+
+    const cameraType = 'CameraView' as any;
+    expect(screen.UNSAFE_getByType(cameraType).props.facing).toBe('front');
+    fireEvent.press(screen.getByLabelText('Switch camera'));
+    expect(screen.UNSAFE_getByType(cameraType).props.facing).toBe('back');
+    fireEvent.press(screen.getByLabelText('Switch camera'));
+    expect(screen.UNSAFE_getByType(cameraType).props.facing).toBe('front');
+  });
+
+  it('defaults the timer to Off and selecting another option updates the checked state', async () => {
+    useCameraPermissions.mockReturnValue([{ granted: true }, jest.fn()]);
+    getUserProfile.mockResolvedValue(null);
+    render(<SelfieCheckScreen />);
+    await act(async () => {});
+
+    expect(screen.getByLabelText('Timer Off').props.accessibilityState?.checked).toBe(true);
+    fireEvent.press(screen.getByLabelText('Timer 3s'));
+    expect(screen.getByLabelText('Timer 3s').props.accessibilityState?.checked).toBe(true);
+    expect(screen.getByLabelText('Timer Off').props.accessibilityState?.checked).toBe(false);
+  });
+
+  it('capturing with a timer selected shows a countdown instead of capturing immediately', async () => {
+    useCameraPermissions.mockReturnValue([{ granted: true }, jest.fn()]);
+    getUserProfile.mockResolvedValue(null);
+    render(<SelfieCheckScreen />);
+    await act(async () => {});
+
+    fireEvent.press(screen.getByLabelText('Timer 3s'));
+    fireEvent.press(screen.getByTestId('capture-button'));
+
+    expect(screen.getByText('Get in position...')).toBeTruthy();
+    expect(screen.getByTestId('capture-button').props.accessibilityState?.disabled).toBe(true);
+  });
 });

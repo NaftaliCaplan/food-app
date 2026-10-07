@@ -79,3 +79,14 @@ New test files: `selfieCheckService.test.ts` (21 tests — prompt-shape via fetc
 * Live on-device testing of multi-garment detection accuracy has not happened yet — this is explicitly the biggest unproven risk, flagged rather than assumed away by unit tests alone.
 * `tierForScore`'s thresholds are a first-pass calibration, expected to need tuning once real detection results are seen, same as `CLASHING_COLOR_PAIRS` was tuned iteratively.
 * Per-rule "why" explanation, flip-camera/back-camera mirror-selfie support, and photo-library import were all explicitly scoped out of v1 (see the plan's "Explicitly deferred" section) — none are started here.
+
+## Follow-up: facing toggle + capture timer (2026-10-07)
+
+First real on-device testing confirmed exactly the predicted gap above: a full outfit rarely fits in frame at front-camera arm's-length distance. Resolved by adding what v1 deliberately deferred:
+
+* `SelfieCheckScreen` now defaults to `facing="front"` (unchanged default) but has a `[FLIP]` button overlaid on the camera view to switch to `back`, letting the phone be propped up/handed off for a full-body shot.
+* A TIMER control (Off / 3s / 10s, same chip-radio style as `UserProfileScreen`'s height/build pickers) delays the actual capture via a countdown, shown as a large centered overlay number plus a "Get in position..." hint; the capture button disables for the duration.
+* `handleCapture`'s original `cameraRef.current` guard was narrowed to only gate the final `takePictureAsync()` call (inside `actuallyCapture()`), not starting the countdown itself — the countdown is pure UI/timing and never needed a live ref; this was also what made the new behavior testable (the mocked `CameraView` never has a resolvable ref in this test environment, same limitation every other camera screen's tests already route around by not testing past that point).
+* 3 new tests in `SelfieCheckScreen.test.tsx` (facing toggle, timer selection, countdown-blocks-immediate-capture) — total suite 34/34, 376/376 tests, `tsc`/lint clean.
+
+Photo-library import and the per-rule "why" explanation remain open, not addressed here.

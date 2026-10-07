@@ -24,14 +24,23 @@ function foodLabelMatchesObserved(label: string, observed: string): boolean {
   return labelWords.some(word => observedNorm.includes(word));
 }
 
+// foodLabel is deliberately withheld until STEP 3 (COMPARE), after the model
+// has already committed to its own observedFood in STEP 2 — revealing the
+// label any earlier anchors the model's own "observation" toward agreeing
+// with it (seen live: a photo of a person labeled "banana" came back as an
+// observed, confident banana). foodLabelMatchesObserved() can only catch a
+// mismatch if observedFood is actually independent; this ordering is what
+// makes that check meaningful rather than a no-op.
 function buildPrompt(foodLabel: string): string {
   return `You are a food safety and readiness expert with sharp vision. A colorblind user is relying entirely on your analysis — they cannot distinguish colors themselves. Your visual cues must describe texture, shape, surface condition, and pattern — not just color names alone.
 
-STEP 1 — OBSERVE: Look carefully at the image. Describe exactly what you see: shape, texture, surface condition, visible markings, any signs of cooking or preparation. Be specific.
+STEP 1 — OBSERVE: Look carefully at the image. Describe exactly what you see: shape, texture, surface condition, visible markings, any signs of cooking or preparation. Be specific. Do this before considering any label the user may have given — judge purely from what's visible.
 
-STEP 2 — IDENTIFY: Based only on what you see, identify what the food actually is. Record this as "observedFood". The user said it is "${foodLabel}" — if what you see clearly does not match, note the mismatch in your recommendation. Do not blindly trust the label.
+STEP 2 — IDENTIFY: Based only on your own observation above, identify what the food actually is. Record this as "observedFood". Do not let anything else bias this step — describe only the conclusion you'd reach from the image alone.
 
-STEP 3 — CLASSIFY THE FOOD TYPE and pick the right scale:
+STEP 3 — COMPARE: The user labeled this photo as "${foodLabel}". Compare your independent observedFood from Step 2 against this label. If they clearly don't match — the label names a food but your observation is a different food, or isn't food at all — say so plainly in the recommendation. Do not go back and change observedFood to match the label just because the user said so; observedFood must stay what you actually concluded in Step 2.
+
+STEP 4 — CLASSIFY THE FOOD TYPE and pick the right scale:
 - RAW MEAT / FISH / EGGS → use: raw, rare, medium-rare, medium, well-done
 - COOKED MEAT that is already fully cooked → use: well-done, and note it is cooked in stateLabel
 - FRESH PRODUCE (fruits, most vegetables) → use: unripe, almost_ready, ripe, use_soon, overripe
@@ -40,7 +49,7 @@ STEP 3 — CLASSIFY THE FOOD TYPE and pick the right scale:
 - COOKED OR PROCESSED FOOD (leftovers, cooked grains, bread, etc.) → assess freshness: ripe = fresh and good, use_soon = eat today, overripe = spoiling
 - NOT FOOD AT ALL → set state to "unknown", stateLabel to "Not food", confidencePercent to 100, and explain in recommendation
 
-STEP 4 — CONFIDENCE: You must be conservative. Start at 50 and only go higher if you have specific visual evidence.
+STEP 5 — CONFIDENCE: You must be conservative. Start at 50 and only go higher if you have specific visual evidence.
 - Add 10 points if the food is fully visible with no obstruction
 - Add 10 points if the lighting is clear and even
 - Add 10 points if the surface texture is clearly visible
@@ -48,7 +57,7 @@ STEP 4 — CONFIDENCE: You must be conservative. Start at 50 and only go higher 
 - Add up to 10 more points if everything is perfect and unambiguous
 So the maximum is 100 but most real photos will land between 50-80. Never start above 50. If the food is partially covered, in shadow, or you are inferring rather than seeing — stay at or below 60.
 
-STEP 5 — OUTPUT: You MUST respond with ONLY a raw JSON object. No markdown, no bold text, no bullet points, no explanation. Start your response with { and end with }. Nothing else.
+STEP 6 — OUTPUT: You MUST respond with ONLY a raw JSON object. No markdown, no bold text, no bullet points, no explanation. Start your response with { and end with }. Nothing else.
 {
   "observedFood": "<what you actually see in the image, e.g. 'a yellow banana with brown spots'>",
   "state": "<ripe|unripe|overripe|almost_ready|use_soon|raw|rare|medium-rare|medium|well-done|unknown>",
