@@ -24,12 +24,15 @@ const APP_SHARED_SECRET = process.env.EXPO_PUBLIC_APP_SHARED_SECRET;
 const BASE64_CHUNK_SIZE = 8192;
 
 export async function photoToBase64(photoUri: string): Promise<{ base64: string; size: number }> {
+  console.log('[DEBUG] photoToBase64 start', photoUri);
   const buffer = await new File(photoUri).arrayBuffer();
+  console.log('[DEBUG] photoToBase64 arrayBuffer done, bytes:', buffer.byteLength);
   const bytes = new Uint8Array(buffer);
   let binary = '';
   for (let i = 0; i < bytes.length; i += BASE64_CHUNK_SIZE) {
     binary += String.fromCharCode(...bytes.subarray(i, i + BASE64_CHUNK_SIZE));
   }
+  console.log('[DEBUG] photoToBase64 encoding done, base64 length:', binary.length);
   return { base64: btoa(binary), size: bytes.length };
 }
 
@@ -38,6 +41,11 @@ export async function callCloudflareVision(
   promptText: string,
   maxTokens = 400,
 ): Promise<unknown> {
+  console.log('[DEBUG] callCloudflareVision start', {
+    url: `${PROXY_URL}/vision`,
+    hasSecret: !!APP_SHARED_SECRET,
+    base64Length: base64.length,
+  });
   const response = await fetch(`${PROXY_URL}/vision`, {
     method: 'POST',
     headers: {
@@ -57,6 +65,7 @@ export async function callCloudflareVision(
       max_tokens: maxTokens,
     }),
   });
+  console.log('[DEBUG] callCloudflareVision fetch resolved, status:', response.status);
 
   if (!response.ok) {
     const errText = await response.text();
@@ -64,5 +73,6 @@ export async function callCloudflareVision(
   }
 
   const json = await response.json();
+  console.log('[DEBUG] callCloudflareVision parsed response');
   return json.result?.response;
 }
