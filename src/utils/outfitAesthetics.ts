@@ -150,28 +150,52 @@ function baseScore(
   stylePrefs?: StylePreference[],
 ): number {
   const colors = new Set<string>();
+  const perItemAccentColors: Set<string>[] = [];
   let busyPatternCount = 0;
   let weightMismatchCount = 0;
 
   for (const item of items) {
+    const itemAccents = new Set<string>();
     for (const rawTag of item.tags) {
       const tag = rawTag.toLowerCase();
-      if (ACCENT_COLORS.has(tag)) colors.add(tag);
+      if (ACCENT_COLORS.has(tag)) {
+        colors.add(tag);
+        itemAccents.add(tag);
+      }
       if (BUSY_PATTERNS.has(tag)) busyPatternCount += 1;
 
       if (temperatureF === undefined) continue;
       if (tag === 'heavyweight' && temperatureF > HOT_THRESHOLD_F) weightMismatchCount += 1;
       if (tag === 'lightweight' && temperatureF < COLD_THRESHOLD_F) weightMismatchCount += 1;
     }
+    if (itemAccents.size > 0) perItemAccentColors.push(itemAccents);
   }
 
   let penalty = 0;
 
   // More than one accent color starts to compete for attention — the classic
-  // "one accent color, let neutrals do the rest" guideline.
-  if (colors.size > 1) penalty += colors.size - 1;
+  // "one accent color, let neutrals do the rest" guideline. But first check
+  // whether a single garment's own colors already account for every accent
+  // color present: a multi-color piece (e.g. a graphic/retro jersey) is
+  // inherently multi-hued by design, and that's not the same thing as
+  // wearing several separate solid-colored garments that each pick their own
+  // competing color — live testing confirmed an outfit that was otherwise
+  // all neutrals plus one busy piece was getting penalized the same as
+  // genuinely mismatched separate garments. Repeating the same color across
+  // items (a tonal look) was already fine before this — colors.size dedupes
+  // that on its own — this only changes the case where the variety itself
+  // traces back to one single piece.
+  const singleItemExplainsAllColors = perItemAccentColors.some(
+    itemAccents => colors.size > 0 && [...colors].every(c => itemAccents.has(c)),
+  );
+  if (!singleItemExplainsAllColors && colors.size > 1) {
+    penalty += colors.size - 1;
+  }
 
-  // A specific known-clashing pair is worse than just "too many accents."
+  // A specific known-clashing pair is worse than just "too many accents" —
+  // this still looks at every color in the outfit regardless of which item
+  // it came from, since two specific clashing hues read as a clash whether
+  // they're on one garment or two.
   if (hasClashingPair(colors)) penalty += 2;
 
   // Two or more busy patterns in one outfit is the classic pattern-mixing mistake.

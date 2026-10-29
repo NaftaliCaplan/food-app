@@ -43,6 +43,35 @@ describe('scoreOutfitAesthetics', () => {
     expect(clashing).toBeGreaterThan(arbitrary);
   });
 
+  it('does not penalize a single multi-color garment paired with neutrals (a confirmed live-testing gap)', () => {
+    // A graphic/retro jersey with several of its own colors, worn with
+    // all-neutral everything else — the color variety traces back to one
+    // piece, not several separate garments competing for attention.
+    const items = [
+      makeItem(['blue', 'yellow', 'graphic'], { category: 'top' }),
+      makeItem(['navy', 'solid'], { category: 'top' }),
+      makeItem(['black', 'solid'], { category: 'bottom' }),
+    ];
+    expect(scoreOutfitAesthetics(items)).toBe(0);
+  });
+
+  it('still flags a clashing pair within a single multi-color garment', () => {
+    const items = [makeItem(['red', 'green', 'graphic'], { category: 'top' }), makeItem(['black', 'solid'])];
+    expect(scoreOutfitAesthetics(items)).toBeGreaterThan(0);
+  });
+
+  it('still penalizes a multi-color garment paired with a separately-colored garment', () => {
+    const singlePieceOnly = scoreOutfitAesthetics([
+      makeItem(['blue', 'yellow', 'graphic'], { category: 'top' }),
+      makeItem(['black', 'solid']),
+    ]);
+    const plusAnotherColor = scoreOutfitAesthetics([
+      makeItem(['blue', 'yellow', 'graphic'], { category: 'top' }),
+      makeItem(['purple', 'solid']),
+    ]);
+    expect(plusAnotherColor).toBeGreaterThan(singlePieceOnly);
+  });
+
   it.each([
     ['red', 'purple'],
     ['red', 'yellow'],
