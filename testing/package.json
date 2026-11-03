@@ -1,0 +1,14 @@
+{
+  "name": "cba-batch-test",
+  "private": true,
+  "scripts": {
+    "food": "tsx run-food.ts",
+    "wardrobe": "tsx run-wardrobe.ts",
+    "selfie": "tsx run-selfie.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "typescript": "~6.0.3"
+  }
+}

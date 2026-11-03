@@ -47,3 +47,9 @@ yarn-error.*
 server/.wrangler/
 server/.dev.vars
 server/node_modules/
+
+# Batch-testing harness (testing/) — personal test photos and generated
+# reports shouldn't be committed; .env.local already covered by the rule above
+testing/photos/
+testing/results/
+testing/node_modules/

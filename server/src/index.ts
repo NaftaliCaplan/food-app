@@ -22,10 +22,18 @@ const MAX_TOKENS_CEILING = 600;
 const RATE_LIMIT_MAX = 30;
 const RATE_LIMIT_WINDOW_SECONDS = 600;
 
+// A separate, much higher limit for the batch-testing harness (testing/) —
+// it authenticates with its own TEST_SHARED_SECRET, never shipped in any app
+// bundle, so raising its limit doesn't loosen the real app's abuse
+// protection at all. Each mode gets its own KV key prefix so a big batch run
+// can never eat into (or be throttled by) the app-client budget.
+const TEST_RATE_LIMIT_MAX = 1000;
+
 interface Env {
   AI: Ai;
   RATE_LIMIT: KVNamespace;
   APP_SHARED_SECRET: string;
+  TEST_SHARED_SECRET?: string;
 }
 
 const CORS_HEADERS = {
@@ -41,11 +49,11 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-async function checkRateLimit(ip: string, kv: KVNamespace): Promise<boolean> {
+async function checkRateLimit(ip: string, kv: KVNamespace, max: number, keyPrefix: string): Promise<boolean> {
   const windowIndex = Math.floor(Date.now() / 1000 / RATE_LIMIT_WINDOW_SECONDS);
-  const key = `rl:${ip}:${windowIndex}`;
+  const key = `${keyPrefix}:${ip}:${windowIndex}`;
   const current = Number((await kv.get(key)) ?? '0');
-  if (current >= RATE_LIMIT_MAX) return false;
+  if (current >= max) return false;
   await kv.put(key, String(current + 1), { expirationTtl: RATE_LIMIT_WINDOW_SECONDS });
   return true;
 }
@@ -79,12 +87,16 @@ export default {
       return json({ error: 'Not found' }, 404);
     }
 
-    if (request.headers.get('X-App-Secret') !== env.APP_SHARED_SECRET) {
+    const providedSecret = request.headers.get('X-App-Secret');
+    const isTestClient = !!env.TEST_SHARED_SECRET && providedSecret === env.TEST_SHARED_SECRET;
+    const isAppClient = providedSecret === env.APP_SHARED_SECRET;
+    if (!isAppClient && !isTestClient) {
       return json({ error: 'Unauthorized' }, 401);
     }
 
     const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
-    const withinLimit = await checkRateLimit(ip, env.RATE_LIMIT);
+    const limit = isTestClient ? TEST_RATE_LIMIT_MAX : RATE_LIMIT_MAX;
+    const withinLimit = await checkRateLimit(ip, env.RATE_LIMIT, limit, isTestClient ? 'rl-test' : 'rl');
     if (!withinLimit) {
       return json({ error: 'Rate limit exceeded, try again later' }, 429);
     }
