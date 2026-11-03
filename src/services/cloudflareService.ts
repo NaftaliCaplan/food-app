@@ -31,7 +31,7 @@ function foodLabelMatchesObserved(label: string, observed: string): boolean {
 // observed, confident banana). foodLabelMatchesObserved() can only catch a
 // mismatch if observedFood is actually independent; this ordering is what
 // makes that check meaningful rather than a no-op.
-function buildPrompt(foodLabel: string): string {
+export function buildPrompt(foodLabel: string): string {
   return `You are a food safety and readiness expert with sharp vision. A colorblind user is relying entirely on your analysis — they cannot distinguish colors themselves. Your visual cues must describe texture, shape, surface condition, and pattern — not just color names alone.
 
 STEP 1 — OBSERVE: Look carefully at the image. Describe exactly what you see: shape, texture, surface condition, visible markings, any signs of cooking or preparation. Be specific. Do this before considering any label the user may have given — judge purely from what's visible.
@@ -68,13 +68,14 @@ STEP 6 — OUTPUT: You MUST respond with ONLY a raw JSON object. No markdown, no
 }`;
 }
 
-export async function analyzeFood(
-  photoUri: string,
+// Split out of analyzeFood so the batch-testing harness (testing/) can reuse
+// this exact parsing path against a raw response it fetched itself — no
+// duplicated parsing logic, same fidelity as the real app.
+export function parseAnalyzeFoodResponse(
+  raw: unknown,
+  size: number,
   foodLabel: string,
-): Promise<AnalysisResult> {
-  const { base64, size } = await photoToBase64(photoUri);
-  const raw = await callCloudflareVision(base64, buildPrompt(foodLabel), 512);
-
+): AnalysisResult {
   const obj = raw && typeof raw === 'object' ? raw as Record<string, unknown> : null;
   // Model returns response as a pre-parsed object — use directly
   if (obj && obj.state) {
@@ -98,4 +99,13 @@ export async function analyzeFood(
   // Fallback: parse as string
   const text = typeof raw === 'string' ? raw : JSON.stringify(raw ?? '');
   return parseLLMResponse(text);
+}
+
+export async function analyzeFood(
+  photoUri: string,
+  foodLabel: string,
+): Promise<AnalysisResult> {
+  const { base64, size } = await photoToBase64(photoUri);
+  const raw = await callCloudflareVision(base64, buildPrompt(foodLabel), 512);
+  return parseAnalyzeFoodResponse(raw, size, foodLabel);
 }

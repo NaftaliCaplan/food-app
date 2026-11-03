@@ -23,7 +23,7 @@ const ACCESSORY_TYPES_LIST = ACCESSORY_TYPE_TAGS.join(' / ');
 // buildTagPrompt, which already only handles one isolated garment per photo —
 // there was no existing multi-item template to extend). Accessories are the
 // one genuinely variable-count category, so that's the only real array.
-function buildSelfieDetectionPrompt(): string {
+export function buildSelfieDetectionPrompt(): string {
   return `You are a clothing identification expert analyzing a photo of a person wearing a full outfit, to help judge whether the pieces they're wearing match.
 
 STEP 0 — CHECK: If you cannot see a person wearing any visible clothing at all, set every slot's "present" to false, "accessories" to an empty array, and skip the remaining steps.
@@ -170,13 +170,14 @@ const TIER_TIPS: Record<SelfieMatchTier, string> = {
   strong_clash: 'Several pieces are clashing — consider swapping one out.',
 };
 
-export async function checkSelfieOutfit(
+// Split out of checkSelfieOutfit so the batch-testing harness (testing/) can
+// reuse this exact parsing+scoring path against a raw response it fetched
+// itself — no duplicated parsing logic, same fidelity as the real app.
+export function buildSelfieCheckResult(
+  raw: unknown,
   photoUri: string,
   profile?: UserProfile | null,
-): Promise<SelfieCheckResult> {
-  const { base64 } = await photoToBase64(photoUri);
-  const raw = await callCloudflareVision(base64, buildSelfieDetectionPrompt(), 500);
-
+): SelfieCheckResult {
   const garments = parseDetectedGarments(raw);
   if (garments.length === 0) {
     throw new Error('No clothing detected in this photo — try again with your outfit clearly visible.');
@@ -192,4 +193,13 @@ export async function checkSelfieOutfit(
   const tier = tierForScore(score);
 
   return { tier, garments, tip: TIER_TIPS[tier] };
+}
+
+export async function checkSelfieOutfit(
+  photoUri: string,
+  profile?: UserProfile | null,
+): Promise<SelfieCheckResult> {
+  const { base64 } = await photoToBase64(photoUri);
+  const raw = await callCloudflareVision(base64, buildSelfieDetectionPrompt(), 500);
+  return buildSelfieCheckResult(raw, photoUri, profile);
 }

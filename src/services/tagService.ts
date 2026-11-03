@@ -118,7 +118,7 @@ function attributeStepLine(category: ItemCategory): string {
   return `- Material: leather / metal / fabric / knit / woven\n- Type: ${ACCESSORY_TYPE_TAGS.join(' / ')} (pick whichever fits best; skip this line entirely if genuinely none apply)`;
 }
 
-function buildTagPrompt(category: ItemCategory): string {
+export function buildTagPrompt(category: ItemCategory): string {
   return `You are a clothing identification expert helping a user catalog their wardrobe so an AI stylist can build outfits from it.
 
 STEP 0 — CHECK: Does this photo actually show a piece of clothing or a wearable accessory (something worn on the body — jewelry, a belt, a bag, a hat, a scarf, sunglasses, a watch), being worn or laid out on its own? It does NOT count if the photo shows furniture, walls, appliances, packaging, a sticker, a logo, printed text, a person's face with no clothing in frame, small handheld electronics or gadgets (phones, computer mice, remotes, keys, chargers — these are NOT accessories just because they're small), or a blank/blurry shot. If you do not see an actual garment or wearable accessory, set "isClothing" to false, leave "name" as an empty string, "colors" and "tags" as empty arrays, and skip the remaining steps.
@@ -213,10 +213,10 @@ function parseTagFallback(text: string, category: ItemCategory): TagResult {
   };
 }
 
-export async function tagClothingItem(photoUri: string, category: ItemCategory): Promise<TagResult> {
-  const { base64 } = await photoToBase64(photoUri);
-  const raw = await callCloudflareVision(base64, buildTagPrompt(category));
-
+// Split out of tagClothingItem so the batch-testing harness (testing/) can
+// reuse this exact parsing path against a raw response it fetched itself —
+// no duplicated parsing logic, same fidelity as the real app.
+export function parseTagResponse(raw: unknown, category: ItemCategory): TagResult {
   const obj = raw && typeof raw === 'object' ? raw as Record<string, unknown> : null;
   if (obj && typeof obj.name === 'string' && Array.isArray(obj.tags)) {
     const rawTags = (obj.tags as unknown[]).filter(t => typeof t === 'string') as string[];
@@ -232,6 +232,12 @@ export async function tagClothingItem(photoUri: string, category: ItemCategory):
   }
 
   return parseTagFallback(typeof raw === 'string' ? raw : '', category);
+}
+
+export async function tagClothingItem(photoUri: string, category: ItemCategory): Promise<TagResult> {
+  const { base64 } = await photoToBase64(photoUri);
+  const raw = await callCloudflareVision(base64, buildTagPrompt(category));
+  return parseTagResponse(raw, category);
 }
 
 export async function extractSkinTone(photoUri: string): Promise<SkinToneResult> {
