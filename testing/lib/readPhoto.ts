@@ -5,8 +5,17 @@
 // (the prompt builders, callCloudflareVision, the response parsers) is the
 // real app code, unmodified.
 import { readFileSync } from 'node:fs';
+import { extname } from 'node:path';
 
-export function photoToBase64(filePath: string): { base64: string; size: number } {
+const MIME_TYPES: Record<string, string> = {
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+};
+
+export function photoToBase64(filePath: string): { base64: string; size: number; mimeType: string } {
   const buffer = readFileSync(filePath);
-  return { base64: buffer.toString('base64'), size: buffer.byteLength };
+  const mimeType = MIME_TYPES[extname(filePath).toLowerCase()] ?? 'image/jpeg';
+  return { base64: buffer.toString('base64'), size: buffer.byteLength, mimeType };
 }

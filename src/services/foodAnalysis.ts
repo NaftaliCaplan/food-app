@@ -21,11 +21,27 @@ function adjustConfidence(modelConfidence: number, imageSizeBytes: number): numb
   return Math.round(Math.max(10, Math.min(99, adjusted)));
 }
 
+// Crude singular/plural stemmer — not linguistically rigorous, just enough to
+// stop an exact-substring check from failing on the most common case: "ripe
+// cherry" vs. an observedFood of "a cluster of bright red cherries" used to
+// come back labelMatch: false purely because "cherry" isn't a literal
+// substring of "cherries" (confirmed via the testing/ batch harness, see
+// project memory). Comparing word-by-word (both sides stemmed) rather than
+// one word against the whole raw string also avoids accidental substring
+// hits across word boundaries as a side effect.
+function stem(word: string): string {
+  if (word.endsWith('ies') && word.length > 4) return word.slice(0, -3) + 'y';
+  if (word.endsWith('es') && word.length > 3) return word.slice(0, -2);
+  if (word.endsWith('s') && word.length > 2) return word.slice(0, -1);
+  return word;
+}
+
 function foodLabelMatchesObserved(label: string, observed: string): boolean {
   const normalize = (s: string) => s.toLowerCase().replace(/[^a-z\s]/g, '');
-  const labelWords = normalize(label).split(/\s+/).filter(w => w.length > 2);
-  const observedNorm = normalize(observed);
-  return labelWords.some(word => observedNorm.includes(word));
+  const toStems = (s: string) => normalize(s).split(/\s+/).filter(w => w.length > 2).map(stem);
+  const labelStems = toStems(label);
+  const observedStems = toStems(observed);
+  return labelStems.some(word => observedStems.some(ow => ow.includes(word) || word.includes(ow)));
 }
 
 // foodLabel is deliberately withheld until STEP 3 (COMPARE), after the model
@@ -50,7 +66,7 @@ STEP 4 — CLASSIFY THE FOOD TYPE and pick the right scale:
 - FRESH PRODUCE (fruits, most vegetables) → use: unripe, almost_ready, ripe, use_soon, overripe
 - PEPPER VARIETIES: a green bell pepper, green jalapeño, or green serrano can be fully ripe and ready — judge by firmness and freshness, not by color alone. Only call a pepper unripe if it appears underdeveloped or shriveled.
 - TOMATOES: green tomatoes may be intentionally used green (e.g. fried green tomatoes) — if they look firm and fresh, use almost_ready not unripe
-- COOKED OR PROCESSED FOOD (leftovers, cooked grains, bread, etc.) → assess freshness: ripe = fresh and good, use_soon = eat today, overripe = spoiling
+- COOKED OR PROCESSED FOOD (leftovers, cooked grains, bread, pasta, noodles, rice, etc.) → assess freshness: ripe = fresh and good, use_soon = eat today, overripe = spoiling. This bucket applies whether the food is currently raw/uncooked (e.g. dry or fresh uncooked pasta) or already cooked — it is still food either way, never "not food."
 - NOT FOOD AT ALL → set state to "unknown", stateLabel to "Not food", confidencePercent to 100, and explain in recommendation
 
 STEP 5 — CONFIDENCE: You must be conservative. Start at 50 and only go higher if you have specific visual evidence.
@@ -100,7 +116,22 @@ export function parseAnalyzeFoodResponse(
       labelMatch,
     };
   }
-  // Fallback: parse as string
+  // Fallback: parse as string. parseLLMResponse() only receives raw text, not
+  // foodLabel or size, so it can extract observedFood/confidencePercent but
+  // structurally can't compute labelMatch or apply the image-size confidence
+  // correction itself — confirmed via the testing/ batch harness that this
+  // path is hit often enough (3 of 17 photos in one real run) to matter, not
+  // just a theoretical gap. Both are applied here instead, same semantics as
+  // the main path above, so results are consistent regardless of which parse
+  // path a response takes.
   const text = typeof raw === 'string' ? raw : JSON.stringify(raw ?? '');
-  return parseLLMResponse(text);
+  const fallbackResult = parseLLMResponse(text);
+  const labelMatch = fallbackResult.observedFood
+    ? foodLabelMatchesObserved(foodLabel, fallbackResult.observedFood)
+    : true;
+  return {
+    ...fallbackResult,
+    confidencePercent: adjustConfidence(fallbackResult.confidencePercent, size),
+    labelMatch,
+  };
 }

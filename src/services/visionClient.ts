@@ -17,6 +17,12 @@ export async function callCloudflareVision(
   base64: string,
   promptText: string,
   maxTokens = 400,
+  // The app always captures real JPEGs (expo-camera's output format), so
+  // this has always been correct for real app usage. Exposed as a parameter
+  // (not hardcoded) so the batch-testing harness (testing/) — which accepts
+  // whatever format a test photo actually is (.webp, .png, etc.) — can pass
+  // the real mime type instead of silently mislabeling the data URI.
+  mimeType = 'image/jpeg',
 ): Promise<unknown> {
   const response = await fetch(`${PROXY_URL}/vision`, {
     method: 'POST',
@@ -29,7 +35,7 @@ export async function callCloudflareVision(
         {
           role: 'user',
           content: [
-            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
+            { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64}` } },
             { type: 'text', text: promptText },
           ],
         },

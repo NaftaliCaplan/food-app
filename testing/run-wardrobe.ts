@@ -18,7 +18,7 @@ import { buildTagPrompt, parseTagResponse } from '../src/services/tagAnalysis';
 import { ItemCategory } from '../src/types/wardrobe';
 
 const PHOTOS_DIR = join(__dirname, 'photos', 'wardrobe');
-const IMAGE_PATTERN = /\.(jpe?g|png)$/i;
+const IMAGE_PATTERN = /\.(jpe?g|png|webp)$/i;
 const CATEGORIES: ItemCategory[] = ['top', 'bottom', 'shoes', 'accessory'];
 
 async function main() {
@@ -40,8 +40,8 @@ async function main() {
       totalFiles += 1;
       process.stdout.write(`${file}... `);
       try {
-        const { base64 } = photoToBase64(join(dir, file));
-        const raw = await callCloudflareVision(base64, buildTagPrompt(category));
+        const { base64, mimeType } = photoToBase64(join(dir, file));
+        const raw = await callCloudflareVision(base64, buildTagPrompt(category), 400, mimeType);
         const result = parseTagResponse(raw, category);
         const categoryNote = result.detectedCategory && result.detectedCategory !== category
           ? ` [AI guessed ${result.detectedCategory} instead]`

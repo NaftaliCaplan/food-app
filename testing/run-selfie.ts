@@ -16,7 +16,7 @@ import { callCloudflareVision } from '../src/services/visionClient';
 import { buildSelfieCheckResult, buildSelfieDetectionPrompt } from '../src/services/selfieAnalysis';
 
 const PHOTOS_DIR = join(__dirname, 'photos', 'selfie');
-const IMAGE_PATTERN = /\.(jpe?g|png)$/i;
+const IMAGE_PATTERN = /\.(jpe?g|png|webp)$/i;
 
 async function main() {
   let files: string[];
@@ -38,8 +38,8 @@ async function main() {
     process.stdout.write(`${file}... `);
     const filePath = join(PHOTOS_DIR, file);
     try {
-      const { base64 } = photoToBase64(filePath);
-      const raw = await callCloudflareVision(base64, buildSelfieDetectionPrompt(), 500);
+      const { base64, mimeType } = photoToBase64(filePath);
+      const raw = await callCloudflareVision(base64, buildSelfieDetectionPrompt(), 500, mimeType);
       const result = buildSelfieCheckResult(raw, filePath, null);
       const garmentSummary = result.garments.map(g => `${g.category}:[${g.tags.join(',')}]`).join(' ');
       console.log(`${result.tier} — ${garmentSummary}`);

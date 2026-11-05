@@ -16,7 +16,9 @@ Open `.env.local` and fill in `TEST_SHARED_SECRET`. This is a *different* secret
 
 ## Adding test photos
 
-- **Food checker**: drop photos in `photos/food/`, named like `banana_01.jpg` — the label sent to the checker is derived from the filename (strip the extension and any trailing number, replace `_`/`-` with spaces). `green-tomato-2.png` → label "green tomato".
+`.jpg`/`.jpeg`/`.png`/`.webp` are all supported — the real mime type is detected from the extension and passed through correctly (not just assumed to be JPEG).
+
+- **Food checker**: drop photos in `photos/food/`, named like `banana_01.jpg` — the label sent to the checker is derived from the filename (strip the extension and any trailing number, replace `_`/`-` with spaces). `green-tomato-2.png` → label "green tomato". **Word separators matter**: `mediumraresteak.webp` becomes the single run-on label "mediumraresteak", which breaks the label/observed-food match check (it only splits on whitespace) — use `medium_rare_steak.webp` or `medium-rare-steak.webp` instead.
 - **Wardrobe tagging**: drop photos in `photos/wardrobe/<category>/`, where `<category>` is `top`, `bottom`, `shoes`, or `accessory` — this mirrors picking a category before taking the photo in the real app, and lets you see how often the AI's own independent category guess disagrees with it.
 - **Selfie checker**: drop full-outfit photos in `photos/selfie/`. No filename convention needed.
 

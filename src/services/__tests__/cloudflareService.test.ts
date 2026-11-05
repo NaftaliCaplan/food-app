@@ -86,6 +86,30 @@ describe('analyzeFood', () => {
     expect(result.recommendation).toBe('Eat now.');
   });
 
+  it('still computes labelMatch on the string-fallback path when observedFood is present (a confirmed batch-testing gap)', async () => {
+    const fenced = '```json\n{"observedFood": "a red apple", "state": "ripe", "confidencePercent": 70, "visualCues": [], "recommendation": "Eat now."}\n```';
+    mockFetch.mockResolvedValue(makeResponse({ result: { response: fenced } }));
+    const result = await analyzeFood('file://test.jpg', 'banana');
+    expect(result.observedFood).toBe('a red apple');
+    expect(result.labelMatch).toBe(false);
+  });
+
+  it('defaults labelMatch to true on the string-fallback path when observedFood is absent', async () => {
+    const fenced = '```json\n{"state": "ripe", "confidencePercent": 70, "visualCues": [], "recommendation": "Eat now."}\n```';
+    mockFetch.mockResolvedValue(makeResponse({ result: { response: fenced } }));
+    const result = await analyzeFood('file://test.jpg', 'banana');
+    expect(result.labelMatch).toBe(true);
+  });
+
+  it('applies the same image-size confidence correction on the string-fallback path (a confirmed batch-testing gap)', async () => {
+    mockImageSize(1_000);
+    const fenced = '```json\n{"state": "ripe", "confidencePercent": 90, "visualCues": [], "recommendation": "Eat now."}\n```';
+    mockFetch.mockResolvedValue(makeResponse({ result: { response: fenced } }));
+    const result = await analyzeFood('file://test.jpg', 'banana');
+    // Same math as the main-path test: 90 > 85 -> 77, then capped to 55 for a <50kb image
+    expect(result.confidencePercent).toBe(55);
+  });
+
   it('throws on a non-OK HTTP response', async () => {
     mockFetch.mockResolvedValue(makeResponse('Unauthorized', false, 401));
     await expect(analyzeFood('file://test.jpg', 'banana')).rejects.toThrow('AI proxy error 401');
@@ -122,6 +146,22 @@ describe('analyzeFood', () => {
       }));
       const result = await analyzeFood('file://test.jpg', 'banana');
       expect(result.labelMatch).toBe(false);
+    });
+
+    it('sets labelMatch true when only the plural/singular form differs (a confirmed batch-testing gap)', async () => {
+      mockFetch.mockResolvedValue(makeResponse({
+        result: {
+          response: {
+            observedFood: 'a cluster of bright red cherries with stems',
+            state: 'ripe',
+            confidencePercent: 60,
+            visualCues: [],
+            recommendation: '',
+          },
+        },
+      }));
+      const result = await analyzeFood('file://test.jpg', 'ripe cherry');
+      expect(result.labelMatch).toBe(true);
     });
 
     it('defaults labelMatch to true when observedFood is missing', async () => {

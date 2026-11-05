@@ -15,7 +15,7 @@ import { callCloudflareVision } from '../src/services/visionClient';
 import { buildPrompt, parseAnalyzeFoodResponse } from '../src/services/foodAnalysis';
 
 const PHOTOS_DIR = join(__dirname, 'photos', 'food');
-const IMAGE_PATTERN = /\.(jpe?g|png)$/i;
+const IMAGE_PATTERN = /\.(jpe?g|png|webp)$/i;
 
 function labelFromFilename(filename: string): string {
   return filename
@@ -45,10 +45,12 @@ async function main() {
     const label = labelFromFilename(file);
     process.stdout.write(`${file} (label: "${label}")... `);
     try {
-      const { base64, size } = photoToBase64(join(PHOTOS_DIR, file));
-      const raw = await callCloudflareVision(base64, buildPrompt(label), 512);
+      const { base64, size, mimeType } = photoToBase64(join(PHOTOS_DIR, file));
+      const raw = await callCloudflareVision(base64, buildPrompt(label), 512, mimeType);
       const result = parseAnalyzeFoodResponse(raw, size, label);
-      console.log(`${result.stateLabel} (${result.confidencePercent}%) — observed: "${result.observedFood}", labelMatch: ${result.labelMatch}`);
+      const observedDisplay = result.observedFood ?? '(not provided — response fell back to string parsing)';
+      const matchDisplay = result.labelMatch === undefined ? 'n/a' : result.labelMatch;
+      console.log(`${result.stateLabel} (${result.confidencePercent}%) — observed: "${observedDisplay}", labelMatch: ${matchDisplay}`);
       results.push({ file, label, result });
     } catch (e) {
       console.log(`ERROR: ${(e as Error).message}`);
