@@ -123,10 +123,23 @@ function attributeStepLine(category: ItemCategory): string {
   return `- Material: leather / metal / fabric / knit / woven\n- Type: ${ACCESSORY_TYPE_TAGS.join(' / ')} (pick whichever fits best; skip this line entirely if genuinely none apply)`;
 }
 
+// STEP 0's closing reminder and the "isClothing" output-schema line both
+// explicitly spell out "true for accessories too" (2026-11-05) — confirmed
+// via the testing/ batch harness that sunglasses specifically (already named
+// as a valid example earlier in STEP 0) were coming back isClothing: false
+// 2 of 3 times, with the same response's own "category": "accessory"
+// contradicting it. The field is literally named "isClothing," and that name
+// alone seems to pull the model toward "is this a garment?" even when an
+// earlier instruction already broadened the definition — reinforcing the
+// correct meaning right next to where the value actually gets generated
+// (the output schema itself, not just an earlier step) is the fix, same
+// "don't just state a rule once and hope it survives the whole prompt"
+// lesson as the exact-name-quoting and anchoring-order fixes elsewhere in
+// this project.
 export function buildTagPrompt(category: ItemCategory): string {
   return `You are a clothing identification expert helping a user catalog their wardrobe so an AI stylist can build outfits from it.
 
-STEP 0 — CHECK: Does this photo actually show a piece of clothing or a wearable accessory (something worn on the body — jewelry, a belt, a bag, a hat, a scarf, sunglasses, a watch), being worn or laid out on its own? It does NOT count if the photo shows furniture, walls, appliances, packaging, a sticker, a logo, printed text, a person's face with no clothing in frame, small handheld electronics or gadgets (phones, computer mice, remotes, keys, chargers — these are NOT accessories just because they're small), or a blank/blurry shot. If you do not see an actual garment or wearable accessory, set "isClothing" to false, leave "name" as an empty string, "colors" and "tags" as empty arrays, and skip the remaining steps.
+STEP 0 — CHECK: Does this photo actually show a piece of clothing or a wearable accessory (something worn on the body — jewelry, a belt, a bag, a hat, a scarf, sunglasses, a watch), being worn or laid out on its own? It does NOT count if the photo shows furniture, walls, appliances, packaging, a sticker, a logo, printed text, a person's face with no clothing in frame, small handheld electronics or gadgets (phones, computer mice, remotes, keys, chargers — these are NOT accessories just because they're small), or a blank/blurry shot. If you do not see an actual garment or wearable accessory, set "isClothing" to false, leave "name" as an empty string, "colors" and "tags" as empty arrays, and skip the remaining steps. The "isClothing" field name is shorthand for "something to catalog in the wardrobe" — it means clothing OR a wearable accessory, not literally just garments. A clear photo of sunglasses, a watch, or jewelry on their own is "isClothing": true, the same as a shirt would be — don't mark an accessory false just because it isn't a garment.
 
 STEP 1 — COLOR: Look at the garment itself, not the background or surroundings. Identify its actual color(s) using EXACTLY ONE WORD from this list: black, white, gray, navy, blue, green, olive, brown, tan, khaki, red, burgundy, pink, purple, yellow, orange. Never use a multi-word or modified description like "olive green", "neon pink", or "bright red" — pick whichever single word above is the closest match, even if it's not perfect. List 1-2 colors — the dominant color first, then a secondary color if the item is clearly two-toned or patterned in a second color. This is the most important thing to get right, since color is the main thing people use to match an outfit.
 
@@ -156,7 +169,7 @@ Good tag examples: navy, olive, white, solid, striped, plaid, textured, canvas, 
 
 STEP 7 — OUTPUT: Respond with ONLY a raw JSON object. No markdown. Start with { end with }:
 {
-  "isClothing": <true|false>,
+  "isClothing": <true|false — true for accessories too, e.g. sunglasses, jewelry, a watch; see STEP 0>,
   "colors": ["<primary color>", "<secondary color if any>"],
   "category": "<top|bottom|shoes|accessory>",
   "name": "<short simple name including the color, e.g. 'navy sweater'>",
