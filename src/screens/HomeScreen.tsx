@@ -37,6 +37,11 @@ export function HomeScreen() {
           subtitle="Check what you're wearing right now"
           onPress={() => navigation.navigate('SelfieCheck')}
         />
+        <FeatureButton
+          title="What color is it?"
+          subtitle="Check the color of a status or indicator light"
+          onPress={() => navigation.navigate('LightChecker')}
+        />
       </View>
 
       <AppText style={styles.taglineBottom}>Point. Capture. Know.</AppText>

@@ -12,6 +12,10 @@ export type RootStackParamList = {
     photoUri: string;
     useProfile: boolean;
   };
+  LightChecker: undefined;
+  LightResults: {
+    photoUri: string;
+  };
   Wardrobe: undefined;
   SavedOutfits: undefined;
   AddItem: undefined;

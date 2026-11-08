@@ -6,6 +6,7 @@
     "wardrobe": "tsx run-wardrobe.ts",
     "selfie": "tsx run-selfie.ts",
     "outfit": "tsx run-outfit.ts",
+    "light": "tsx run-light.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

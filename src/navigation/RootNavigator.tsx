@@ -2,6 +2,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { FoodCheckerScreen } from '../screens/FoodCheckerScreen';
 import { HomeScreen } from '../screens/HomeScreen';
+import { LightCheckerScreen } from '../screens/LightCheckerScreen';
+import { LightResultsScreen } from '../screens/LightResultsScreen';
 import { ResultsScreen } from '../screens/ResultsScreen';
 import { AddItemScreen } from '../screens/AddItemScreen';
 import { EditItemScreen } from '../screens/EditItemScreen';
@@ -31,6 +33,8 @@ export function RootNavigator() {
       <Stack.Screen name="Results" component={ResultsScreen} />
       <Stack.Screen name="SelfieCheck" component={SelfieCheckScreen} />
       <Stack.Screen name="SelfieCheckResults" component={SelfieCheckResultsScreen} />
+      <Stack.Screen name="LightChecker" component={LightCheckerScreen} />
+      <Stack.Screen name="LightResults" component={LightResultsScreen} />
       <Stack.Screen name="Wardrobe" component={WardrobeScreen} />
       <Stack.Screen name="SavedOutfits" component={SavedOutfitsScreen} />
       <Stack.Screen name="AddItem" component={AddItemScreen} />
