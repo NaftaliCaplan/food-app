@@ -29,4 +29,12 @@ export const Colors = {
   matchTierNeutral:    '#94A3B8',
   matchTierMildClash:  '#FACC15',
   matchTierStrongClash:'#F87171',
+
+  // Light-checker swatch colors — always paired with colorLabel text that
+  // spells out RED/GREEN/AMBER directly. The text label is the actual
+  // accessibility mechanism here, more so than anywhere else in the app.
+  lightRed:     '#F87171',
+  lightGreen:   '#4ADE80',
+  lightAmber:   '#FBBF24',
+  lightUnclear: '#8A8A8A',
 } as const;
