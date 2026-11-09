@@ -54,7 +54,18 @@ async function checkRateLimit(ip: string, kv: KVNamespace, max: number, keyPrefi
   const key = `${keyPrefix}:${ip}:${windowIndex}`;
   const current = Number((await kv.get(key)) ?? '0');
   if (current >= max) return false;
-  await kv.put(key, String(current + 1), { expirationTtl: RATE_LIMIT_WINDOW_SECONDS });
+  try {
+    await kv.put(key, String(current + 1), { expirationTtl: RATE_LIMIT_WINDOW_SECONDS });
+  } catch {
+    // KV enforces its own ~1-write/sec-per-key limit, independent of our own
+    // `max`/window above — several near-simultaneous requests from the same
+    // client (e.g. the light checker's 3-call majority vote, all hitting the
+    // same key at once) can legitimately exceed that, throwing here. This is
+    // a cost backstop, not a security boundary (see this function's own
+    // call site comment) — failing open on the write (still letting the
+    // request through) is the right tradeoff; failing the whole request
+    // because our own bookkeeping write collided with itself is not.
+  }
   return true;
 }
 
