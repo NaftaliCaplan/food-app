@@ -17,18 +17,13 @@ const VALID_COLORS = new Set<LightColor>(['red', 'green', 'amber', 'unclear']);
 export function buildLightPrompt(): string {
   return `You are a precision color-identification expert helping a colorblind user who cannot distinguish red from green on their own. They are pointing their camera at a single status or indicator light (for example, on a piece of equipment, an appliance, or a control panel) and need to know its exact color. Nothing else about the image matters.
 
-STEP 1 — LOCATE: Find the single most prominent genuinely illuminated indicator light in the image — a status/signal light (an LED, bulb, lit icon, or light bar/strip) that is actually EMITTING light, not a screen, not a reflection, and not ambient room lighting. It can be any shape or size (a small dot, or a longer bar/strip) — judge by light-emission characteristics, not by shape or color:
-- A genuinely lit light typically shows a soft glow, halo, or bloom, and is brighter than its immediate surroundings, sometimes with a slightly overexposed/blown-out core.
-- Flat, uniform color with no brightness gradient is just colored material (plastic casing, a button, a printed logo, trim) — not a light, no matter how vivid or how much of the frame it fills.
-- A repeating mechanical pattern of identical slats, fins, or slots (a heatsink or ventilation grille) is a cooling feature, not a light, regardless of its color.
-If more than one genuinely lit light is visible, only proceed if exactly one of them is clearly the most prominent — distinctly larger, more central, or more in focus than the rest. Pick that one and ignore the others. If several lit lights are comparably prominent (similar size, position, and focus, e.g. a signal-strength light and a power light both clearly lit at once) with no single standout, this is ambiguous — go straight to STEP 3 rather than guessing which one the user means. If nothing in the frame is genuinely emitting light, there is also no indicator light to classify — go straight to STEP 3.
+STEP 1 — LOCATE: Find the single most prominent illuminated indicator light in the image — the brightest, clearest glowing or lit element that looks like a status/signal light (a small LED, bulb, or lit icon), not a screen, not a reflection, and not ambient room lighting. If several lit indicators are visible, choose only the one that is largest, most central, or most clearly in focus — ignore the rest.
 
 STEP 2 — CLASSIFY COLOR: Judge only that one light's actual illuminated color — not the color of its case, label, or background. Classify it as exactly one of: red, green, amber.
 - "amber" covers yellow, orange, and amber/gold lights — any light that isn't clearly red or clearly green belongs here, not just lights that look literally orange.
 
 STEP 3 — DEFENSIVE CHECK: Set color to "unclear" if any of these apply — do not guess:
-- No light in the image appears to be genuinely emitting light (the panel/device is off, or what's visible is just colored-but-unlit material — a lens, casing, button, logo, or vent/grille — color alone is never evidence of being lit)
-- Multiple genuinely lit lights are visible and none is clearly the single most prominent one — say so in "detail" (e.g. "Multiple lights detected — move closer so only one is in frame") rather than picking one arbitrarily
+- No light in the image appears to be actually illuminated (the panel is off, or what's visible is an unlit bulb/lens)
 - The image is too blurry, dark, glared-out, or distant to tell the light's true color
 - You cannot tell a camera flash reflection or lens artifact apart from a real indicator light
 - You are genuinely torn between two colors
@@ -74,5 +69,42 @@ export function parseLightResponse(raw: unknown): LightCheckResult {
     color,
     colorLabel: COLOR_LABELS[color],
     detail: color === 'unclear' ? (rawDetail || 'Could not clearly identify a lit indicator light.') : undefined,
+  };
+}
+
+// Majority-vote across N independent single-shot results (see
+// lightCheckerService.ts's checkLight, which calls the model 3x on the same
+// photo+prompt and feeds the parsed results here). Batch-testing this
+// feature (2026-11-08) showed the single-shot model isn't reliable enough on
+// borderline photos to trust one call's confident-sounding answer — the same
+// ambiguous photo would flip between colors (and even between a real color
+// and "unclear") across repeated identical calls. Run-to-run disagreement on
+// a genuinely clear photo is rare; on a genuinely ambiguous one it's common —
+// so disagreement across repeats is itself a usable signal that a human
+// "plainly and confidently" framing shouldn't be trusted, rather than
+// something to paper over with more prompt wording.
+export function voteLightResults(results: LightCheckResult[]): LightCheckResult {
+  const counts: Record<LightColor, number> = { red: 0, green: 0, amber: 0, unclear: 0 };
+  for (const r of results) counts[r.color] += 1;
+
+  const [topColor, topCount] = (Object.entries(counts) as [LightColor, number][])
+    .sort((a, b) => b[1] - a[1])[0];
+
+  if (topCount > results.length / 2) {
+    if (topColor === 'unclear') {
+      const detail = results.find(r => r.color === 'unclear')?.detail
+        ?? 'Could not clearly identify a lit indicator light.';
+      return { color: 'unclear', colorLabel: COLOR_LABELS.unclear, detail };
+    }
+    return { color: topColor, colorLabel: COLOR_LABELS[topColor] };
+  }
+
+  // No color won a majority — the repeated calls disagree with each other,
+  // which is exactly the case a single confident-sounding call would have
+  // hidden. Report that honestly instead of picking one arbitrarily.
+  return {
+    color: 'unclear',
+    colorLabel: COLOR_LABELS.unclear,
+    detail: 'Got inconsistent readings across repeated checks — try again with a clearer, closer shot of just one light.',
   };
 }

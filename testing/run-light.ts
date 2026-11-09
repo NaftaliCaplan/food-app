@@ -1,6 +1,9 @@
 // Batch-tests the light checker against every photo in photos/light/, reusing
-// the real prompt-building and response-parsing code from
-// src/services/lightAnalysis.ts. See testing/README.md for setup.
+// the real prompt-building, response-parsing, and majority-vote code from
+// src/services/lightAnalysis.ts — mirrors lightCheckerService.ts's checkLight
+// exactly (3 independent calls per photo, voted), so this measures the same
+// behavior real app usage gets, not just a single raw call. See
+// testing/README.md for setup.
 //
 // Label-free, same as run-selfie.ts — there's no claimed-label concept here.
 import './lib/config';
@@ -9,10 +12,11 @@ import { join } from 'node:path';
 import { photoToBase64 } from './lib/readPhoto';
 import { writeReport } from './lib/report';
 import { callCloudflareVision } from '../src/services/visionClient';
-import { buildLightPrompt, parseLightResponse } from '../src/services/lightAnalysis';
+import { buildLightPrompt, parseLightResponse, voteLightResults } from '../src/services/lightAnalysis';
 
 const PHOTOS_DIR = join(__dirname, 'photos', 'light');
 const IMAGE_PATTERN = /\.(jpe?g|png|webp)$/i;
+const VOTES = 3;
 
 async function main() {
   let files: string[];
@@ -35,10 +39,17 @@ async function main() {
     const filePath = join(PHOTOS_DIR, file);
     try {
       const { base64, mimeType } = photoToBase64(filePath);
-      const raw = await callCloudflareVision(base64, buildLightPrompt(), 200, mimeType);
-      const result = parseLightResponse(raw);
-      console.log(`${result.colorLabel}${result.detail ? ' — ' + result.detail : ''}`);
-      results.push({ file, result });
+      const prompt = buildLightPrompt();
+      const raws = await Promise.all(
+        Array.from({ length: VOTES }, () => callCloudflareVision(base64, prompt, 200, mimeType)),
+      );
+      const votes = raws.map(parseLightResponse);
+      const result = voteLightResults(votes);
+      const voteSummary = votes.map(v => v.colorLabel).join('/');
+      console.log(`${result.colorLabel}${result.detail ? ' — ' + result.detail : ''} (votes: ${voteSummary})`);
+      // Individual votes kept alongside the final result so disagreement
+      // patterns are visible in the report, not just the aggregated outcome.
+      results.push({ file, result, votes });
     } catch (e) {
       console.log(`ERROR: ${(e as Error).message}`);
       results.push({ file, error: (e as Error).message });

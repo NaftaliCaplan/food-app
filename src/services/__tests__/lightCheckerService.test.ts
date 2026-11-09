@@ -15,10 +15,10 @@ describe('checkLight', () => {
     mockFetch.mockReset();
   });
 
-  it('calls Cloudflare with correct method, auth header, and max_tokens', async () => {
+  it('calls Cloudflare 3x (majority vote) with correct method, auth header, and max_tokens', async () => {
     mockFetch.mockResolvedValue(makeResponse({ result: { response: { color: 'red', detail: '' } } }));
     await checkLight('file://test.jpg');
-    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFetch).toHaveBeenCalledTimes(3);
     const [, options] = mockFetch.mock.calls[0];
     expect(options.method).toBe('POST');
     expect(options.headers['Content-Type']).toBe('application/json');
@@ -65,5 +65,33 @@ describe('checkLight', () => {
   it('throws on a non-OK HTTP response', async () => {
     mockFetch.mockResolvedValue(makeResponse('Unauthorized', false, 401));
     await expect(checkLight('file://test.jpg')).rejects.toThrow('AI proxy error 401');
+  });
+
+  describe('majority voting across the 3 calls', () => {
+    function mockVotes(colors: string[]) {
+      mockFetch.mockReset();
+      for (const color of colors) {
+        mockFetch.mockResolvedValueOnce(makeResponse({ result: { response: { color, detail: '' } } }));
+      }
+    }
+
+    it('returns the 2/3 majority color when votes split', async () => {
+      mockVotes(['green', 'amber', 'green']);
+      const result = await checkLight('file://test.jpg');
+      expect(result.color).toBe('green');
+    });
+
+    it('returns unclear with an inconsistency detail on a 3-way split with no majority', async () => {
+      mockVotes(['red', 'green', 'amber']);
+      const result = await checkLight('file://test.jpg');
+      expect(result.color).toBe('unclear');
+      expect(result.detail).toBe('Got inconsistent readings across repeated checks — try again with a clearer, closer shot of just one light.');
+    });
+
+    it('returns unclear (not a stray color) when unclear wins the majority', async () => {
+      mockVotes(['unclear', 'unclear', 'red']);
+      const result = await checkLight('file://test.jpg');
+      expect(result.color).toBe('unclear');
+    });
   });
 });
