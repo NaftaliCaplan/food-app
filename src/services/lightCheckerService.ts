@@ -5,8 +5,8 @@ import { callCloudflareVision } from './visionClient';
 
 export async function checkLight(photoUri: string): Promise<LightCheckResult> {
   const { base64 } = await photoToBase64(photoUri);
-  // Small JSON payload (two short fields) vs. food's 512/selfie's 500 —
-  // bump if testing/run-light.ts ever shows truncation.
-  const raw = await callCloudflareVision(base64, buildLightPrompt(), 200);
+  // 300 to fit the forced-reasoning "observation" sentence plus color/detail
+  // — bump further if testing/run-light.ts ever shows truncation.
+  const raw = await callCloudflareVision(base64, buildLightPrompt(), 300);
   return parseLightResponse(raw);
 }

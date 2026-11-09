@@ -35,9 +35,10 @@ async function main() {
     const filePath = join(PHOTOS_DIR, file);
     try {
       const { base64, mimeType } = photoToBase64(filePath);
-      const raw = await callCloudflareVision(base64, buildLightPrompt(), 200, mimeType);
+      const raw = await callCloudflareVision(base64, buildLightPrompt(), 300, mimeType);
       const result = parseLightResponse(raw);
       console.log(`${result.colorLabel}${result.detail ? ' — ' + result.detail : ''}`);
+      if (result.observation) console.log(`  observation: ${result.observation}`);
       results.push({ file, result });
     } catch (e) {
       console.log(`ERROR: ${(e as Error).message}`);

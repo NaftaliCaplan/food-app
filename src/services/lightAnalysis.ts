@@ -17,19 +17,20 @@ const VALID_COLORS = new Set<LightColor>(['red', 'green', 'amber', 'unclear']);
 export function buildLightPrompt(): string {
   return `You are a precision color-identification expert helping a colorblind user who cannot distinguish red from green on their own. They are pointing their camera at a single status or indicator light (for example, on a piece of equipment, an appliance, or a control panel) and need to know its exact color. Nothing else about the image matters.
 
-STEP 1 — LOCATE: Find the single most prominent illuminated indicator light in the image — the brightest, clearest glowing or lit element that looks like a status/signal light (a small LED, bulb, or lit icon), not a screen, not a reflection, and not ambient room lighting. If several lit indicators are visible, choose only the one that is largest, most central, or most clearly in focus — ignore the rest.
+STEP 1 — OBSERVE (write this out before doing anything else): Look at the single brightest, most eye-catching colored element in the image that could plausibly be a status/signal light. In one factual sentence, describe exactly what you see:
+- Is it genuinely EMITTING light — a soft glow, halo, or bloom, brighter than its immediate surroundings, maybe with a slightly overexposed core? Or is it just colored MATERIAL with flat, even coloring and no brightness gradient — a plastic casing, button, lens, trim, or vent/grille — that merely happens to be red, green, or another color?
+- How many genuinely glowing lights, if any, are visible anywhere in the whole image?
+Answer honestly based only on what's visually there — do not assume something is a light just because it's a color you'd expect a light to be.
 
-STEP 2 — CLASSIFY COLOR: Judge only that one light's actual illuminated color — not the color of its case, label, or background. Classify it as exactly one of: red, green, amber.
+STEP 2 — LOCATE: Using only what you just wrote in STEP 1, find the single most prominent GENUINELY glowing indicator light — something you already described as actually emitting light, never something you described as colored-but-unlit material. If your STEP 1 observation found no genuinely glowing light, or found more than one comparably prominent glowing light with no single clear winner (e.g. two different lit lights of similar size/position), there is no single light to classify — skip straight to STEP 4 with color "unclear".
+
+STEP 3 — CLASSIFY COLOR: Judge only that one light's actual illuminated color — not the color of its case, label, or background. Classify it as exactly one of: red, green, amber.
 - "amber" covers yellow, orange, and amber/gold lights — any light that isn't clearly red or clearly green belongs here, not just lights that look literally orange.
-
-STEP 3 — DEFENSIVE CHECK: Set color to "unclear" if any of these apply — do not guess:
-- No light in the image appears to be actually illuminated (the panel is off, or what's visible is an unlit bulb/lens)
-- The image is too blurry, dark, glared-out, or distant to tell the light's true color
-- You cannot tell a camera flash reflection or lens artifact apart from a real indicator light
-- You are genuinely torn between two colors
+- Set color to "unclear" instead if the image is too blurry, dark, glared-out, or distant to tell the true color, if you can't tell a camera flash reflection or lens artifact apart from a real indicator light, or if you're genuinely torn between two colors. Do not guess.
 
 STEP 4 — OUTPUT: Respond with ONLY a raw JSON object. No markdown, no explanation. Start with { and end with }:
 {
+  "observation": "<your one-sentence STEP 1 answer>",
   "color": "<red|green|amber|unclear>",
   "detail": "<if color is 'unclear', one short factual sentence describing why, e.g. 'No illuminated light visible in the photo'; otherwise an empty string>"
 }`;
@@ -64,10 +65,12 @@ export function parseLightResponse(raw: unknown): LightCheckResult {
   const rawColor = typeof obj?.color === 'string' ? obj.color.toLowerCase() : '';
   const color: LightColor = VALID_COLORS.has(rawColor as LightColor) ? (rawColor as LightColor) : 'unclear';
   const rawDetail = typeof obj?.detail === 'string' ? obj.detail.trim() : '';
+  const observation = typeof obj?.observation === 'string' ? obj.observation.trim() : undefined;
 
   return {
     color,
     colorLabel: COLOR_LABELS[color],
     detail: color === 'unclear' ? (rawDetail || 'Could not clearly identify a lit indicator light.') : undefined,
+    observation: observation || undefined,
   };
 }

@@ -22,7 +22,7 @@ describe('checkLight', () => {
     const [, options] = mockFetch.mock.calls[0];
     expect(options.method).toBe('POST');
     expect(options.headers['Content-Type']).toBe('application/json');
-    expect(JSON.parse(options.body).max_tokens).toBe(200);
+    expect(JSON.parse(options.body).max_tokens).toBe(300);
   });
 
   it.each(['red', 'green', 'amber'] as const)('parses a clean "%s" response', async (color) => {
@@ -31,6 +31,14 @@ describe('checkLight', () => {
     expect(result.color).toBe(color);
     expect(result.colorLabel).toBe(color[0].toUpperCase() + color.slice(1));
     expect(result.detail).toBeUndefined();
+  });
+
+  it('passes through the forced-reasoning observation sentence', async () => {
+    mockFetch.mockResolvedValue(makeResponse({
+      result: { response: { observation: 'The red region has a soft glow and is brighter than its surroundings — it is genuinely lit.', color: 'red', detail: '' } },
+    }));
+    const result = await checkLight('file://test.jpg');
+    expect(result.observation).toBe('The red region has a soft glow and is brighter than its surroundings — it is genuinely lit.');
   });
 
   it('returns unclear with the model-provided detail when no light is lit', async () => {
