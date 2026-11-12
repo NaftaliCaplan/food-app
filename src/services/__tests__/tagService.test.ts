@@ -1,10 +1,15 @@
 import { extractSkinTone, tagClothingItem } from '../tagService';
 import { makeResponse } from '../../testUtils/mockResponse';
 
-jest.mock('expo-file-system', () => ({
-  File: jest.fn().mockImplementation(() => ({
-    arrayBuffer: jest.fn().mockResolvedValue(new Uint8Array([1, 2, 3]).buffer),
-  })),
+jest.mock('expo-image-manipulator', () => ({
+  ImageManipulator: {
+    manipulate: jest.fn().mockReturnValue({
+      renderAsync: jest.fn().mockResolvedValue({
+        saveAsync: jest.fn().mockResolvedValue({ base64: 'AAAA' }),
+      }),
+    }),
+  },
+  SaveFormat: { JPEG: 'jpeg', PNG: 'png', WEBP: 'webp' },
 }));
 
 global.fetch = jest.fn();

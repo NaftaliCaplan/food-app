@@ -9,7 +9,21 @@
 // narrowly-scoped shared secret that can only call this one endpoint,
 // subject to the rate limit below.
 
-const MODEL = '@cf/meta/llama-3.2-11b-vision-instruct';
+// Re-swapped to @cf/mistralai/mistral-small-3.1-24b-instruct 2026-11-11,
+// after root-causing and fixing the earlier same-day break: Mistral's image
+// decoder was crashing (undocumented "8005 internal server error") on any
+// JPEG carrying a non-identity EXIF orientation tag — confirmed via direct
+// A/B testing (same file, only the EXIF tag differs, failed 3/3 vs. 3/3
+// success) — which is exactly what real phone-camera photos carry by
+// default. Fixed client-side: src/services/cloudflareVision.ts's
+// photoToBase64() now runs every photo through expo-image-manipulator
+// before upload, which bakes in correct pixel orientation and drops the
+// EXIF block entirely (also shrinks oversized captures as a bonus). See
+// project memory (vision-model-swap-attempt) for the full investigation —
+// Mistral fixed real selfie-checker accuracy bugs (background-color bleed,
+// hallucinated occluded garments) and was faster/cheaper than the previous
+// model per real measured neuron cost.
+const MODEL = '@cf/mistralai/mistral-small-3.1-24b-instruct';
 
 // Defensive ceiling so a client can't ask for an arbitrarily expensive
 // response regardless of what it passes.

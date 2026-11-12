@@ -1,21 +1,25 @@
 import { analyzeFood } from '../cloudflareService';
 import { makeResponse } from '../../testUtils/mockResponse';
+import { fakeBase64 } from '../../testUtils/fakeBase64';
 
-jest.mock('expo-file-system', () => ({
-  File: jest.fn().mockImplementation(() => ({
-    arrayBuffer: jest.fn().mockResolvedValue(new Uint8Array(200_000).buffer),
-  })),
+const mockSaveAsync = jest.fn().mockResolvedValue({ base64: fakeBase64(200_000) });
+
+jest.mock('expo-image-manipulator', () => ({
+  ImageManipulator: {
+    manipulate: jest.fn().mockReturnValue({
+      renderAsync: jest.fn().mockResolvedValue({
+        saveAsync: (...args: unknown[]) => mockSaveAsync(...args),
+      }),
+    }),
+  },
+  SaveFormat: { JPEG: 'jpeg', PNG: 'png', WEBP: 'webp' },
 }));
-
-const { File } = require('expo-file-system');
 
 global.fetch = jest.fn();
 const mockFetch = global.fetch as jest.Mock;
 
 function mockImageSize(bytes: number) {
-  File.mockImplementation(() => ({
-    arrayBuffer: jest.fn().mockResolvedValue(new Uint8Array(bytes).buffer),
-  }));
+  mockSaveAsync.mockResolvedValue({ base64: fakeBase64(bytes) });
 }
 
 function promptFrom(mockFetchCall: unknown[]): string {

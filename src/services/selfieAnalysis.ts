@@ -113,14 +113,20 @@ function parseAccessories(value: unknown): DetectedGarment[] {
   for (const entry of value) {
     if (!entry || typeof entry !== 'object') continue;
     const obj = entry as Record<string, unknown>;
-    const type = typeof obj.type === 'string' && ACCESSORY_TYPES.has(obj.type.toLowerCase())
-      ? [obj.type.toLowerCase()]
-      : [];
+    const rawType = typeof obj.type === 'string' ? obj.type.toLowerCase() : '';
+    // Drop the whole entry when the model's type doesn't match our vocabulary
+    // (e.g. "phone" — a handheld object, not a wearable accessory, that the
+    // model occasionally mislabels as one) rather than keeping a type-less
+    // garment with only stray color tags — that's exactly the "random tag
+    // clutter" users were seeing in the result card (see STEP 0's "a watch,
+    // or jewelry" guidance in buildSelfieDetectionPrompt, which doesn't stop
+    // the model from inventing an out-of-vocabulary type anyway).
+    if (!ACCESSORY_TYPES.has(rawType)) continue;
     const colors = stringArray(obj.colors).flatMap(normalizeColor);
     const material = stringArray(obj.attributes)
       .map(a => a.toLowerCase())
       .filter(a => ACCESSORY_MATERIALS.has(a));
-    garments.push({ category: 'accessory', tags: [...type, ...colors, ...material] });
+    garments.push({ category: 'accessory', tags: [rawType, ...colors, ...material] });
   }
   return garments;
 }
