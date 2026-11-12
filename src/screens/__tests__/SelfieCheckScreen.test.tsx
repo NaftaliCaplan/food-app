@@ -50,7 +50,7 @@ describe('SelfieCheckScreen', () => {
     render(<SelfieCheckScreen />);
     await act(async () => {});
     expect(screen.getByText("How's my outfit?")).toBeTruthy();
-    expect(screen.getByText('Frame your outfit — tap to capture')).toBeTruthy();
+    expect(screen.getByText('Stand, full outfit in frame, plain background — tap to capture')).toBeTruthy();
   });
 
   it('hides the personalize toggle when no profile exists', async () => {

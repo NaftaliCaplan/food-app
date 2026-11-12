@@ -166,7 +166,9 @@ export function SelfieCheckScreen() {
           </View>
 
           <AppText style={styles.hint}>
-            {countdown !== null ? 'Get in position...' : 'Frame your outfit — tap to capture'}
+            {countdown !== null
+              ? 'Get in position...'
+              : 'Stand, full outfit in frame, plain background — tap to capture'}
           </AppText>
           {capturing ? (
             <ActivityIndicator color={Colors.accent} size="large" />

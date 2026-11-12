@@ -36,11 +36,11 @@ export function buildSelfieDetectionPrompt(): string {
 STEP 0 — CHECK: If you cannot see a person wearing any visible clothing at all, set every slot's "present" to false, "accessories" to an empty array, and skip the remaining steps.
 
 STEP 1 — FOR EACH SLOT (top, bottom, shoes) that is actually visible in the photo, describe it:
-- Colors: 1-2 words from EXACTLY this list: black, white, gray, navy, blue, green, olive, brown, tan, khaki, red, burgundy, pink, purple, yellow, orange. Never a multi-word or modified description like "olive green" or "neon pink" — pick whichever single word above is the closest match.
+- Colors: 1-2 words from EXACTLY this list: black, white, gray, navy, blue, green, olive, brown, tan, khaki, red, burgundy, pink, purple, yellow, orange. Never a multi-word or modified description like "olive green" or "neon pink" — pick whichever single word above is the closest match. Only describe the color of the clothing fabric itself — never furniture, walls, floors, or anything else in the background, even if it's right behind or next to the person.
 - Pattern: solid / striped / plaid / checked / floral / textured / graphic
 - Brightness: light / dark / vivid / muted
 - Attributes: for top/bottom, any that apply from ${TOP_BOTTOM_ATTRIBUTES_LIST}; for shoes, any that apply from ${SHOE_ATTRIBUTES_LIST}.
-If a slot genuinely isn't visible (cropped out of frame, or it's a one-piece dress with no separate top+bottom), set that slot's "present" to false and leave colors/attributes as empty arrays — do not guess at something you can't see.
+A slot isn't visible if it's cropped out of frame, it's a one-piece dress with no separate top+bottom, OR it's physically blocked from view — for example, feet/shoes hidden behind a couch, table, or other object when the person is sitting, or a leg tucked out of sight. If you cannot actually see a slot's real fabric, set its "present" to false and leave colors/attributes as empty arrays — do not guess at or infer an item you can't see, even if it would be a typical thing to pair with the rest of the outfit.
 
 STEP 2 — ACCESSORIES: List any visible accessories. For each, give its type (${ACCESSORY_TYPES_LIST}), 1-2 colors (same color list as Step 1), and material if visible (leather / metal / fabric / knit / woven). Leave the array empty if none are visible.
 
