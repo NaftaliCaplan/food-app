@@ -130,7 +130,7 @@ describe('checkSelfieOutfit', () => {
     expect(topTags).toEqual(['navy']);
   });
 
-  it('parses accessory type/colors/material and drops an unrecognized type', async () => {
+  it('parses a recognized accessory type/colors/material and drops an entry with an unrecognized type entirely', async () => {
     mockFetch.mockResolvedValue(makeResponse({
       result: {
         response: {
@@ -138,16 +138,19 @@ describe('checkSelfieOutfit', () => {
           top: { present: true, colors: ['navy'], pattern: 'solid', brightness: 'dark', attributes: [] },
           accessories: [
             { type: 'belt', colors: ['brown'], attributes: ['leather'] },
-            { type: 'not-a-real-type', colors: ['red'], attributes: [] },
+            { type: 'phone', colors: ['red'], attributes: [] },
           ],
         },
       },
     }));
     const result = await checkSelfieOutfit('file://test.jpg');
     const accessoryGarments = result.garments.filter(g => g.category === 'accessory');
-    expect(accessoryGarments).toHaveLength(2);
+    // An unrecognized type (e.g. "phone" — a handheld object the model
+    // sometimes mislabels as a wearable accessory) drops the whole entry
+    // rather than keeping a type-less, tag-only garment — that's what was
+    // showing up as unhelpful clutter in the real result card.
+    expect(accessoryGarments).toHaveLength(1);
     expect(accessoryGarments[0].tags).toEqual(expect.arrayContaining(['belt', 'brown', 'leather']));
-    expect(accessoryGarments[1].tags).not.toContain('not-a-real-type');
   });
 
   it('parses a markdown-fenced response the same way as a raw object', async () => {

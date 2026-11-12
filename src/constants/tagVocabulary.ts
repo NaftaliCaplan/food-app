@@ -22,7 +22,7 @@ export const BRIGHTNESS_TAGS = ['light', 'dark', 'vivid', 'muted'];
 // guess fails safely (the item just falls back to slot-less, today's
 // default for everything). Still fully overridable via the curated picker,
 // same as category/style already are.
-export const ACCESSORY_TYPE_TAGS = ['hat', 'belt', 'bag', 'watch', 'scarf', 'jewelry', 'sunglasses'];
+export const ACCESSORY_TYPE_TAGS = ['hat', 'belt', 'bag', 'watch', 'scarf', 'jewelry', 'sunglasses', 'glasses'];
 
 // Secondary attribute group depends on category, same split as the AI prompt:
 // fit/weight only makes sense for top/bottom, shoes/accessories get
