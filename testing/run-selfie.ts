@@ -17,6 +17,7 @@ import { buildSelfieCheckResult, buildSelfieDetectionPrompt } from '../src/servi
 
 const PHOTOS_DIR = join(__dirname, 'photos', 'selfie');
 const IMAGE_PATTERN = /\.(jpe?g|png|webp)$/i;
+const MODEL_OVERRIDE = process.env.TEST_MODEL_OVERRIDE || undefined;
 
 async function main() {
   let files: string[];
@@ -31,7 +32,8 @@ async function main() {
     return;
   }
 
-  console.log(`Running ${files.length} photo(s) through the selfie checker...\n`);
+  console.log(`Running ${files.length} photo(s) through the selfie checker...`);
+  console.log(`Using model: ${MODEL_OVERRIDE ?? '(default)'}\n`);
   const results: unknown[] = [];
 
   for (const file of files) {
@@ -39,7 +41,7 @@ async function main() {
     const filePath = join(PHOTOS_DIR, file);
     try {
       const { base64, mimeType } = photoToBase64(filePath);
-      const raw = await callCloudflareVision(base64, buildSelfieDetectionPrompt(), 500, mimeType);
+      const raw = await callCloudflareVision(base64, buildSelfieDetectionPrompt(), 500, mimeType, MODEL_OVERRIDE);
       const result = buildSelfieCheckResult(raw, filePath, null);
       const garmentSummary = result.garments.map(g => `${g.category}:[${g.tags.join(',')}]`).join(' ');
       console.log(`${result.tier} — ${garmentSummary}`);

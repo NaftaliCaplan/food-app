@@ -17,6 +17,7 @@ import { buildTagPrompt, parseTagResponse, TagResult } from '../../src/services/
 import { ItemCategory, WardrobeItem } from '../../src/types/wardrobe';
 
 const IMAGE_PATTERN = /\.(jpe?g|png|webp)$/i;
+const MODEL_OVERRIDE = process.env.TEST_MODEL_OVERRIDE || undefined;
 export const WARDROBE_CATEGORIES: ItemCategory[] = ['top', 'bottom', 'shoes', 'accessory'];
 
 export interface TaggedTestItem {
@@ -45,7 +46,7 @@ export async function buildTestWardrobe(photosDir: string): Promise<TaggedTestIt
     for (const file of files) {
       try {
         const { base64, mimeType } = photoToBase64(join(dir, file));
-        const raw = await callCloudflareVision(base64, buildTagPrompt(folderCategory), 400, mimeType);
+        const raw = await callCloudflareVision(base64, buildTagPrompt(folderCategory), 400, mimeType, MODEL_OVERRIDE);
         const tagResult = parseTagResponse(raw, folderCategory);
 
         let item: WardrobeItem | null = null;

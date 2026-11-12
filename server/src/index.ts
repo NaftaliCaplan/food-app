@@ -80,6 +80,10 @@ interface VisionMessage {
 interface VisionRequestBody {
   messages: VisionMessage[];
   max_tokens?: number;
+  // Only honored for the test client (see below) — lets the batch-testing
+  // harness (testing/) compare candidate models against the real deployed
+  // Worker without ever giving the shipped app a way to pick its own model.
+  model?: string;
 }
 
 function isValidBody(value: unknown): value is VisionRequestBody {
@@ -124,6 +128,8 @@ export default {
     }
 
     const maxTokens = Math.min(body.max_tokens ?? 400, MAX_TOKENS_CEILING);
+    const requestedModel = typeof body.model === 'string' && body.model.length > 0 ? body.model : undefined;
+    const model = isTestClient && requestedModel ? requestedModel : MODEL;
 
     try {
       // Our own VisionMessage shape intentionally mirrors what the client
@@ -132,7 +138,7 @@ export default {
       // needed here and tends to shift across @cloudflare/workers-types
       // versions. `as never` sidesteps the generated overload union; the
       // real validation this relies on is isValidBody() above.
-      const result = await env.AI.run(MODEL, {
+      const result = await env.AI.run(model as never, {
         messages: body.messages,
         max_tokens: maxTokens,
       } as never);

@@ -17,6 +17,7 @@ import { writeReport } from './lib/report';
 const PHOTOS_DIR = join(__dirname, 'photos', 'wardrobe');
 
 async function main() {
+  console.log(`Using model: ${process.env.TEST_MODEL_OVERRIDE ?? '(default)'}\n`);
   const tagged = await buildTestWardrobe(PHOTOS_DIR);
 
   if (tagged.length === 0) {

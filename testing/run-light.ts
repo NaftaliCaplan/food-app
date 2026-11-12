@@ -13,6 +13,7 @@ import { buildLightPrompt, parseLightResponse } from '../src/services/lightAnaly
 
 const PHOTOS_DIR = join(__dirname, 'photos', 'light');
 const IMAGE_PATTERN = /\.(jpe?g|png|webp)$/i;
+const MODEL_OVERRIDE = process.env.TEST_MODEL_OVERRIDE || undefined;
 
 async function main() {
   let files: string[];
@@ -27,7 +28,8 @@ async function main() {
     return;
   }
 
-  console.log(`Running ${files.length} photo(s) through the light checker...\n`);
+  console.log(`Running ${files.length} photo(s) through the light checker...`);
+  console.log(`Using model: ${MODEL_OVERRIDE ?? '(default)'}\n`);
   const results: unknown[] = [];
 
   for (const file of files) {
@@ -35,7 +37,7 @@ async function main() {
     const filePath = join(PHOTOS_DIR, file);
     try {
       const { base64, mimeType } = photoToBase64(filePath);
-      const raw = await callCloudflareVision(base64, buildLightPrompt(), 300, mimeType);
+      const raw = await callCloudflareVision(base64, buildLightPrompt(), 300, mimeType, MODEL_OVERRIDE);
       const result = parseLightResponse(raw);
       console.log(`${result.colorLabel}${result.detail ? ' — ' + result.detail : ''}`);
       if (result.observation) console.log(`  observation: ${result.observation}`);

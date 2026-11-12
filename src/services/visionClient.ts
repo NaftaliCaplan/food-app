@@ -23,6 +23,12 @@ export async function callCloudflareVision(
   // whatever format a test photo actually is (.webp, .png, etc.) — can pass
   // the real mime type instead of silently mislabeling the data URI.
   mimeType = 'image/jpeg',
+  // Only honored by the Worker when the request authenticates as its test
+  // client (see server/src/index.ts) — the real app never passes this, so
+  // this is a no-op for every existing call site. Lets the batch-testing
+  // harness (testing/) compare candidate models against the real deployed
+  // Worker without touching the shipped app's behavior.
+  modelOverride?: string,
 ): Promise<unknown> {
   const response = await fetch(`${PROXY_URL}/vision`, {
     method: 'POST',
@@ -41,6 +47,7 @@ export async function callCloudflareVision(
         },
       ],
       max_tokens: maxTokens,
+      ...(modelOverride ? { model: modelOverride } : {}),
     }),
   });
 
