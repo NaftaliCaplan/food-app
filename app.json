@@ -41,7 +41,7 @@
       [
         "@sentry/react-native/expo",
         {
-          "url": "https://sentry.io/",
+          "url": "https://sentry.io",
           "project": "cba",
           "organization": "northeastern-university-boston"
         }
