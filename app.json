@@ -37,7 +37,15 @@
           "barcodeScannerEnabled": false
         }
       ],
-      "@sentry/react-native"
+      "@sentry/react-native",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "cba",
+          "organization": "northeastern-university-boston"
+        }
+      ]
     ],
     "extra": {
       "eas": {

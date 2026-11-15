@@ -53,3 +53,5 @@ server/node_modules/
 testing/photos/
 testing/results/
 testing/node_modules/
+
+.env.local
