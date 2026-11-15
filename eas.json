@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 20.0.0"
+    "version": ">= 20.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -18,6 +19,17 @@
     "production": {
       "autoIncrement": true,
       "channel": "production"
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "language": "en-US"
+      },
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
     }
   }
 }
