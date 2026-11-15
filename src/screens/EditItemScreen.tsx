@@ -1,5 +1,6 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as Sentry from '@sentry/react-native';
 import { useState } from 'react';
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -39,6 +40,7 @@ export function EditItemScreen() {
       navigation.goBack();
     } catch (e) {
       console.error('Update item failed', e);
+      Sentry.captureException(e);
       setSaving(false);
     }
   }

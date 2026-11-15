@@ -1,5 +1,6 @@
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as Sentry from '@sentry/react-native';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -96,6 +97,7 @@ export function OutfitResultsScreen() {
       navigation.navigate('Wardrobe');
     } catch (e) {
       console.error('Save outfit failed', e);
+      Sentry.captureException(e);
       setSaving(false);
     }
   }

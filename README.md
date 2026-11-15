@@ -18,6 +18,8 @@ cp .env.example .env
 
 **Security note:** `EXPO_PUBLIC_APP_SHARED_SECRET` is still `EXPO_PUBLIC_`-prefixed, so it still ships inside the client JS bundle — a determined person can extract it. What the proxy actually buys you: that secret only grants "can call this one rate-limited endpoint," not a real Cloudflare account credential, which now lives only inside the Worker itself. See `server/README.md` for the full reasoning and the rate-limit details.
 
+`EXPO_PUBLIC_SENTRY_DSN` (crash/error reporting) is optional — leave it blank to develop with Sentry fully no-op'd. Get a real value from a Sentry project once one exists.
+
 ## Running
 
 ```sh

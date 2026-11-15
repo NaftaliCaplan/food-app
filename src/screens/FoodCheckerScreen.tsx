@@ -1,5 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as Sentry from '@sentry/react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
@@ -37,6 +38,7 @@ export function FoodCheckerScreen() {
       }
     } catch (e) {
       console.error('Capture failed', e);
+      Sentry.captureException(e);
     } finally {
       setCapturing(false);
     }

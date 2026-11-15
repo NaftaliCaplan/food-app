@@ -1,5 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as Sentry from '@sentry/react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRef, useState } from 'react';
 import {
@@ -65,6 +66,7 @@ export function AddItemScreen() {
       setStep('review');
     } catch (e) {
       console.error('Capture/tag failed', e);
+      Sentry.captureException(e);
       setStep('camera');
     } finally {
       setCapturing(false);
@@ -94,6 +96,7 @@ export function AddItemScreen() {
       navigation.goBack();
     } catch (e) {
       console.error('Save failed', e);
+      Sentry.captureException(e);
       setSaving(false);
     }
   }

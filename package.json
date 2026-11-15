@@ -8,6 +8,7 @@
     "@react-native-community/slider": "5.2.1",
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/native-stack": "^6.11.0",
+    "@sentry/react-native": "~8.28.0",
     "expo": "^58.0.0",
     "expo-camera": "~58.0.14",
     "expo-file-system": "~58.0.13",
@@ -56,7 +57,8 @@
     ],
     "moduleNameMapper": {
       "^test-renderer$": "<rootDir>/node_modules/react-test-renderer",
-      "^\\.\\./\\.\\./modules/volume-shutter/src$": "<rootDir>/src/testUtils/mockVolumeShutter.ts"
+      "^\\.\\./\\.\\./modules/volume-shutter/src$": "<rootDir>/src/testUtils/mockVolumeShutter.ts",
+      "^@sentry/react-native$": "<rootDir>/src/testUtils/mockSentry.ts"
     },
     "testPathIgnorePatterns": [
       "/node_modules/",

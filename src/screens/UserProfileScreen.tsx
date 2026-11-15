@@ -1,5 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as Sentry from '@sentry/react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -78,6 +79,7 @@ export function UserProfileScreen() {
       setCameraStep('preview');
     } catch (e) {
       console.error('Profile photo failed', e);
+      Sentry.captureException(e);
       setCameraStep('preview');
     }
   }
@@ -92,6 +94,7 @@ export function UserProfileScreen() {
       navigation.goBack();
     } catch (e) {
       console.error('Save profile failed', e);
+      Sentry.captureException(e);
       setSaving(false);
     }
   }
