@@ -7,17 +7,20 @@ import { AppText } from './AppText';
 interface Props {
   status: 'loading' | 'error';
   error?: string | null;
+  // Previously 3 near-identical components (StatusOverlay, LightStatusOverlay,
+  // SelfieCheckStatusOverlay) differing only in this one loading-copy string —
+  // see docs/AUDIT-2026-11-15.md's Duplication findings. Callers compute their
+  // own domain-specific copy (e.g. `Analyzing ${foodLabel}...`) rather than
+  // this component guessing at it.
+  loadingText: string;
 }
 
-// A small per-feature duplicate of StatusOverlay/SelfieCheckStatusOverlay for
-// custom copy — the project's established precedent for this exact
-// situation, not a shared parameterized component.
-export function LightStatusOverlay({ status, error }: Props) {
+export function ResultStatusOverlay({ status, error, loadingText }: Props) {
   if (status === 'loading') {
     return (
       <View style={styles.container}>
         <ActivityIndicator color={Colors.accent} size="large" />
-        <AppText style={styles.loadingText}>Reading the light...</AppText>
+        <AppText style={styles.loadingText}>{loadingText}</AppText>
       </View>
     );
   }
