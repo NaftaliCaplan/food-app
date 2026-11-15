@@ -11,13 +11,13 @@
 // could actually contain.
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { MODEL_OVERRIDE } from './config';
 import { photoToBase64 } from './readPhoto';
 import { callVisionProxy } from '../../src/services/visionClient';
 import { buildTagPrompt, parseTagResponse, TagResult } from '../../src/services/tagAnalysis';
 import { ItemCategory, WardrobeItem } from '../../src/types/wardrobe';
 
 const IMAGE_PATTERN = /\.(jpe?g|png|webp)$/i;
-const MODEL_OVERRIDE = process.env.TEST_MODEL_OVERRIDE || undefined;
 export const WARDROBE_CATEGORIES: ItemCategory[] = ['top', 'bottom', 'shoes', 'accessory'];
 
 export interface TaggedTestItem {

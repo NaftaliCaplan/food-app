@@ -82,7 +82,9 @@ export function UserProfileScreen() {
     }
   }
 
-  useVolumeShutter(handleCapture, isFocused && !!permission?.granted && showCamera && cameraStep === 'preview');
+  const canCapture = showCamera && cameraStep === 'preview';
+
+  useVolumeShutter(handleCapture, isFocused && !!permission?.granted && canCapture);
 
   async function handleSave() {
     setSaving(true);
@@ -106,7 +108,6 @@ export function UserProfileScreen() {
     setBuild('average');
   }
 
-  // Camera view — shown when user taps "Take / Retake Photo"
   if (showCamera) {
     return (
       <ReferencePhotoCapture
@@ -120,7 +121,6 @@ export function UserProfileScreen() {
     );
   }
 
-  // Main profile edit view
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>

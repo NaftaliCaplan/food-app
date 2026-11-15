@@ -36,3 +36,8 @@ for (const line of raw.split('\n')) {
 if (!process.env.EXPO_PUBLIC_PROXY_URL || !process.env.EXPO_PUBLIC_APP_SHARED_SECRET) {
   throw new Error(`${envPath} is missing PROXY_URL or TEST_SHARED_SECRET — see testing/README.md.`);
 }
+
+// Lets a batch run pin a specific model (see server/src/index.ts's isTestClient
+// gating) instead of whatever the Worker proxy defaults to, without touching
+// the shipped app's own model choice.
+export const MODEL_OVERRIDE = process.env.TEST_MODEL_OVERRIDE || undefined;

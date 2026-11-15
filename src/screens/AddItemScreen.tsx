@@ -73,7 +73,9 @@ export function AddItemScreen() {
     }
   }
 
-  useVolumeShutter(handleCapture, isFocused && !!permission?.granted && step === 'camera' && !capturing);
+  const canCapture = step === 'camera' && !capturing;
+
+  useVolumeShutter(handleCapture, isFocused && !!permission?.granted && canCapture);
 
   function toggleTag(tag: string) {
     setTags(prev => (prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]));
@@ -100,7 +102,6 @@ export function AddItemScreen() {
     }
   }
 
-  // Step: tagging (loading)
   if (step === 'tagging') {
     return (
       <SafeAreaView style={styles.container}>
@@ -112,7 +113,6 @@ export function AddItemScreen() {
     );
   }
 
-  // Step: not clothing — blocked, no save option, must retake
   if (step === 'notClothing') {
     return (
       <SafeAreaView style={styles.container}>
@@ -129,7 +129,6 @@ export function AddItemScreen() {
     );
   }
 
-  // Step: review tags
   if (step === 'review') {
     return (
       <SafeAreaView style={styles.container}>
@@ -154,7 +153,6 @@ export function AddItemScreen() {
     );
   }
 
-  // Step: camera
   return (
     <CameraPermissionGate
       permission={permission}

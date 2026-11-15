@@ -21,11 +21,11 @@ jest.mock('../../storage/profileStorage', () => ({
   getUserProfile: jest.fn(),
 }));
 jest.mock('../../storage/outfitStorage', () => ({
-  saveOutfit: jest.fn(),
+  addOutfit: jest.fn(),
 }));
 
 const { getWardrobe } = require('../../storage/wardrobeStorage');
-const { saveOutfit } = require('../../storage/outfitStorage');
+const { addOutfit } = require('../../storage/outfitStorage');
 
 const mockGenerate = jest.fn();
 const mockReject = jest.fn();
@@ -45,7 +45,7 @@ describe('OutfitResultsScreen', () => {
     mockGenerate.mockClear();
     mockReject.mockClear();
     getWardrobe.mockReset().mockResolvedValue([]);
-    saveOutfit.mockReset().mockResolvedValue(undefined);
+    addOutfit.mockReset().mockResolvedValue(undefined);
     useOutfitGenerator.mockReturnValue({
       status: 'idle',
       suggestion: null,
@@ -131,7 +131,7 @@ describe('OutfitResultsScreen', () => {
       fireEvent.press(screen.getByText('✓ Keep This Outfit'));
     });
 
-    expect(saveOutfit).toHaveBeenCalledWith(
+    expect(addOutfit).toHaveBeenCalledWith(
       expect.objectContaining({
         itemIds: ['1', '2'],
         styleName: 'Casual',

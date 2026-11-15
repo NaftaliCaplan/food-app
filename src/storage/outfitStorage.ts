@@ -14,7 +14,7 @@ export async function getSavedOutfits(): Promise<SavedOutfit[]> {
   }
 }
 
-export async function saveOutfit(outfit: SavedOutfit): Promise<void> {
+export async function addOutfit(outfit: SavedOutfit): Promise<void> {
   const current = await getSavedOutfits();
   current.push(outfit);
   await AsyncStorage.setItem(OUTFITS_KEY, JSON.stringify(current));

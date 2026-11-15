@@ -3,7 +3,7 @@
 // src/services/lightAnalysis.ts. See testing/README.md for setup.
 //
 // Label-free, same as run-selfie.ts — there's no claimed-label concept here.
-import './lib/config';
+import { MODEL_OVERRIDE } from './lib/config';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { photoToBase64 } from './lib/readPhoto';
@@ -13,7 +13,6 @@ import { buildLightPrompt, parseLightResponse } from '../src/services/lightAnaly
 
 const PHOTOS_DIR = join(__dirname, 'photos', 'light');
 const IMAGE_PATTERN = /\.(jpe?g|png|webp)$/i;
-const MODEL_OVERRIDE = process.env.TEST_MODEL_OVERRIDE || undefined;
 
 async function main() {
   let files: string[];

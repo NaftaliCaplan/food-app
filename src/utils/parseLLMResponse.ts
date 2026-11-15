@@ -29,15 +29,12 @@ export function parseLLMResponse(raw: string): AnalysisResult {
   else if (lower.includes('unripe') || lower.includes('not ripe') || lower.includes('under-ripe')) state = 'unripe';
   else if (lower.includes('ripe')) state = 'ripe';
 
-  // Extract confidence percent from markdown e.g. "100%" or "Confidence Percent: 85%"
   const confMatch = raw.match(/(\d+)%/);
   const confidencePercent = confMatch ? parseInt(confMatch[1], 10) : 50;
 
-  // Extract bullet point visual cues
   const cueMatches = raw.match(/^\*\s+(.+)$/gm) ?? [];
   const visualCues = cueMatches.map(c => c.replace(/^\*\s+/, '').trim()).slice(0, 3);
 
-  // Extract recommendation — last sentence or line after "Recommendation"
   const recMatch = raw.match(/[Rr]ecommendation[:\*\s]+(.+)/s);
   const recommendation = recMatch ? recMatch[1].trim().slice(0, 200) : raw.slice(0, 150);
 

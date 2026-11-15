@@ -6,7 +6,7 @@
 // Label per photo is derived from the filename: strip the extension and any
 // trailing _NN/-NN counter, replace remaining _/- with spaces. E.g.
 // "banana_01.jpg" -> "banana", "green-tomato-3.png" -> "green tomato".
-import './lib/config';
+import { MODEL_OVERRIDE } from './lib/config';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { photoToBase64 } from './lib/readPhoto';
@@ -16,7 +16,6 @@ import { buildFoodPrompt, parseAnalyzeFoodResponse } from '../src/services/foodA
 
 const PHOTOS_DIR = join(__dirname, 'photos', 'food');
 const IMAGE_PATTERN = /\.(jpe?g|png|webp)$/i;
-const MODEL_OVERRIDE = process.env.TEST_MODEL_OVERRIDE || undefined;
 
 function labelFromFilename(filename: string): string {
   return filename

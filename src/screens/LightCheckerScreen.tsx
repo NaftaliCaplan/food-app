@@ -43,7 +43,9 @@ export function LightCheckerScreen() {
     }
   }
 
-  useVolumeShutter(handleCapture, isFocused && !!permission?.granted && !capturing);
+  const canCapture = !capturing;
+
+  useVolumeShutter(handleCapture, isFocused && !!permission?.granted && canCapture);
 
   return (
     <CameraPermissionGate
@@ -62,10 +64,10 @@ export function LightCheckerScreen() {
 
         <View style={styles.bottomBar}>
           <AppText style={styles.hint}>Point at the light — tap to capture</AppText>
-          {capturing ? (
-            <ActivityIndicator color={Colors.accent} size="large" />
-          ) : (
+          {canCapture ? (
             <CaptureButton onPress={handleCapture} />
+          ) : (
+            <ActivityIndicator color={Colors.accent} size="large" />
           )}
         </View>
       </View>

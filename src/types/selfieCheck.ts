@@ -12,8 +12,8 @@ export interface DetectedGarment {
 }
 
 // Mirrors the legacy clothes-checker's MatchVerdict tiers/labels/colors
-// (theme/colors.ts's clothesStrongMatch..clothesStrongClash), but derived
-// from a real computed score (see selfieCheckService.ts's tierForScore)
+// (theme/colors.ts's matchTierStrong..matchTierStrongClash), but derived
+// from a real computed score (see selfieAnalysis.ts's tierForScore)
 // rather than an AI-self-reported verdict.
 export type SelfieMatchTier = 'strong_match' | 'good_match' | 'neutral' | 'mild_clash' | 'strong_clash';
 

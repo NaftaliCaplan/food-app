@@ -12,6 +12,12 @@ import expo.modules.kotlin.modules.ModuleDefinition
 // system volume change) while armed; everything else still reaches the
 // original callback untouched.
 class VolumeShutterModule : Module() {
+  // Kept as a persistent flag read inside dispatchKeyEvent, rather than
+  // wrapping/unwrapping the callback itself on every start/stop (what the
+  // iOS sibling does by creating/destroying its AVCaptureEventInteraction
+  // fresh each time) — Window.Callback has no equivalent lightweight
+  // add/remove API, so swapping it out is reserved for attach()/detach()
+  // only, and arming/disarming in between just flips this flag.
   private var armed = false
   private var originalCallback: Window.Callback? = null
 
@@ -20,6 +26,9 @@ class VolumeShutterModule : Module() {
 
     Events("onShutterPress")
 
+    // Unlike the iOS sibling (gated on iOS 17.2's AVCaptureEventInteraction),
+    // Window.Callback interception has been available since the earliest
+    // supported Android API level, so there's nothing to version-gate here.
     Function("isAvailable") {
       true
     }

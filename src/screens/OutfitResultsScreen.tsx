@@ -17,7 +17,7 @@ import { CATEGORY_ICON } from '../constants/categoryDisplay';
 import { useOutfitGenerator } from '../hooks/useOutfitGenerator';
 import { RootStackParamList } from '../navigation/types';
 import { getUserProfile } from '../storage/profileStorage';
-import { saveOutfit } from '../storage/outfitStorage';
+import { addOutfit } from '../storage/outfitStorage';
 import { getWardrobe } from '../storage/wardrobeStorage';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
@@ -87,7 +87,7 @@ export function OutfitResultsScreen() {
     if (!suggestion || saving) return;
     setSaving(true);
     try {
-      await saveOutfit({
+      await addOutfit({
         id: Date.now().toString(),
         itemIds: suggestion.items.map(i => i.id),
         styleName: formatStyleName(stylePrefs),

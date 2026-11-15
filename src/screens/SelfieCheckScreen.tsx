@@ -106,7 +106,9 @@ export function SelfieCheckScreen() {
     }, 1000);
   }
 
-  useVolumeShutter(handleCapture, isFocused && !!permission?.granted && !capturing && countdown === null);
+  const canCapture = !capturing && countdown === null;
+
+  useVolumeShutter(handleCapture, isFocused && !!permission?.granted && canCapture);
 
   return (
     <CameraPermissionGate
@@ -178,7 +180,7 @@ export function SelfieCheckScreen() {
           {capturing ? (
             <ActivityIndicator color={Colors.accent} size="large" />
           ) : (
-            <CaptureButton onPress={handleCapture} disabled={capturing || countdown !== null} />
+            <CaptureButton onPress={handleCapture} disabled={!canCapture} />
           )}
         </View>
       </View>

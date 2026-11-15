@@ -50,7 +50,7 @@ OutfitResultsScreen
       → outfitCandidates.selectBestOutfit()   [enumerates every valid combo, greedy accessories]
         → outfitAesthetics.scoreOutfitAesthetics()   [color/pattern/temperature/layering/personalization score]
       → outfitRecommendation.buildRecommendation()   [templated tip from the final items]
-  → user accepts → outfitStorage.saveOutfit()  [persisted, item IDs only]
+  → user accepts → outfitStorage.addOutfit()  [persisted, item IDs only]
   → user rejects → same pipeline again, excluding the last few rejected combos
 
 SavedOutfitsScreen

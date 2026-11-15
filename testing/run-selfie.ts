@@ -7,7 +7,7 @@
 // scoring path. The placeholder "photoUri" passed to buildSelfieCheckResult
 // is never actually read (see that function's own comment) — the local file
 // path works fine as a stand-in.
-import './lib/config';
+import { MODEL_OVERRIDE } from './lib/config';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { photoToBase64 } from './lib/readPhoto';
@@ -17,7 +17,6 @@ import { buildSelfieCheckResult, buildSelfieDetectionPrompt } from '../src/servi
 
 const PHOTOS_DIR = join(__dirname, 'photos', 'selfie');
 const IMAGE_PATTERN = /\.(jpe?g|png|webp)$/i;
-const MODEL_OVERRIDE = process.env.TEST_MODEL_OVERRIDE || undefined;
 
 async function main() {
   let files: string[];

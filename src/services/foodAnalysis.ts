@@ -15,7 +15,6 @@ function adjustConfidence(modelConfidence: number, imageSizeBytes: number): numb
 
   // Very small images (< 50kb) are likely blurry or dark
   if (imageSizeBytes < 50_000) adjusted = Math.min(adjusted, 55);
-  // Small images (< 150kb) — moderate penalty
   else if (imageSizeBytes < 150_000) adjusted = Math.min(adjusted, 70);
 
   return Math.round(Math.max(10, Math.min(99, adjusted)));
