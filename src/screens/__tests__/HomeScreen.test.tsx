@@ -6,8 +6,16 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: mockNavigate }),
 }));
 
+const mockOpenBrowserAsync = jest.fn();
+jest.mock('expo-web-browser', () => ({
+  openBrowserAsync: (...args: unknown[]) => mockOpenBrowserAsync(...args),
+}));
+
 describe('HomeScreen', () => {
-  beforeEach(() => mockNavigate.mockClear());
+  beforeEach(() => {
+    mockNavigate.mockClear();
+    mockOpenBrowserAsync.mockClear();
+  });
 
   it('renders title and tagline', () => {
     render(<HomeScreen />);
@@ -45,5 +53,13 @@ describe('HomeScreen', () => {
     render(<HomeScreen />);
     fireEvent.press(screen.getByText('What color is it?'));
     expect(mockNavigate).toHaveBeenCalledWith('LightChecker');
+  });
+
+  it('opens the privacy policy in an in-app browser when the footer link is pressed', () => {
+    render(<HomeScreen />);
+    fireEvent.press(screen.getByText('Privacy Policy'));
+    expect(mockOpenBrowserAsync).toHaveBeenCalledWith(
+      'https://naftalicaplan.github.io/food-app/privacy-policy.html',
+    );
   });
 });

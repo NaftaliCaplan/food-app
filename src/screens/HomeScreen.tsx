@@ -1,6 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { StyleSheet, View } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FeatureButton } from '../components/FeatureButton';
@@ -10,6 +11,12 @@ import { Spacing } from '../theme/spacing';
 import { RootStackParamList } from '../navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+
+// Both the App Store and Google Play require this to be reachable from
+// inside the app, not just linked from the store listing metadata — see
+// docs/privacy-policy.html (hosted via this repo's own GitHub Pages site,
+// independent of the user's personal GitHub Pages site in a different repo).
+const PRIVACY_POLICY_URL = 'https://naftalicaplan.github.io/food-app/privacy-policy.html';
 
 export function HomeScreen() {
   const navigation = useNavigation<Nav>();
@@ -45,6 +52,9 @@ export function HomeScreen() {
       </View>
 
       <AppText style={styles.taglineBottom}>Point. Capture. Know.</AppText>
+      <TouchableOpacity onPress={() => WebBrowser.openBrowserAsync(PRIVACY_POLICY_URL)}>
+        <AppText style={styles.privacyLink}>Privacy Policy</AppText>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -82,5 +92,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textSecondary,
     textAlign: 'center',
+  },
+  privacyLink: {
+    fontSize: 11,
+    color: Colors.textDisabled,
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+    marginTop: Spacing.xs,
   },
 });
