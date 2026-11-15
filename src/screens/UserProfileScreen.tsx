@@ -15,6 +15,7 @@ import { clearUserProfile, getUserProfile, saveUserProfile } from '../storage/pr
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
 import { UserProfile } from '../types/wardrobe';
+import { useVolumeShutter } from '../../modules/volume-shutter/src';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'UserProfile'>;
 
@@ -80,6 +81,8 @@ export function UserProfileScreen() {
       setCameraStep('preview');
     }
   }
+
+  useVolumeShutter(handleCapture, !!permission?.granted && showCamera && cameraStep === 'preview');
 
   async function handleSave() {
     setSaving(true);

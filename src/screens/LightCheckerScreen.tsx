@@ -12,6 +12,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { RootStackParamList } from '../navigation/types';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
+import { useVolumeShutter } from '../../modules/volume-shutter/src';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'LightChecker'>;
 
@@ -39,6 +40,8 @@ export function LightCheckerScreen() {
       setCapturing(false);
     }
   }
+
+  useVolumeShutter(handleCapture, !!permission?.granted && !capturing);
 
   return (
     <CameraPermissionGate

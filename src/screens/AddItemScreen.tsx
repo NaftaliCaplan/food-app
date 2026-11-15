@@ -18,6 +18,7 @@ import { CategoryPicker } from '../components/CategoryPicker';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { WardrobeItemForm } from '../components/WardrobeItemForm';
 import { RootStackParamList } from '../navigation/types';
+import { useVolumeShutter } from '../../modules/volume-shutter/src';
 import { tagClothingItem } from '../services/tagService';
 import { addItem, copyPhotoToApp } from '../storage/wardrobeStorage';
 import { Colors } from '../theme/colors';
@@ -69,6 +70,8 @@ export function AddItemScreen() {
       setCapturing(false);
     }
   }
+
+  useVolumeShutter(handleCapture, !!permission?.granted && step === 'camera' && !capturing);
 
   function toggleTag(tag: string) {
     setTags(prev => (prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]));

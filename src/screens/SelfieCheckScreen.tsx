@@ -14,6 +14,7 @@ import { RootStackParamList } from '../navigation/types';
 import { getUserProfile } from '../storage/profileStorage';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
+import { useVolumeShutter } from '../../modules/volume-shutter/src';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'SelfieCheck'>;
 
@@ -102,6 +103,8 @@ export function SelfieCheckScreen() {
       }
     }, 1000);
   }
+
+  useVolumeShutter(handleCapture, !!permission?.granted && !capturing && countdown === null);
 
   return (
     <CameraPermissionGate

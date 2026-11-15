@@ -13,6 +13,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
 import { RootStackParamList } from '../navigation/types';
+import { useVolumeShutter } from '../../modules/volume-shutter/src';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'FoodChecker'>;
 
@@ -42,6 +43,8 @@ export function FoodCheckerScreen() {
   }
 
   const canCapture = foodLabel.trim().length > 0 && !capturing;
+
+  useVolumeShutter(handleCapture, !!permission?.granted && canCapture);
 
   return (
     <CameraPermissionGate

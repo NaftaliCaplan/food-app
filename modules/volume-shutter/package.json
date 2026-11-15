@@ -1,0 +1,7 @@
+{
+  "name": "volume-shutter",
+  "version": "1.0.0",
+  "description": "Listens for physical volume-button presses to trigger a camera shutter",
+  "main": "src/index.ts",
+  "license": "MIT"
+}

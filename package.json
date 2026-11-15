@@ -13,6 +13,7 @@
     "expo-file-system": "~58.0.13",
     "expo-font": "~58.0.11",
     "expo-image-manipulator": "~58.0.16",
+    "expo-modules-core": "~58.1.0",
     "expo-status-bar": "~58.0.4",
     "expo-updates": "~58.0.21",
     "expo-web-browser": "~58.0.8",
@@ -54,7 +55,8 @@
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?|@react-native/.*)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg)"
     ],
     "moduleNameMapper": {
-      "^test-renderer$": "<rootDir>/node_modules/react-test-renderer"
+      "^test-renderer$": "<rootDir>/node_modules/react-test-renderer",
+      "^\\.\\./\\.\\./modules/volume-shutter/src$": "<rootDir>/src/testUtils/mockVolumeShutter.ts"
     },
     "testPathIgnorePatterns": [
       "/node_modules/",
