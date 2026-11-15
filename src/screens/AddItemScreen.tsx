@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Sentry from '@sentry/react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -32,6 +32,7 @@ type Step = 'camera' | 'tagging' | 'notClothing' | 'review';
 
 export function AddItemScreen() {
   const navigation = useNavigation<Nav>();
+  const isFocused = useIsFocused();
   const [permission, requestPermission] = useCameraPermissions();
   const [capturing, setCapturing] = useState(false);
   const [category, setCategory] = useState<ItemCategory>('top');
@@ -73,7 +74,7 @@ export function AddItemScreen() {
     }
   }
 
-  useVolumeShutter(handleCapture, !!permission?.granted && step === 'camera' && !capturing);
+  useVolumeShutter(handleCapture, isFocused && !!permission?.granted && step === 'camera' && !capturing);
 
   function toggleTag(tag: string) {
     setTags(prev => (prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]));

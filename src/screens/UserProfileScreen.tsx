@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Sentry from '@sentry/react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -24,6 +24,7 @@ type CameraStep = 'preview' | 'capturing' | 'extracting';
 
 export function UserProfileScreen() {
   const navigation = useNavigation<Nav>();
+  const isFocused = useIsFocused();
   const [permission, requestPermission] = useCameraPermissions();
 
   // Profile fields
@@ -84,7 +85,7 @@ export function UserProfileScreen() {
     }
   }
 
-  useVolumeShutter(handleCapture, !!permission?.granted && showCamera && cameraStep === 'preview');
+  useVolumeShutter(handleCapture, isFocused && !!permission?.granted && showCamera && cameraStep === 'preview');
 
   async function handleSave() {
     setSaving(true);

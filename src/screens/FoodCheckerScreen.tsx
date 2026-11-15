@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Sentry from '@sentry/react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -20,6 +20,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'FoodChecker'>;
 
 export function FoodCheckerScreen() {
   const navigation = useNavigation<Nav>();
+  const isFocused = useIsFocused();
   const [permission, requestPermission] = useCameraPermissions();
   const [foodLabel, setFoodLabel] = useState('');
   const [capturing, setCapturing] = useState(false);
@@ -46,7 +47,7 @@ export function FoodCheckerScreen() {
 
   const canCapture = foodLabel.trim().length > 0 && !capturing;
 
-  useVolumeShutter(handleCapture, !!permission?.granted && canCapture);
+  useVolumeShutter(handleCapture, isFocused && !!permission?.granted && canCapture);
 
   return (
     <CameraPermissionGate

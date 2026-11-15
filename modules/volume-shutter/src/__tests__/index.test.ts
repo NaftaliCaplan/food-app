@@ -88,4 +88,46 @@ describe('useVolumeShutter', () => {
     expect(removeMock).toHaveBeenCalledTimes(1);
     expect(mockNative.stopListening).toHaveBeenCalledTimes(1);
   });
+
+  // Regression tests for docs/AUDIT-2026-11-15.md's Critical #2 — React
+  // Navigation keeps a screen mounted after a forward navigate() (no
+  // unmountOnBlur), so two camera screens' useVolumeShutter can genuinely
+  // both be enabled at once. Without reference counting, a second instance's
+  // cleanup would silently switch off a first instance's still-active
+  // listener.
+  describe('multiple simultaneously-enabled instances (reference counting)', () => {
+    it('only calls native startListening/addListener once for two simultaneously-enabled instances', () => {
+      renderHook(() => useVolumeShutter(jest.fn(), true));
+      renderHook(() => useVolumeShutter(jest.fn(), true));
+
+      expect(mockNative.startListening).toHaveBeenCalledTimes(1);
+      expect(mockNative.addListener).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not stop listening when one of two enabled instances unmounts — the real bug this fixes', () => {
+      const { unmount: unmountA } = renderHook(() => useVolumeShutter(jest.fn(), true));
+      const { unmount: unmountB } = renderHook(() => useVolumeShutter(jest.fn(), true));
+
+      unmountA();
+      expect(mockNative.stopListening).not.toHaveBeenCalled();
+
+      unmountB();
+      expect(mockNative.stopListening).toHaveBeenCalledTimes(1);
+    });
+
+    it('fires every currently-enabled instance\'s callback on a single native event', () => {
+      const captureA = jest.fn();
+      const captureB = jest.fn();
+      renderHook(() => useVolumeShutter(captureA, true));
+      renderHook(() => useVolumeShutter(captureB, true));
+
+      const nativeHandler = (mockNative.addListener as jest.Mock).mock.calls[0][1];
+      act(() => {
+        nativeHandler();
+      });
+
+      expect(captureA).toHaveBeenCalledTimes(1);
+      expect(captureB).toHaveBeenCalledTimes(1);
+    });
+  });
 });

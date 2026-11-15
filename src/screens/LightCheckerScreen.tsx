@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Sentry from '@sentry/react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -23,6 +23,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'LightChecker'>;
 // the front camera, which doesn't apply to a nearby indicator light.
 export function LightCheckerScreen() {
   const navigation = useNavigation<Nav>();
+  const isFocused = useIsFocused();
   const [permission, requestPermission] = useCameraPermissions();
   const [capturing, setCapturing] = useState(false);
   const cameraRef = useRef<CameraView>(null);
@@ -43,7 +44,7 @@ export function LightCheckerScreen() {
     }
   }
 
-  useVolumeShutter(handleCapture, !!permission?.granted && !capturing);
+  useVolumeShutter(handleCapture, isFocused && !!permission?.granted && !capturing);
 
   return (
     <CameraPermissionGate

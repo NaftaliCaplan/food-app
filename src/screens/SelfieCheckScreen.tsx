@@ -1,4 +1,4 @@
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Sentry from '@sentry/react-native';
 import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
@@ -31,6 +31,7 @@ const TIMER_OPTIONS: { key: number; label: string }[] = [
 
 export function SelfieCheckScreen() {
   const navigation = useNavigation<Nav>();
+  const isFocused = useIsFocused();
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<CameraType>('front');
   const [timerSeconds, setTimerSeconds] = useState(0);
@@ -106,7 +107,7 @@ export function SelfieCheckScreen() {
     }, 1000);
   }
 
-  useVolumeShutter(handleCapture, !!permission?.granted && !capturing && countdown === null);
+  useVolumeShutter(handleCapture, isFocused && !!permission?.granted && !capturing && countdown === null);
 
   return (
     <CameraPermissionGate

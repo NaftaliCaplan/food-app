@@ -6,6 +6,7 @@ const mockGoBack = jest.fn();
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: mockNavigate, goBack: mockGoBack }),
+  useIsFocused: () => true,
 }));
 
 jest.mock('expo-camera', () => ({
