@@ -28,8 +28,16 @@ export function SavedOutfitsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      getSavedOutfits().then(setOutfits);
-      getWardrobe().then(w => setItemMap(new Map(w.map(i => [i.id, i]))));
+      let cancelled = false;
+      getSavedOutfits().then(o => {
+        if (!cancelled) setOutfits(o);
+      });
+      getWardrobe().then(w => {
+        if (!cancelled) setItemMap(new Map(w.map(i => [i.id, i])));
+      });
+      return () => {
+        cancelled = true;
+      };
     }, []),
   );
 

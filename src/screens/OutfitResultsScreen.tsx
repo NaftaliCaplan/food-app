@@ -65,13 +65,13 @@ export function OutfitResultsScreen() {
     };
   }, [useProfile]);
 
-  const { status, suggestion, error, attemptCount, generate, reject } = useOutfitGenerator(
+  const { status, suggestion, error, attemptCount, generate, reject } = useOutfitGenerator({
     wardrobe,
-    stylePrefs as StylePreference[],
+    stylePrefs: stylePrefs as StylePreference[],
     profile,
     includeAccessories,
     temperatureF,
-  );
+  });
 
   // Fire the first generation once wardrobe/profile have loaded. Guarded by a
   // ref so it only runs once — `generate`'s identity changes when wardrobe

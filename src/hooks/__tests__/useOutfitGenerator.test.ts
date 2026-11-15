@@ -21,7 +21,7 @@ describe('useOutfitGenerator', () => {
   });
 
   it('starts idle and has not called generateOutfit', () => {
-    const { result } = renderHook(() => useOutfitGenerator(wardrobe, ['casual'], null));
+    const { result } = renderHook(() => useOutfitGenerator({ wardrobe, stylePrefs: ['casual'], profile: null }));
     expect(result.current.status).toBe('idle');
     expect(result.current.suggestion).toBeNull();
     expect(result.current.attemptCount).toBe(0);
@@ -30,7 +30,7 @@ describe('useOutfitGenerator', () => {
 
   it('transitions idle -> loading -> success on generate()', async () => {
     generateOutfit.mockResolvedValue(mockSuggestion);
-    const { result } = renderHook(() => useOutfitGenerator(wardrobe, ['casual'], null));
+    const { result } = renderHook(() => useOutfitGenerator({ wardrobe, stylePrefs: ['casual'], profile: null }));
 
     act(() => {
       result.current.generate();
@@ -45,7 +45,7 @@ describe('useOutfitGenerator', () => {
 
   it('transitions to error and does not bump attemptCount on failure', async () => {
     generateOutfit.mockRejectedValue(new Error('Not enough wardrobe items match the selected style.'));
-    const { result } = renderHook(() => useOutfitGenerator(wardrobe, ['casual'], null));
+    const { result } = renderHook(() => useOutfitGenerator({ wardrobe, stylePrefs: ['casual'], profile: null }));
 
     await act(async () => {
       result.current.generate();
@@ -58,7 +58,9 @@ describe('useOutfitGenerator', () => {
 
   it('passes includeAccessories through to generateOutfit', async () => {
     generateOutfit.mockResolvedValue(mockSuggestion);
-    const { result } = renderHook(() => useOutfitGenerator(wardrobe, ['casual'], null, false));
+    const { result } = renderHook(() =>
+      useOutfitGenerator({ wardrobe, stylePrefs: ['casual'], profile: null, includeAccessories: false }),
+    );
 
     await act(async () => {
       result.current.generate();
@@ -71,7 +73,9 @@ describe('useOutfitGenerator', () => {
 
   it('passes temperatureF through to generateOutfit when provided', async () => {
     generateOutfit.mockResolvedValue(mockSuggestion);
-    const { result } = renderHook(() => useOutfitGenerator(wardrobe, ['casual'], null, true, 85));
+    const { result } = renderHook(() =>
+      useOutfitGenerator({ wardrobe, stylePrefs: ['casual'], profile: null, includeAccessories: true, temperatureF: 85 }),
+    );
 
     await act(async () => {
       result.current.generate();
@@ -84,7 +88,7 @@ describe('useOutfitGenerator', () => {
 
   it('reject() records the current suggestion as rejected and regenerates', async () => {
     generateOutfit.mockResolvedValue(mockSuggestion);
-    const { result } = renderHook(() => useOutfitGenerator(wardrobe, ['casual'], null));
+    const { result } = renderHook(() => useOutfitGenerator({ wardrobe, stylePrefs: ['casual'], profile: null }));
 
     await act(async () => {
       result.current.generate();
@@ -111,7 +115,7 @@ describe('useOutfitGenerator', () => {
 
   it('reject() accumulates multiple rejected combinations across calls', async () => {
     generateOutfit.mockResolvedValue(mockSuggestion);
-    const { result } = renderHook(() => useOutfitGenerator(wardrobe, ['casual'], null));
+    const { result } = renderHook(() => useOutfitGenerator({ wardrobe, stylePrefs: ['casual'], profile: null }));
 
     await act(async () => {
       result.current.generate();
@@ -140,7 +144,7 @@ describe('useOutfitGenerator', () => {
     const suggestionWith = (id: string) => ({ ...mockSuggestion, items: [{ ...wardrobe[0], id }] });
 
     generateOutfit.mockResolvedValue(mockSuggestion); // A: ['1', '2']
-    const { result } = renderHook(() => useOutfitGenerator(wardrobe, ['casual'], null));
+    const { result } = renderHook(() => useOutfitGenerator({ wardrobe, stylePrefs: ['casual'], profile: null }));
     await act(async () => {
       result.current.generate();
     });

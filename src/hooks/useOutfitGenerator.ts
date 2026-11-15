@@ -22,13 +22,27 @@ export interface UseOutfitGeneratorResult extends OutfitGeneratorState {
   reject: () => void;
 }
 
-export function useOutfitGenerator(
-  wardrobe: WardrobeItem[],
-  stylePrefs: StylePreference[],
-  profile: UserProfile | null,
-  includeAccessories: boolean = true,
-  temperatureF?: number,
-): UseOutfitGeneratorResult {
+// Same 5 fields `run` below already repackages into GenerateOutfitOptions —
+// bundled here too (rather than 5 positional params) for the same reason
+// that refactor was applied to scoreOutfitAesthetics/addAccessoriesGreedily
+// (see ADR history / docs/AUDIT-2026-09-24.md item 4): same-shaped positional
+// args at the call site are easy to transpose silently; this hook's own
+// signature was the one place that cleanup missed (docs/AUDIT-2026-11-15.md).
+export interface UseOutfitGeneratorOptions {
+  wardrobe: WardrobeItem[];
+  stylePrefs: StylePreference[];
+  profile: UserProfile | null;
+  includeAccessories?: boolean;
+  temperatureF?: number;
+}
+
+export function useOutfitGenerator({
+  wardrobe,
+  stylePrefs,
+  profile,
+  includeAccessories = true,
+  temperatureF,
+}: UseOutfitGeneratorOptions): UseOutfitGeneratorResult {
   const [status, setStatus] = useState<GeneratorStatus>('idle');
   const [suggestion, setSuggestion] = useState<OutfitSuggestion | null>(null);
   const [error, setError] = useState<string | null>(null);
