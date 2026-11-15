@@ -27,7 +27,16 @@
     "plugins": [
       "expo-font",
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "CBA uses your camera to photograph food, clothing, and indicator lights so it can identify colors and help you build outfits.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": false
+        }
+      ]
     ],
     "extra": {
       "eas": {
