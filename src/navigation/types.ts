@@ -1,4 +1,4 @@
-import { WardrobeItem } from '../types/wardrobe';
+import { StylePreference, WardrobeItem } from '../types/wardrobe';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -25,7 +25,7 @@ export type RootStackParamList = {
   UserProfile: undefined;
   OutfitBuilder: undefined;
   OutfitResults: {
-    stylePrefs: string[];
+    stylePrefs: StylePreference[];
     useProfile: boolean;
     includeAccessories: boolean;
     temperatureF: number;

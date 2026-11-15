@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
 import { ProfileForm } from '../components/ProfileForm';
-import { ReferencePhotoCapture } from '../components/ReferencePhotoCapture';
+import { CameraStep, ReferencePhotoCapture } from '../components/ReferencePhotoCapture';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { RootStackParamList } from '../navigation/types';
 import { extractSkinTone } from '../services/tagService';
@@ -19,8 +19,6 @@ import { useVolumeShutter } from '../../modules/volume-shutter/src';
 import { reportError } from '../utils/reportError';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'UserProfile'>;
-
-type CameraStep = 'preview' | 'capturing' | 'extracting';
 
 export function UserProfileScreen() {
   const navigation = useNavigation<Nav>();

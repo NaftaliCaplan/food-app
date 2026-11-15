@@ -8,7 +8,7 @@ import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { photoToBase64 } from './lib/readPhoto';
 import { writeReport } from './lib/report';
-import { callCloudflareVision } from '../src/services/visionClient';
+import { callVisionProxy } from '../src/services/visionClient';
 import { buildLightPrompt, parseLightResponse } from '../src/services/lightAnalysis';
 
 const PHOTOS_DIR = join(__dirname, 'photos', 'light');
@@ -37,7 +37,7 @@ async function main() {
     const filePath = join(PHOTOS_DIR, file);
     try {
       const { base64, mimeType } = photoToBase64(filePath);
-      const raw = await callCloudflareVision(base64, buildLightPrompt(), 300, mimeType, MODEL_OVERRIDE);
+      const raw = await callVisionProxy(base64, buildLightPrompt(), 300, mimeType, MODEL_OVERRIDE);
       const result = parseLightResponse(raw);
       console.log(`${result.colorLabel}${result.detail ? ' — ' + result.detail : ''}`);
       if (result.observation) console.log(`  observation: ${result.observation}`);

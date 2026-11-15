@@ -2,7 +2,7 @@
 // app reads photos via expo-file-system's native module, which only runs
 // inside the app. Same output shape ({ base64, size }), different I/O
 // backend appropriate for a plain Node script. Everything downstream of this
-// (the prompt builders, callCloudflareVision, the response parsers) is the
+// (the prompt builders, callVisionProxy, the response parsers) is the
 // real app code, unmodified.
 import { readFileSync } from 'node:fs';
 import { extname } from 'node:path';

@@ -69,8 +69,14 @@ const BUSY_PATTERNS = new Set(['striped', 'plaid', 'checked', 'floral', 'graphic
 // and hard-excluding on it before caused real problems elsewhere (ADR 0014).
 // A wrongly-tagged item can lose the ranking here, but can never become
 // unselectable.
-const HOT_THRESHOLD_F = 75;
-const COLD_THRESHOLD_F = 45;
+// Exported so outfitRecommendation.ts's tip generator uses the exact same
+// cutoffs the scorer does — previously independently redefined in both
+// files (see docs/AUDIT-2026-11-15.md); if one ever gets tuned (these are
+// "tune via live testing" values, not fixed constants) without the other,
+// the scorer and the recommendation text would disagree about what counts
+// as weather-inappropriate.
+export const HOT_THRESHOLD_F = 75;
+export const COLD_THRESHOLD_F = 45;
 
 const LAYERING_BONUS = 0.5;
 

@@ -1,5 +1,5 @@
 // Shared mock for a fetch() Response, used by every service test that calls
-// Cloudflare Workers AI (tagService, selfieCheckService, cloudflareService) —
+// Cloudflare Workers AI (tagService, selfieCheckService, foodCheckerService) —
 // was independently duplicated verbatim across all three test files.
 export function makeResponse(body: unknown, ok = true, status = 200) {
   return {

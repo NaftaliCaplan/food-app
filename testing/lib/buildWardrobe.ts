@@ -12,7 +12,7 @@
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { photoToBase64 } from './readPhoto';
-import { callCloudflareVision } from '../../src/services/visionClient';
+import { callVisionProxy } from '../../src/services/visionClient';
 import { buildTagPrompt, parseTagResponse, TagResult } from '../../src/services/tagAnalysis';
 import { ItemCategory, WardrobeItem } from '../../src/types/wardrobe';
 
@@ -46,7 +46,7 @@ export async function buildTestWardrobe(photosDir: string): Promise<TaggedTestIt
     for (const file of files) {
       try {
         const { base64, mimeType } = photoToBase64(join(dir, file));
-        const raw = await callCloudflareVision(base64, buildTagPrompt(folderCategory), 400, mimeType, MODEL_OVERRIDE);
+        const raw = await callVisionProxy(base64, buildTagPrompt(folderCategory), 400, mimeType, MODEL_OVERRIDE);
         const tagResult = parseTagResponse(raw, folderCategory);
 
         let item: WardrobeItem | null = null;

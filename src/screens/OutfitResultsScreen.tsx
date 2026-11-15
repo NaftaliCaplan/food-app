@@ -67,7 +67,7 @@ export function OutfitResultsScreen() {
 
   const { status, suggestion, error, attemptCount, generate, reject } = useOutfitGenerator({
     wardrobe,
-    stylePrefs: stylePrefs as StylePreference[],
+    stylePrefs,
     profile,
     includeAccessories,
     temperatureF,
@@ -90,7 +90,7 @@ export function OutfitResultsScreen() {
       await saveOutfit({
         id: Date.now().toString(),
         itemIds: suggestion.items.map(i => i.id),
-        styleName: formatStyleName(stylePrefs as StylePreference[]),
+        styleName: formatStyleName(stylePrefs),
         savedAt: Date.now(),
         recommendation: suggestion.recommendation,
       });

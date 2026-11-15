@@ -1,7 +1,5 @@
 import { WardrobeItem } from '../types/wardrobe';
-
-const HOT_THRESHOLD_F = 75;
-const COLD_THRESHOLD_F = 45;
+import { HOT_THRESHOLD_F, COLD_THRESHOLD_F } from './outfitAesthetics';
 
 function displayName(item: WardrobeItem): string {
   return item.name ?? item.category;

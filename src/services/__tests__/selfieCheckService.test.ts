@@ -1,4 +1,5 @@
-import { checkSelfieOutfit, tierForScore } from '../selfieCheckService';
+import { checkSelfieOutfit } from '../selfieCheckService';
+import { tierForScore } from '../selfieAnalysis';
 import { makeResponse } from '../../testUtils/mockResponse';
 
 jest.mock('expo-image-manipulator', () => ({

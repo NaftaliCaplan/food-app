@@ -13,7 +13,7 @@
 const PROXY_URL = process.env.EXPO_PUBLIC_PROXY_URL;
 const APP_SHARED_SECRET = process.env.EXPO_PUBLIC_APP_SHARED_SECRET;
 
-export async function callCloudflareVision(
+export async function callVisionProxy(
   base64: string,
   promptText: string,
   maxTokens = 400,

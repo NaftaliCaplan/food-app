@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { analyzeFood } from '../services/cloudflareService';
+import { analyzeFood } from '../services/foodCheckerService';
 import { AnalysisResult } from '../types/analysis';
 
 type Status = 'loading' | 'success' | 'error';

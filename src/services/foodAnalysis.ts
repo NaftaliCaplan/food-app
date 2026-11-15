@@ -1,7 +1,7 @@
 // Pure prompt-building and response-parsing for the food checker — zero
-// React Native dependency, split out of cloudflareService.ts (2026-11-03) so
+// React Native dependency, split out of foodCheckerService.ts (2026-11-03) so
 // the batch-testing harness (testing/) can import it directly in plain Node.
-// cloudflareService.ts's analyzeFood() is the only thing that still needs
+// foodCheckerService.ts's analyzeFood() is the only thing that still needs
 // the RN-specific photoToBase64 step; everything here runs anywhere.
 import { AnalysisResult } from '../types/analysis';
 import { parseLLMResponse, labelForState } from '../utils/parseLLMResponse';
@@ -51,7 +51,7 @@ function foodLabelMatchesObserved(label: string, observed: string): boolean {
 // observed, confident banana). foodLabelMatchesObserved() can only catch a
 // mismatch if observedFood is actually independent; this ordering is what
 // makes that check meaningful rather than a no-op.
-export function buildPrompt(foodLabel: string): string {
+export function buildFoodPrompt(foodLabel: string): string {
   return `You are a food safety and readiness expert with sharp vision. A colorblind user is relying entirely on your analysis — they cannot distinguish colors themselves. Your visual cues must describe texture, shape, surface condition, and pattern — not just color names alone.
 
 STEP 1 — OBSERVE: Look carefully at the image. Describe exactly what you see: shape, texture, surface condition, visible markings, any signs of cooking or preparation. Be specific. Do this before considering any label the user may have given — judge purely from what's visible.

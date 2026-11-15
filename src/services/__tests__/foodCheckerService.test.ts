@@ -1,4 +1,4 @@
-import { analyzeFood } from '../cloudflareService';
+import { analyzeFood } from '../foodCheckerService';
 import { makeResponse } from '../../testUtils/mockResponse';
 import { fakeBase64 } from '../../testUtils/fakeBase64';
 

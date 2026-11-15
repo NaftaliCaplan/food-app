@@ -12,7 +12,7 @@ import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { photoToBase64 } from './lib/readPhoto';
 import { writeReport } from './lib/report';
-import { callCloudflareVision } from '../src/services/visionClient';
+import { callVisionProxy } from '../src/services/visionClient';
 import { buildSelfieCheckResult, buildSelfieDetectionPrompt } from '../src/services/selfieAnalysis';
 
 const PHOTOS_DIR = join(__dirname, 'photos', 'selfie');
@@ -41,7 +41,7 @@ async function main() {
     const filePath = join(PHOTOS_DIR, file);
     try {
       const { base64, mimeType } = photoToBase64(filePath);
-      const raw = await callCloudflareVision(base64, buildSelfieDetectionPrompt(), 500, mimeType, MODEL_OVERRIDE);
+      const raw = await callVisionProxy(base64, buildSelfieDetectionPrompt(), 500, mimeType, MODEL_OVERRIDE);
       const result = buildSelfieCheckResult(raw, filePath, null);
       const garmentSummary = result.garments.map(g => `${g.category}:[${g.tags.join(',')}]`).join(' ');
       console.log(`${result.tier} — ${garmentSummary}`);

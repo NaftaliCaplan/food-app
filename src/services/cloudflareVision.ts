@@ -1,10 +1,10 @@
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 
 // Shared by every service that sends a photo + prompt to Cloudflare Workers AI
-// (cloudflareService.ts, tagService.ts, selfieCheckService.ts) — previously
+// (foodCheckerService.ts, tagService.ts, selfieCheckService.ts) — previously
 // each had its own near-identical copy of this (account/model/base64/fetch)
 // boilerplate, which had drifted into 3 independent copies. See
-// docs/AUDIT-2026-09-24.md. The network-calling half (callCloudflareVision)
+// docs/AUDIT-2026-09-24.md. The network-calling half (callVisionProxy)
 // moved to visionClient.ts (2026-11-03) — this file now holds only the
 // RN-specific photo-reading step, so the pure network logic can be imported
 // outside the app (see testing/).

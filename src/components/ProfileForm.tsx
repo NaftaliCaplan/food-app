@@ -86,7 +86,7 @@ export function ProfileForm({
               accessibilityState={{ checked: active }}
             >
               <AppText style={[styles.chipLabel, active && styles.chipLabelActive]}>
-                {active ? '(x)' : '( )'} {o.label}
+                {active ? '[x]' : '[ ]'} {o.label}
               </AppText>
             </TouchableOpacity>
           );
@@ -108,7 +108,7 @@ export function ProfileForm({
               accessibilityState={{ checked: active }}
             >
               <AppText style={[styles.chipLabel, active && styles.chipLabelActive]}>
-                {active ? '(x)' : '( )'} {o.label}
+                {active ? '[x]' : '[ ]'} {o.label}
               </AppText>
             </TouchableOpacity>
           );

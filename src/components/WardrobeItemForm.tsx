@@ -8,6 +8,7 @@ import { ItemCategory } from '../types/wardrobe';
 import { extractStyles, isStyleWord } from '../utils/styleTags';
 import { AppText } from './AppText';
 import { CategoryPicker } from './CategoryPicker';
+import { PrimaryInput } from './PrimaryInput';
 import { StylePicker } from './StylePicker';
 
 interface Props {
@@ -87,13 +88,10 @@ export function WardrobeItemForm({
       <StylePicker selected={selectedStyles} onToggle={onToggleTag} />
 
       <AppText style={styles.sectionLabel}>NAME (optional)</AppText>
-      <TextInput
-        style={styles.nameInput}
+      <PrimaryInput
         value={name}
         onChangeText={onNameChange}
         placeholder="e.g. white button-up shirt"
-        placeholderTextColor={Colors.textDisabled}
-        selectionColor={Colors.accent}
       />
 
       <AppText style={styles.sectionLabel}>TAGS</AppText>
@@ -163,17 +161,6 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     letterSpacing: 1.5,
     marginTop: Spacing.sm,
-  },
-  nameInput: {
-    backgroundColor: Colors.surface,
-    borderRadius: 0,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    color: Colors.textPrimary,
-    fontSize: 15,
-    fontFamily: 'JetBrainsMono_400Regular',
   },
   tagHint: {
     fontSize: 12,

@@ -67,7 +67,7 @@ export function SelfieCheckScreen() {
     };
   }, []);
 
-  async function actuallyCapture() {
+  async function capturePhoto() {
     if (!cameraRef.current) return;
     setCapturing(true);
     try {
@@ -84,11 +84,11 @@ export function SelfieCheckScreen() {
 
   function handleCapture() {
     // No cameraRef check here — the countdown is pure UI/timing and doesn't
-    // need a live ref; actuallyCapture() below guards the ref at the one
+    // need a live ref; capturePhoto() below guards the ref at the one
     // point it's actually needed (the takePictureAsync call itself).
     if (capturing || countdown !== null) return;
     if (timerSeconds === 0) {
-      actuallyCapture();
+      capturePhoto();
       return;
     }
     let remaining = timerSeconds;
@@ -99,7 +99,7 @@ export function SelfieCheckScreen() {
         if (countdownTimer.current) clearInterval(countdownTimer.current);
         countdownTimer.current = null;
         setCountdown(null);
-        actuallyCapture();
+        capturePhoto();
       } else {
         setCountdown(remaining);
       }

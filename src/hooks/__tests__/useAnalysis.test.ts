@@ -1,8 +1,8 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { useAnalysis } from '../useAnalysis';
 
-jest.mock('../../services/cloudflareService');
-const { analyzeFood } = require('../../services/cloudflareService');
+jest.mock('../../services/foodCheckerService');
+const { analyzeFood } = require('../../services/foodCheckerService');
 
 const mockResult = {
   state: 'ripe' as const,

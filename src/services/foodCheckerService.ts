@@ -1,13 +1,13 @@
 import { AnalysisResult } from '../types/analysis';
-import { buildPrompt, parseAnalyzeFoodResponse } from './foodAnalysis';
+import { buildFoodPrompt, parseAnalyzeFoodResponse } from './foodAnalysis';
 import { photoToBase64 } from './cloudflareVision';
-import { callCloudflareVision } from './visionClient';
+import { callVisionProxy } from './visionClient';
 
 export async function analyzeFood(
   photoUri: string,
   foodLabel: string,
 ): Promise<AnalysisResult> {
   const { base64, size } = await photoToBase64(photoUri);
-  const raw = await callCloudflareVision(base64, buildPrompt(foodLabel), 512);
+  const raw = await callVisionProxy(base64, buildFoodPrompt(foodLabel), 512);
   return parseAnalyzeFoodResponse(raw, size, foodLabel);
 }

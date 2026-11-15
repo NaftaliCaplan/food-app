@@ -11,8 +11,8 @@ import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { photoToBase64 } from './lib/readPhoto';
 import { writeReport } from './lib/report';
-import { callCloudflareVision } from '../src/services/visionClient';
-import { buildPrompt, parseAnalyzeFoodResponse } from '../src/services/foodAnalysis';
+import { callVisionProxy } from '../src/services/visionClient';
+import { buildFoodPrompt, parseAnalyzeFoodResponse } from '../src/services/foodAnalysis';
 
 const PHOTOS_DIR = join(__dirname, 'photos', 'food');
 const IMAGE_PATTERN = /\.(jpe?g|png|webp)$/i;
@@ -48,7 +48,7 @@ async function main() {
     process.stdout.write(`${file} (label: "${label}")... `);
     try {
       const { base64, size, mimeType } = photoToBase64(join(PHOTOS_DIR, file));
-      const raw = await callCloudflareVision(base64, buildPrompt(label), 512, mimeType, MODEL_OVERRIDE);
+      const raw = await callVisionProxy(base64, buildFoodPrompt(label), 512, mimeType, MODEL_OVERRIDE);
       const result = parseAnalyzeFoodResponse(raw, size, label);
       const observedDisplay = result.observedFood ?? '(not provided — response fell back to string parsing)';
       const matchDisplay = result.labelMatch === undefined ? 'n/a' : result.labelMatch;

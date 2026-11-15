@@ -9,7 +9,7 @@ Maintained on a "significant change" cadence, not on every commit: expect an upd
 This codebase has two structurally different shapes, and one feature that deliberately straddles both:
 
 1. **One-shot checkers** — take one photo, get back one result, nothing persisted. Two live today:
-   - **Food ripeness/doneness** (`cloudflareService.ts` → `ResultsScreen`) — AI judges the verdict directly (a Cloudflare-hosted vision model returns a verdict + confidence).
+   - **Food ripeness/doneness** (`foodCheckerService.ts` → `ResultsScreen`) — AI judges the verdict directly (a Cloudflare-hosted vision model returns a verdict + confidence).
    - **Selfie match check** (`selfieCheckService.ts` → `SelfieCheckScreen`/`SelfieCheckResultsScreen`) — shaped like a one-shot checker (one selfie in, one result out, nothing saved), but the AI's only job is to *detect and tag* the garments it sees; the actual match verdict comes from the same deterministic scoring function the wardrobe engine uses (`outfitAesthetics.ts`). It's the one file that bridges both shapes — don't assume it's part of the wardrobe engine's own pipeline (`outfitService.ts`/`outfitCandidates.ts` are not involved at all), and don't assume it works like the food checker either (no AI-judged verdict here).
 
 2. **Wardrobe / Outfit Matcher** (the main feature, where most ongoing work happens) — a persisted wardrobe (`wardrobeStorage.ts`) plus a fully deterministic outfit-generation engine. No AI call anywhere in *generation* — AI only runs earlier, when tagging a photo as it's added to the wardrobe, or reading a profile reference photo.
@@ -98,7 +98,7 @@ Shared: `AppText` (font-weight-aware text primitive, used almost everywhere), `S
 | File | Purpose |
 |---|---|
 | `tagService.ts` | AI: names/tags a wardrobe photo (one item per photo); also extracts skin tone/build for profiles |
-| `cloudflareService.ts` | AI: food ripeness verdict (one-shot checker) |
+| `foodCheckerService.ts` | AI: food ripeness verdict (one-shot checker) |
 | `selfieCheckService.ts` | AI: detects/tags garments from one selfie, then scores the result via `outfitAesthetics.scoreOutfitAesthetics` — no AI-judged verdict |
 | `outfitService.ts` | Deterministic orchestrator for the wardrobe engine — see the trace above |
 
@@ -124,4 +124,4 @@ Lives in `theme/colors.ts` (one flat color object: near-black backgrounds, a sin
 - **Ties in scoring are broken randomly, not by wardrobe scan order**: with a narrow-enough rule set, exact ties are common; `selectBestOutfit` breaks them by lowest score, then fewest total items, then genuinely random. This makes outfit generation not-strictly-deterministic for identical inputs — deliberate, not a bug.
 - **`SavedOutfit` stores item IDs only**, never a snapshot of the actual items. Deleting or editing a wardrobe item after saving an outfit that used it is expected and handled (`SavedOutfitsScreen` resolves missing IDs gracefully), not a bug.
 - **The rejected-outfit list is a rolling window, not a permanent blacklist** (`useOutfitGenerator.ts`, last 3 only) — so a small wardrobe can't get permanently stuck once its few genuinely good combinations are used up in one "Try Again" session.
-- **Every AI call goes through `server/` now, not Cloudflare directly** (added 2026-10-04): `cloudflareService.ts`/`tagService.ts`/`selfieCheckService.ts` all share `cloudflareVision.ts`'s `callCloudflareVision`, which calls a small Cloudflare Worker proxy (`server/`) instead of Workers AI's REST API directly. The real Cloudflare account credential lives only inside that Worker (via its native `AI` binding — no account ID/API token anywhere else, client or server); the app holds only a narrowly-scoped, rate-limited shared secret. See `server/README.md` for the full reasoning and setup. `server/` is a separate deployable (own `package.json`/`tsconfig.json`, excluded from the app's own `tsc`/`jest`/`lint`), not part of the Expo app's build.
+- **Every AI call goes through `server/` now, not Cloudflare directly** (added 2026-10-04): `foodCheckerService.ts`/`tagService.ts`/`selfieCheckService.ts`/`lightCheckerService.ts` all share `visionClient.ts`'s `callVisionProxy`, which calls a small Cloudflare Worker proxy (`server/`) instead of Workers AI's REST API directly. The real Cloudflare account credential lives only inside that Worker (via its native `AI` binding — no account ID/API token anywhere else, client or server); the app holds only a narrowly-scoped, rate-limited shared secret. See `server/README.md` for the full reasoning and setup. `server/` is a separate deployable (own `package.json`/`tsconfig.json`, excluded from the app's own `tsc`/`jest`/`lint`), not part of the Expo app's build.

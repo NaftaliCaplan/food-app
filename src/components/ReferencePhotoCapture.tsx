@@ -10,13 +10,16 @@ import { CameraPermissionGate } from './CameraPermissionGate';
 import { CaptureButton } from './CaptureButton';
 import { ScreenHeader } from './ScreenHeader';
 
-type Step = 'preview' | 'capturing' | 'extracting';
+// Exported so UserProfileScreen.tsx (where this state actually lives) can
+// share this exact type instead of independently redeclaring an identical
+// union under a different name — see docs/AUDIT-2026-11-15.md.
+export type CameraStep = 'preview' | 'capturing' | 'extracting';
 
 interface Props {
   permission: ReturnType<typeof useCameraPermissions>[0];
   requestPermission: () => void;
   cameraRef: RefObject<CameraView | null>;
-  step: Step;
+  step: CameraStep;
   onCapture: () => void;
   onCancel: () => void;
 }

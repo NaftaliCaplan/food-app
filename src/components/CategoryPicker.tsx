@@ -32,7 +32,7 @@ export function CategoryPicker({ category, onChange }: Props) {
             accessibilityState={{ checked: active }}
           >
             <AppText style={[styles.catLabel, active && styles.catLabelActive]}>
-              {active ? '(x)' : '( )'} {c.label}
+              {active ? '[x]' : '[ ]'} {c.label}
             </AppText>
           </TouchableOpacity>
         );
