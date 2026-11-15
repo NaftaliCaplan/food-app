@@ -1,6 +1,5 @@
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import * as Sentry from '@sentry/react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -17,6 +16,7 @@ import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
 import { UserProfile } from '../types/wardrobe';
 import { useVolumeShutter } from '../../modules/volume-shutter/src';
+import { reportError } from '../utils/reportError';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'UserProfile'>;
 
@@ -79,8 +79,7 @@ export function UserProfileScreen() {
       setShowCamera(false);
       setCameraStep('preview');
     } catch (e) {
-      console.error('Profile photo failed', e);
-      Sentry.captureException(e);
+      reportError('Profile photo failed', e);
       setCameraStep('preview');
     }
   }
@@ -94,8 +93,7 @@ export function UserProfileScreen() {
       await saveUserProfile(profile);
       navigation.goBack();
     } catch (e) {
-      console.error('Save profile failed', e);
-      Sentry.captureException(e);
+      reportError('Save profile failed', e);
       setSaving(false);
     }
   }

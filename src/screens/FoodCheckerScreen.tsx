@@ -1,6 +1,5 @@
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import * as Sentry from '@sentry/react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
@@ -15,6 +14,7 @@ import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
 import { RootStackParamList } from '../navigation/types';
 import { useVolumeShutter } from '../../modules/volume-shutter/src';
+import { reportError } from '../utils/reportError';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'FoodChecker'>;
 
@@ -38,8 +38,7 @@ export function FoodCheckerScreen() {
         });
       }
     } catch (e) {
-      console.error('Capture failed', e);
-      Sentry.captureException(e);
+      reportError('Capture failed', e);
     } finally {
       setCapturing(false);
     }

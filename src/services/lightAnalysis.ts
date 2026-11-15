@@ -4,6 +4,7 @@
 // Node. lightCheckerService.ts is the only thing that still needs the
 // RN-specific photoToBase64 step.
 import { LightCheckResult, LightColor } from '../types/light';
+import { extractJsonObject } from '../utils/extractJsonObject';
 
 const COLOR_LABELS: Record<LightColor, string> = {
   red: 'Red',
@@ -34,24 +35,6 @@ STEP 4 — OUTPUT: Respond with ONLY a raw JSON object. No markdown, no explanat
   "color": "<red|green|amber|unclear>",
   "detail": "<if color is 'unclear', one short factual sentence describing why, e.g. 'No illuminated light visible in the photo'; otherwise an empty string>"
 }`;
-}
-
-// Mirrors selfieAnalysis.ts's extractJsonObject — strips markdown fences
-// (Llama frequently wraps output despite the "raw JSON only" instruction)
-// and attempts one real JSON.parse of the extracted {...} block. Each
-// *Analysis.ts file owns its own small parsing helpers rather than sharing a
-// cross-file util (same convention as foodAnalysis.ts/selfieAnalysis.ts).
-function extractJsonObject(raw: unknown): Record<string, unknown> | null {
-  if (raw && typeof raw === 'object') return raw as Record<string, unknown>;
-  if (typeof raw !== 'string') return null;
-  const cleaned = raw.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
-  const match = cleaned.match(/\{[\s\S]*\}/);
-  if (!match) return null;
-  try {
-    return JSON.parse(match[0]) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
 }
 
 // Split out so the batch-testing harness (testing/) can reuse this exact

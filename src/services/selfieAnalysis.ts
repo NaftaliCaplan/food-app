@@ -9,6 +9,7 @@
 import { ACCESSORY_TYPE_TAGS, BRIGHTNESS_TAGS, PATTERN_TAGS } from '../constants/tagVocabulary';
 import { normalizeColor } from './tagAnalysis';
 import { scoreOutfitAesthetics } from '../utils/outfitAesthetics';
+import { extractJsonObject } from '../utils/extractJsonObject';
 import { DetectedGarment, SelfieCheckResult, SelfieMatchTier } from '../types/selfieCheck';
 import { UserProfile, WardrobeItem } from '../types/wardrobe';
 
@@ -55,24 +56,11 @@ STEP 3 — OUTPUT: Respond with ONLY a raw JSON object. No markdown, no explanat
 
 // Multi-slot nested JSON is too fragile to patch key-by-key with per-field
 // regexes the way tagService.ts's single-flat-object fallback does — instead,
-// strip markdown fences (Llama frequently wraps output despite the "raw JSON
-// only" instruction) and attempt one real JSON.parse of the extracted
-// {...} block. If that still fails, there's nothing safe to partially
-// reconstruct — the caller treats this as a failed detection, same as
-// AddItemScreen's "not clothing, retake only" outcome, rather than guessing.
-function extractJsonObject(raw: unknown): Record<string, unknown> | null {
-  if (raw && typeof raw === 'object') return raw as Record<string, unknown>;
-  if (typeof raw !== 'string') return null;
-  const cleaned = raw.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
-  const match = cleaned.match(/\{[\s\S]*\}/);
-  if (!match) return null;
-  try {
-    return JSON.parse(match[0]) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
-
+// extractJsonObject (shared util) strips markdown fences and attempts one
+// real JSON.parse of the extracted {...} block. If that still fails, there's
+// nothing safe to partially reconstruct — the caller treats this as a failed
+// detection, same as AddItemScreen's "not clothing, retake only" outcome,
+// rather than guessing.
 function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? (value as unknown[]).filter(v => typeof v === 'string') as string[] : [];
 }

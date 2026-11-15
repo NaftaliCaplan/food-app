@@ -1,6 +1,5 @@
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import * as Sentry from '@sentry/react-native';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -23,6 +22,7 @@ import { getWardrobe } from '../storage/wardrobeStorage';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
 import { StylePreference, UserProfile, WardrobeItem } from '../types/wardrobe';
+import { reportError } from '../utils/reportError';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'OutfitResults'>;
 type Rt = RouteProp<RootStackParamList, 'OutfitResults'>;
@@ -96,8 +96,7 @@ export function OutfitResultsScreen() {
       });
       navigation.navigate('Wardrobe');
     } catch (e) {
-      console.error('Save outfit failed', e);
-      Sentry.captureException(e);
+      reportError('Save outfit failed', e);
       setSaving(false);
     }
   }

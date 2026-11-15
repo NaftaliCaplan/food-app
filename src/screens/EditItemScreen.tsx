@@ -1,6 +1,5 @@
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import * as Sentry from '@sentry/react-native';
 import { useState } from 'react';
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +11,7 @@ import { updateItem } from '../storage/wardrobeStorage';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
 import { ItemCategory } from '../types/wardrobe';
+import { reportError } from '../utils/reportError';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'EditItem'>;
 type Rt = RouteProp<RootStackParamList, 'EditItem'>;
@@ -39,8 +39,7 @@ export function EditItemScreen() {
       });
       navigation.goBack();
     } catch (e) {
-      console.error('Update item failed', e);
-      Sentry.captureException(e);
+      reportError('Update item failed', e);
       setSaving(false);
     }
   }

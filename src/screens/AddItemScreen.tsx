@@ -1,6 +1,5 @@
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import * as Sentry from '@sentry/react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRef, useState } from 'react';
 import {
@@ -25,6 +24,7 @@ import { addItem, copyPhotoToApp } from '../storage/wardrobeStorage';
 import { Colors } from '../theme/colors';
 import { Spacing } from '../theme/spacing';
 import { ItemCategory, WardrobeItem } from '../types/wardrobe';
+import { reportError } from '../utils/reportError';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'AddItem'>;
 
@@ -66,8 +66,7 @@ export function AddItemScreen() {
       setTags(result.tags);
       setStep('review');
     } catch (e) {
-      console.error('Capture/tag failed', e);
-      Sentry.captureException(e);
+      reportError('Capture/tag failed', e);
       setStep('camera');
     } finally {
       setCapturing(false);
@@ -96,8 +95,7 @@ export function AddItemScreen() {
       await addItem(item);
       navigation.goBack();
     } catch (e) {
-      console.error('Save failed', e);
-      Sentry.captureException(e);
+      reportError('Save failed', e);
       setSaving(false);
     }
   }

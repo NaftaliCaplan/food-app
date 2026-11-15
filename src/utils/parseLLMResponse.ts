@@ -1,23 +1,17 @@
 import { AnalysisResult, RipenessState } from '../types/analysis';
+import { extractJsonObject } from './extractJsonObject';
 
 export function parseLLMResponse(raw: string): AnalysisResult {
-  // Strip markdown code fences LLaVA sometimes wraps around JSON
-  const cleaned = raw.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
-
-  // Try JSON parse first
-  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    try {
-      const parsed = JSON.parse(jsonMatch[0]);
-      return {
-        state: parsed.state ?? 'unknown',
-        stateLabel: parsed.stateLabel ?? labelForState(parsed.state),
-        confidencePercent: parsed.confidencePercent ?? 50,
-        visualCues: Array.isArray(parsed.visualCues) ? parsed.visualCues : [],
-        recommendation: parsed.recommendation ?? '',
-        ...(parsed.observedFood ? { observedFood: parsed.observedFood } : {}),
-      };
-    } catch {}
+  const parsed = extractJsonObject(raw);
+  if (parsed) {
+    return {
+      state: (parsed.state as RipenessState) ?? 'unknown',
+      stateLabel: (parsed.stateLabel as string) ?? labelForState(parsed.state as RipenessState),
+      confidencePercent: (parsed.confidencePercent as number) ?? 50,
+      visualCues: Array.isArray(parsed.visualCues) ? parsed.visualCues as string[] : [],
+      recommendation: (parsed.recommendation as string) ?? '',
+      ...(parsed.observedFood ? { observedFood: parsed.observedFood as string } : {}),
+    };
   }
 
   // Fallback: parse markdown-formatted response from Llama

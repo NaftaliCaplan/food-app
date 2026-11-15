@@ -7,6 +7,7 @@
 import { ACCESSORY_TYPE_TAGS, COLOR_TAGS } from '../constants/tagVocabulary';
 import { ItemCategory, StylePreference, UserProfile } from '../types/wardrobe';
 import { isStyleWord, normalizeStyle, STYLE_KEYS } from '../utils/styleTags';
+import { extractJsonObject } from '../utils/extractJsonObject';
 
 const CANONICAL_COLORS = new Set(COLOR_TAGS);
 
@@ -231,25 +232,50 @@ function parseTagFallback(text: string, category: ItemCategory): TagResult {
   };
 }
 
+// Shared by both parseTagResponse's direct-object path and its
+// JSON.parse-recovery path (see below) — a well-shaped object is a
+// well-shaped object regardless of whether Cloudflare handed it to us
+// pre-parsed or as a markdown-fenced string we had to extract ourselves.
+function buildTagResultFromObject(obj: Record<string, unknown>, category: ItemCategory): TagResult | null {
+  if (typeof obj.name !== 'string' || !Array.isArray(obj.tags)) return null;
+  const rawTags = (obj.tags as unknown[]).filter(t => typeof t === 'string') as string[];
+  const rawColors = Array.isArray(obj.colors)
+    ? (obj.colors as unknown[]).filter(c => typeof c === 'string') as string[]
+    : [];
+  return {
+    isClothing: obj.isClothing !== false,
+    name: obj.name,
+    tags: mergeColorTags(mergeStyleTags(rawTags, parseStyles(obj.styles)), rawColors),
+    detectedCategory: parseCategory(obj.category),
+  };
+}
+
 // Split out of tagClothingItem so the batch-testing harness (testing/) can
 // reuse this exact parsing path against a raw response it fetched itself —
 // no duplicated parsing logic, same fidelity as the real app.
 export function parseTagResponse(raw: unknown, category: ItemCategory): TagResult {
   const obj = raw && typeof raw === 'object' ? raw as Record<string, unknown> : null;
-  if (obj && typeof obj.name === 'string' && Array.isArray(obj.tags)) {
-    const rawTags = (obj.tags as unknown[]).filter(t => typeof t === 'string') as string[];
-    const rawColors = Array.isArray(obj.colors)
-      ? (obj.colors as unknown[]).filter(c => typeof c === 'string') as string[]
-      : [];
-    return {
-      isClothing: obj.isClothing !== false,
-      name: obj.name,
-      tags: mergeColorTags(mergeStyleTags(rawTags, parseStyles(obj.styles)), rawColors),
-      detectedCategory: parseCategory(obj.category),
-    };
-  }
+  const direct = obj ? buildTagResultFromObject(obj, category) : null;
+  if (direct) return direct;
 
-  return parseTagFallback(typeof raw === 'string' ? raw : '', category);
+  // Llama frequently wraps valid JSON in markdown fences, which Cloudflare
+  // then returns as a plain string rather than a pre-parsed object (see
+  // parseTagFallback's own comment below) — try a real JSON.parse recovery
+  // before falling back to the weaker regex reconstruction, the same way
+  // foodAnalysis.ts/selfieAnalysis.ts/lightAnalysis.ts already do via this
+  // same shared extractJsonObject util (see docs/AUDIT-2026-11-15.md's
+  // Duplication finding #2 — this file used to skip straight to regex
+  // scraping, the one *Analysis.ts file that didn't attempt JSON.parse first
+  // despite its own comment calling this exact failure mode common).
+  const recovered = extractJsonObject(raw);
+  const fromRecovered = recovered ? buildTagResultFromObject(recovered, category) : null;
+  if (fromRecovered) return fromRecovered;
+
+  // JSON.stringify(raw ?? '') rather than discarding a non-string raw
+  // outright — matches foodAnalysis.ts's parseLLMResponse convention, so a
+  // near-miss object (e.g. valid JSON shape but missing/wrong-typed `name`)
+  // still gives the regex fallback something to scan instead of nothing.
+  return parseTagFallback(typeof raw === 'string' ? raw : JSON.stringify(raw ?? ''), category);
 }
 
 // Split out of extractSkinTone so the batch-testing harness (testing/) could

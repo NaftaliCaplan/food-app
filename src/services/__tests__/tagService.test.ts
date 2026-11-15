@@ -132,13 +132,24 @@ describe('tagClothingItem', () => {
     expect(result.isClothing).toBe(true);
   });
 
-  it('falls back to regex extraction when the model wraps JSON in markdown fences', async () => {
+  it('recovers via a real JSON.parse when the model wraps JSON in markdown fences', async () => {
     const fenced = '```json\n{"isClothing": true, "name": "denim jacket", "styles": ["casual"], "tags": ["denim", "casual", "formal"]}\n```';
     mockFetch.mockResolvedValue(makeResponse({ result: { response: fenced } }));
     const result = await tagClothingItem('file://test.jpg', 'top');
     expect(result.name).toBe('denim jacket');
     expect(result.tags).toEqual(expect.arrayContaining(['denim', 'casual']));
     expect(result.tags).not.toContain('formal');
+  });
+
+  it('correctly parses an escaped quote inside a string value, which the old regex-only fallback could not (docs/AUDIT-2026-11-15.md Duplication #2)', async () => {
+    const fenced = '```json\n{"isClothing": true, "name": "men\\"s jacket", "styles": ["casual"], "tags": ["denim"]}\n```';
+    mockFetch.mockResolvedValue(makeResponse({ result: { response: fenced } }));
+    const result = await tagClothingItem('file://test.jpg', 'top');
+    // A hand-rolled /"name"\s*:\s*"([^"]+)"/ regex stops at the first
+    // unescaped-looking quote, truncating this to just "men\" — real
+    // JSON.parse (via the shared extractJsonObject recovery path) handles
+    // the escape correctly and gets the full, correct name.
+    expect(result.name).toBe('men"s jacket');
   });
 
   it('returns the AI\'s independently detected category, overriding a wrong pre-selection', async () => {
