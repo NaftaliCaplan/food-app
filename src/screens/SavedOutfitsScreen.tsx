@@ -81,7 +81,9 @@ export function SavedOutfitsScreen() {
               style={[styles.card, hasLaundryItem && styles.cardLaundry]}
               activeOpacity={0.7}
               onPress={() => setExpandedId(expanded ? null : outfit.id)}
+              accessibilityRole="button"
               accessibilityLabel={`${expanded ? 'Hide' : 'Show'} details for ${outfit.styleName} outfit from ${formatSavedDate(outfit.savedAt)}`}
+              accessibilityState={{ expanded }}
             >
               <View style={styles.cardHeader}>
                 <AppText style={styles.styleName} numberOfLines={1}>
@@ -90,6 +92,7 @@ export function SavedOutfitsScreen() {
                 <AppText style={styles.dateText}>{formatSavedDate(outfit.savedAt)}</AppText>
                 <TouchableOpacity
                   onPress={() => handleDelete(outfit.id)}
+                  accessibilityRole="button"
                   accessibilityLabel={`Delete saved outfit from ${formatSavedDate(outfit.savedAt)}`}
                   style={styles.deleteBtn}
                 >

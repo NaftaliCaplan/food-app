@@ -59,13 +59,18 @@ export function ProfileForm({
             {skinToneDesc ? (
               <AppText style={styles.skinDesc}>{skinToneDesc}</AppText>
             ) : null}
-            <TouchableOpacity onPress={onRetakePhoto}>
+            <TouchableOpacity onPress={onRetakePhoto} accessibilityRole="button">
               <AppText style={styles.retakeLink}>Retake photo</AppText>
             </TouchableOpacity>
           </View>
         </View>
       ) : (
-        <TouchableOpacity style={styles.photoPlaceholder} onPress={onRetakePhoto}>
+        <TouchableOpacity
+          style={styles.photoPlaceholder}
+          onPress={onRetakePhoto}
+          accessibilityRole="button"
+          accessibilityLabel="Take reference photo"
+        >
           <AppText style={styles.photoPlaceholderIcon}>[CAMERA]</AppText>
           <AppText style={styles.photoPlaceholderText}>Tap to take reference photo</AppText>
         </TouchableOpacity>
@@ -120,6 +125,9 @@ export function ProfileForm({
         style={[styles.primaryBtn, saving && styles.btnDisabled]}
         onPress={onSave}
         disabled={saving}
+        accessibilityRole="button"
+        accessibilityLabel="Save profile"
+        accessibilityState={{ disabled: saving, busy: saving }}
       >
         {saving
           ? <ActivityIndicator color="#000" />
@@ -127,12 +135,17 @@ export function ProfileForm({
         }
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.skipBtn} onPress={onSkip}>
+      <TouchableOpacity style={styles.skipBtn} onPress={onSkip} accessibilityRole="button">
         <AppText style={styles.skipText}>Skip for now</AppText>
       </TouchableOpacity>
 
       {photoUri || skinToneDesc ? (
-        <TouchableOpacity style={styles.clearBtn} onPress={onClear}>
+        <TouchableOpacity
+          style={styles.clearBtn}
+          onPress={onClear}
+          accessibilityRole="button"
+          accessibilityLabel="Clear profile"
+        >
           <AppText style={styles.clearText}>✕ Clear profile</AppText>
         </TouchableOpacity>
       ) : null}

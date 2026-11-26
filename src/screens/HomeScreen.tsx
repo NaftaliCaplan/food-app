@@ -52,7 +52,10 @@ export function HomeScreen() {
       </View>
 
       <AppText style={styles.taglineBottom}>Point. Capture. Know.</AppText>
-      <TouchableOpacity onPress={() => WebBrowser.openBrowserAsync(PRIVACY_POLICY_URL)}>
+      <TouchableOpacity
+        onPress={() => WebBrowser.openBrowserAsync(PRIVACY_POLICY_URL)}
+        accessibilityRole="link"
+      >
         <AppText style={styles.privacyLink}>Privacy Policy</AppText>
       </TouchableOpacity>
     </SafeAreaView>

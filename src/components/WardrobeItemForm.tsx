@@ -92,6 +92,7 @@ export function WardrobeItemForm({
         value={name}
         onChangeText={onNameChange}
         placeholder="e.g. white button-up shirt"
+        accessibilityLabel="Item name"
       />
 
       <AppText style={styles.sectionLabel}>TAGS</AppText>
@@ -130,8 +131,14 @@ export function WardrobeItemForm({
           selectionColor={Colors.accent}
           onSubmitEditing={addCustomTag}
           returnKeyType="done"
+          accessibilityLabel="Custom tag"
         />
-        <TouchableOpacity style={styles.tagAddBtn} onPress={addCustomTag}>
+        <TouchableOpacity
+          style={styles.tagAddBtn}
+          onPress={addCustomTag}
+          accessibilityRole="button"
+          accessibilityLabel="Add custom tag"
+        >
           <AppText style={styles.tagAddText}>＋</AppText>
         </TouchableOpacity>
       </View>
@@ -140,6 +147,9 @@ export function WardrobeItemForm({
         style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
         onPress={onSave}
         disabled={saving}
+        accessibilityRole="button"
+        accessibilityLabel={saveLabel}
+        accessibilityState={{ disabled: saving, busy: saving }}
       >
         {saving ? (
           <ActivityIndicator color="#000" />

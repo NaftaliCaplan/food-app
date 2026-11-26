@@ -33,7 +33,11 @@ export function CameraPermissionGate({ permission, requestPermission, message, c
         <View style={styles.permissionBox}>
           <AppText style={styles.permissionTitle}>Camera access needed</AppText>
           <AppText style={styles.permissionSub}>{message}</AppText>
-          <TouchableOpacity style={styles.permissionBtn} onPress={requestPermission}>
+          <TouchableOpacity
+            style={styles.permissionBtn}
+            onPress={requestPermission}
+            accessibilityRole="button"
+          >
             <AppText style={styles.permissionBtnText}>Grant Permission</AppText>
           </TouchableOpacity>
         </View>

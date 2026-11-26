@@ -127,10 +127,19 @@ export function OutfitResultsScreen() {
         <View style={styles.centerBox}>
           <AppText style={styles.errorIcon}>[ERROR]</AppText>
           <AppText style={styles.errorText}>{error}</AppText>
-          <TouchableOpacity style={styles.primaryBtn} onPress={() => generate()}>
+          <TouchableOpacity
+            style={styles.primaryBtn}
+            onPress={() => generate()}
+            accessibilityRole="button"
+          >
             <AppText style={styles.primaryBtnText}>Try Again</AppText>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.skipBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={styles.skipBtn}
+            onPress={() => navigation.goBack()}
+            accessibilityRole="button"
+            accessibilityLabel="Adjust style"
+          >
             <AppText style={styles.skipText}>← Adjust Style</AppText>
           </TouchableOpacity>
         </View>
@@ -176,7 +185,9 @@ export function OutfitResultsScreen() {
           style={[styles.noBtn, saving && styles.btnDisabled]}
           onPress={handleReject}
           disabled={saving}
+          accessibilityRole="button"
           accessibilityLabel="Try a different outfit"
+          accessibilityState={{ disabled: saving }}
         >
           <AppText style={styles.noBtnText}>✕ Try Again</AppText>
         </TouchableOpacity>
@@ -184,7 +195,9 @@ export function OutfitResultsScreen() {
           style={[styles.yesBtn, saving && styles.btnDisabled]}
           onPress={handleAccept}
           disabled={saving}
+          accessibilityRole="button"
           accessibilityLabel="Keep this outfit"
+          accessibilityState={{ disabled: saving, busy: saving }}
         >
           {saving ? (
             <ActivityIndicator color="#000" />

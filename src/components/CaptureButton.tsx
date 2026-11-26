@@ -5,9 +5,10 @@ import { Colors } from '../theme/colors';
 interface Props {
   onPress: () => void;
   disabled?: boolean;
+  accessibilityLabel: string;
 }
 
-export function CaptureButton({ onPress, disabled }: Props) {
+export function CaptureButton({ onPress, disabled, accessibilityLabel }: Props) {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -15,6 +16,9 @@ export function CaptureButton({ onPress, disabled }: Props) {
       activeOpacity={0.8}
       style={[styles.outer, disabled && styles.outerDisabled]}
       testID="capture-button"
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled: !!disabled }}
     >
       <View style={[styles.inner, disabled && styles.innerDisabled]} />
     </TouchableOpacity>

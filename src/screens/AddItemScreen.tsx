@@ -121,7 +121,11 @@ export function AddItemScreen() {
           <AppText style={styles.notClothingText}>
             That doesn&apos;t look like a clothing item. Try again with the item clearly in frame.
           </AppText>
-          <TouchableOpacity style={styles.permissionBtn} onPress={() => setStep('camera')}>
+          <TouchableOpacity
+            style={styles.permissionBtn}
+            onPress={() => setStep('camera')}
+            accessibilityRole="button"
+          >
             <AppText style={styles.permissionBtnText}>Retake Photo</AppText>
           </TouchableOpacity>
         </View>
@@ -175,7 +179,11 @@ export function AddItemScreen() {
           {capturing ? (
             <ActivityIndicator color={Colors.accent} size="large" />
           ) : (
-            <CaptureButton onPress={handleCapture} disabled={capturing} />
+            <CaptureButton
+              onPress={handleCapture}
+              disabled={capturing}
+              accessibilityLabel="Take photo of item"
+            />
           )}
         </View>
       </View>

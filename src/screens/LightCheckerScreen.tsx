@@ -65,7 +65,7 @@ export function LightCheckerScreen() {
         <View style={styles.bottomBar}>
           <AppText style={styles.hint}>Point at the light — tap to capture</AppText>
           {canCapture ? (
-            <CaptureButton onPress={handleCapture} />
+            <CaptureButton onPress={handleCapture} accessibilityLabel="Take photo of light" />
           ) : (
             <ActivityIndicator color={Colors.accent} size="large" />
           )}

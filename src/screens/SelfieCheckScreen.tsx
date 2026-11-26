@@ -180,7 +180,11 @@ export function SelfieCheckScreen() {
           {capturing ? (
             <ActivityIndicator color={Colors.accent} size="large" />
           ) : (
-            <CaptureButton onPress={handleCapture} disabled={!canCapture} />
+            <CaptureButton
+              onPress={handleCapture}
+              disabled={!canCapture}
+              accessibilityLabel="Take photo of outfit"
+            />
           )}
         </View>
       </View>

@@ -52,7 +52,11 @@ export class ErrorBoundary extends Component<Props, State> {
           <View style={styles.errorBox}>
             <AppText style={styles.errorText}>{error.message || String(error)}</AppText>
           </View>
-          <TouchableOpacity style={styles.resetBtn} onPress={this.handleReset}>
+          <TouchableOpacity
+            style={styles.resetBtn}
+            onPress={this.handleReset}
+            accessibilityRole="button"
+          >
             <AppText style={styles.resetBtnText}>Try Again</AppText>
           </TouchableOpacity>
         </ScrollView>

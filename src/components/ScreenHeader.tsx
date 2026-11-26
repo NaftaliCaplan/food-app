@@ -25,7 +25,11 @@ export function ScreenHeader({ title, onBack, right, backLabel = '← Back' }: P
   return (
     <View style={styles.row}>
       <View style={styles.side}>
-        <TouchableOpacity onPress={onBack}>
+        <TouchableOpacity
+          onPress={onBack}
+          accessibilityRole="button"
+          accessibilityLabel={backLabel.replace(/^[←→]\s*/, '') || 'Back'}
+        >
           <AppText style={styles.backText}>{backLabel}</AppText>
         </TouchableOpacity>
       </View>

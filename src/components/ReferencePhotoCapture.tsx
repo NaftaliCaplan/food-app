@@ -65,7 +65,11 @@ export function ReferencePhotoCapture({
           {step === 'capturing' ? (
             <ActivityIndicator color={Colors.accent} size="large" />
           ) : (
-            <CaptureButton onPress={onCapture} disabled={step !== 'preview'} />
+            <CaptureButton
+              onPress={onCapture}
+              disabled={step !== 'preview'}
+              accessibilityLabel="Take reference photo"
+            />
           )}
         </View>
       </View>

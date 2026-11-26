@@ -66,7 +66,7 @@ export function WardrobeScreen() {
               <TouchableOpacity
                 style={styles.profileBtn}
                 onPress={() => navigation.navigate('UserProfile')}
-                accessibilityLabel="Set up style profile"
+                accessibilityLabel={hasProfile ? 'Edit style profile' : 'Set up style profile'}
               >
                 <AppText style={styles.profileIcon}>
                   {hasProfile ? '[P✓]' : '[P]'}
@@ -85,6 +85,8 @@ export function WardrobeScreen() {
           <TouchableOpacity
             style={styles.addBtn}
             onPress={() => navigation.navigate('AddItem')}
+            accessibilityRole="button"
+            accessibilityLabel="Add your first item"
           >
             <AppText style={styles.addBtnText}>+ Add your first item</AppText>
           </TouchableOpacity>
@@ -104,7 +106,7 @@ export function WardrobeScreen() {
               <TouchableOpacity
                 style={styles.profileBtn}
                 onPress={() => navigation.navigate('UserProfile')}
-                accessibilityLabel="Set up style profile"
+                accessibilityLabel={hasProfile ? 'Edit style profile' : 'Set up style profile'}
               >
                 <AppText style={styles.profileIcon}>
                   {hasProfile ? '[P✓]' : '[P]'}
@@ -113,6 +115,7 @@ export function WardrobeScreen() {
               <TouchableOpacity
                 style={styles.addIconBtn}
                 onPress={() => navigation.navigate('AddItem')}
+                accessibilityRole="button"
                 accessibilityLabel="Add item to wardrobe"
               >
                 <AppText style={styles.addIconText}>＋</AppText>
@@ -133,6 +136,7 @@ export function WardrobeScreen() {
             <View style={styles.thumbWrap}>
               <TouchableOpacity
                 onPress={() => navigation.navigate('EditItem', { item })}
+                accessibilityRole="button"
                 accessibilityLabel={`Edit ${item.name ?? item.category}`}
               >
                 <Image
@@ -143,9 +147,11 @@ export function WardrobeScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => handleToggleLaundry(item)}
+                accessibilityRole="button"
                 accessibilityLabel={
                   item.inLaundry ? `Mark ${item.name ?? item.category} as clean` : `Mark ${item.name ?? item.category} as in laundry`
                 }
+                accessibilityState={{ checked: item.inLaundry }}
                 style={[styles.laundryBadge, item.inLaundry && styles.laundryBadgeActive]}
               >
                 <AppText style={[styles.laundryBadgeText, item.inLaundry && styles.laundryBadgeTextActive]}>
@@ -160,6 +166,7 @@ export function WardrobeScreen() {
               </AppText>
               <TouchableOpacity
                 onPress={() => handleDelete(item.id)}
+                accessibilityRole="button"
                 accessibilityLabel={`Remove ${item.name ?? item.category}`}
                 style={styles.deleteBtn}
               >
@@ -180,6 +187,7 @@ export function WardrobeScreen() {
           <TouchableOpacity
             style={styles.savedBtn}
             onPress={() => navigation.navigate('SavedOutfits')}
+            accessibilityRole="button"
             accessibilityLabel="View saved outfits"
           >
             <AppText style={styles.savedBtnText}>Saved</AppText>
@@ -188,6 +196,7 @@ export function WardrobeScreen() {
             style={[styles.buildBtn, !canBuild && styles.buildBtnDisabled]}
             onPress={() => canBuild && navigation.navigate('OutfitBuilder')}
             disabled={!canBuild}
+            accessibilityRole="button"
             accessibilityLabel="Build an outfit"
             accessibilityState={{ disabled: !canBuild }}
           >

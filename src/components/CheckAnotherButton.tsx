@@ -10,7 +10,12 @@ interface Props {
 
 export function CheckAnotherButton({ onPress }: Props) {
   return (
-    <TouchableOpacity style={styles.btn} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={styles.btn}
+      onPress={onPress}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+    >
       <AppText style={styles.text}>Check another</AppText>
     </TouchableOpacity>
   );
